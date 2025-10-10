@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const { width, height } = Dimensions.get('window');
-
+// AIzaSyB52U540AQbDeKq__z0IDhrDfm5ZiACqFk
 const LocationScreen = ({ navigation, route }) => {
     const [routeCoords, setRouteCoords] = useState([]);
     useEffect(() => {
@@ -22,7 +22,7 @@ const LocationScreen = ({ navigation, route }) => {
             try {
                 const response = await fetch(
                     "https://maps.googleapis.com/maps/api/directions/json?" +
-                    "origin=13.0296,80.2405&destination=13.0213,80.2270&key=AIzaSyB52U540AQbDeKq__z0IDhrDfm5ZiACqFk"
+                    "origin=13.0296,80.2405&destination=13.0213,80.2270&key=sfcsdgfvzs"
                 );
                 const data = await response.json();
 

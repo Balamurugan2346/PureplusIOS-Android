@@ -14,7 +14,6 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const { width, height } = Dimensions.get('window');
-import MapLightTheme from '../../../Themes/MapTheme'
 
 const LocationScreen = ({ navigation, route }) => {
     const [routeCoords, setRouteCoords] = useState([]);

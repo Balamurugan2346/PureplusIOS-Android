@@ -1,10 +1,11 @@
 import { Provider } from 'react-redux';
-import AppNavigator from '../pureplusApp/src/Navigation/AppNavigator';
-import { AppContextProvider } from '../pureplusApp/src/Context/AppContext';
-import { TabBarVisibilityProvider } from '../pureplusApp/src/Context/BottomBarContext';
-import { ThemeProvider } from '../pureplusApp/src/Context/ThemeContext';
-import { store } from '../pureplusApp/src/Redux/Store';
+import AppNavigator from './src/Navigation/AppNavigator';
+import { AppContextProvider } from './src/Context/AppContext';
+import { TabBarVisibilityProvider } from './src/Context/BottomBarContext';
+import { ThemeProvider } from './src/Context/ThemeContext';
+import { store } from './src/Redux/Store';
 import { NavigationContainer } from '@react-navigation/native';
+import { Text } from 'react-native';
 
 
  function App() {
@@ -20,7 +21,6 @@ import { NavigationContainer } from '@react-navigation/native';
       </ThemeProvider>
     </AppContextProvider>
     </NavigationContainer>
-
   );
 }
 

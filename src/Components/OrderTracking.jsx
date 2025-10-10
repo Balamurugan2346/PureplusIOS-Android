@@ -5,7 +5,6 @@ import { useState } from 'react';
 import { Image, LayoutAnimation, Linking, Platform, StyleSheet, Text, TouchableOpacity, UIManager, View } from 'react-native';
 import Fonts from '../../assets/fonts/Fonts';
 import VectorBg from './VectorBg';
-import MapStyle from '../Themes/MapTheme'
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 
 const OrdetTracking = ({ title, description, img }) => {

@@ -1,0 +1,85 @@
+{
+  "migIndex": 1,
+  "data": [
+    {
+      "path": "assets/fonts/Fonts.js",
+      "sha1": "20d884bfb1531e5897f5a19e4374e332f401d135"
+    },
+    {
+      "path": "assets/fonts/Lexend-Black.ttf",
+      "sha1": "d5cb18ad3ffeeed68c3753396450935fc5ecbeb2"
+    },
+    {
+      "path": "assets/fonts/Lexend-Bold.ttf",
+      "sha1": "df3c3feab8ac51ab6f8d6a01f3b3a0e19dc88d03"
+    },
+    {
+      "path": "assets/fonts/Lexend-ExtraBold.ttf",
+      "sha1": "b4eb65e2f16d6614bde3f7d9d0bb09742ff47163"
+    },
+    {
+      "path": "assets/fonts/Lexend-ExtraLight.ttf",
+      "sha1": "29cea0bfaa9b846ba18aa6ff8c4914db5f09ebd7"
+    },
+    {
+      "path": "assets/fonts/Lexend-Light.ttf",
+      "sha1": "7ee28022da7fcd1f0adcfe7c2d73650c59d5c1fc"
+    },
+    {
+      "path": "assets/fonts/Lexend-Medium.ttf",
+      "sha1": "d607ea1e392b925d5229569cd3a8c9bdfcac1eaf"
+    },
+    {
+      "path": "assets/fonts/Lexend-Regular.ttf",
+      "sha1": "dd3cee6e434d8debb7699473bd61918cfb54798d"
+    },
+    {
+      "path": "assets/fonts/Lexend-SemiBold.ttf",
+      "sha1": "2a080dd36278ff2755d5976317cbeeecbcf6cc62"
+    },
+    {
+      "path": "assets/fonts/Lexend-Thin.ttf",
+      "sha1": "13b34f576c98265048bba2deebe6a97fbc055626"
+    },
+    {
+      "path": "assets/fonts/Montserrat-Bold.ttf",
+      "sha1": "c7d907722af4fb845ab97d515bb414f29651f000"
+    },
+    {
+      "path": "assets/fonts/NotoSansJP-Bold.ttf",
+      "sha1": "8211c414885366bca9ee1b1c8fbb2c60e7d1adab"
+    },
+    {
+      "path": "assets/fonts/SpaceMono-Regular.ttf",
+      "sha1": "fae3a5a43b50e0408fd61e14383d94a023d332b0"
+    },
+    {
+      "path": "assets/fonts/WorkSans-Bold.ttf",
+      "sha1": "29ee9214b2baa985b6ca8f1474a5d3c799a4fe81"
+    },
+    {
+      "path": "assets/fonts/WorkSans-ExtraBold.ttf",
+      "sha1": "26d9971e704d3a8eb3110da3d06f402b18037a14"
+    },
+    {
+      "path": "assets/fonts/WorkSans-ExtraLight.ttf",
+      "sha1": "d7ca304d44396af5ecb757d7d3e98648cdeaa306"
+    },
+    {
+      "path": "assets/fonts/WorkSans-Light.ttf",
+      "sha1": "6102f2c9d19a421a8c915b0622e7dabf13c24c7b"
+    },
+    {
+      "path": "assets/fonts/WorkSans-Medium.ttf",
+      "sha1": "b95c7b1d3a5130d2d87e86f91eb397a428b4ba43"
+    },
+    {
+      "path": "assets/fonts/WorkSans-Regular.ttf",
+      "sha1": "943c38fa3c44e48acc89c9547e30dc57991cb150"
+    },
+    {
+      "path": "assets/fonts/WorkSans-Thin.ttf",
+      "sha1": "c2ff22018bcb4a7849339432b301a6ce863018be"
+    }
+  ]
+}

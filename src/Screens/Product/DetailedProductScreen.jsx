@@ -11,6 +11,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import CartButton from '../../Components/Cart/CartButton';
 import PerksUI from '../../Components/GlassyPerksContainer';
 import AddressScreen from '../../Screens/Address/AddressScreen';
+import ImageWithTitleDesc from '../../Components/Product/ImageWithTitleDesc'
+import IconWithFeatures from '../../Components/Product/IconWithTextFeatures'
+import {WaterFeatures} from '../../Data/waterFeaturesData'
 
 const DetailedProductScreen = ({ navigation }) => {
 
@@ -81,20 +84,20 @@ const DetailedProductScreen = ({ navigation }) => {
   // },[selectedProduct])
 
   return (
-    <View style={[styles.container, { marginBottom: insets.bottom }]}>
-      <ScrollView refreshControl={
+    <View style={[styles.container, { marginBottom: insets.bottom + 10}]}>
+      <ScrollView style={{marginBottom:10}} refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
       }>
         
         <TouchableOpacity
           onPress={() => navigation.goBack()}
-          style={{ zIndex: 1, position: "absolute", marginVertical: 46, marginHorizontal: 20 }}
+          style={{ zIndex: 1, position: "absolute", marginVertical: insets.top + 10, marginHorizontal: insets.left + 10 }}
         >
           <AppNavButton color={theme.secondary} />
         </TouchableOpacity>
-
-        <View style={{ backgroundColor: theme.inputContainerBorder, borderBottomLeftRadius: 20, borderBottomRightRadius: 20, height: height * 0.4, width: "100%", alignItems: "center" }}>
-          <Image source={require('../../../assets/images/30L.png')} style={{ width: 300, height: 300, top: "8%" }} />
+{/* backgroundColor: theme.inputContainerBorder,  color for below image*/}
+        <View style={{  borderBottomLeftRadius: 20, borderBottomRightRadius: 20, height: height * 0.4, width: "100%", alignItems: "center" }}>
+          <Image source={require('../../../assets/images/watercanNew.png')} style={{ width: 300, height: 300, top: "8%" }} />
         </View>
 
         <View style={styles.content}>
@@ -108,7 +111,7 @@ const DetailedProductScreen = ({ navigation }) => {
               </TouchableOpacity>
             </View>
             <View style={{ flexDirection: "row" }}>
-              <Text style={paratextConfig}>{product.description}</Text>
+              <Text style={[paratextConfig,{marginTop:5}]}>Note:You can purchase a can in unit not a single can,              1 Unit = 3 Water can</Text>
             </View>
 
             <Line style={{ marginTop: 10, marginBottom: 10 }} />
@@ -146,6 +149,10 @@ const DetailedProductScreen = ({ navigation }) => {
 
         </View>
 
+<ImageWithTitleDesc/>
+   {WaterFeatures.map((feature,index)=>(
+     <IconWithFeatures iconName={feature.iconName} title={feature.header} description={feature.body} key={index}/>
+   ))}
       </ScrollView>
       <CartButton navigation={navigation} product={product} />
 

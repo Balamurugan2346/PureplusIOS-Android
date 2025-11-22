@@ -195,7 +195,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import Video from "react-native-video";
 import  LinearGradient  from 'react-native-linear-gradient';
 import React, { useEffect, useRef, useState } from 'react';
-import { Keyboard, KeyboardAvoidingView, Platform, SafeAreaView, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context'
+import { Image, Keyboard, KeyboardAvoidingView, Platform,  StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { useDispatch, useSelector } from 'react-redux';
 import NumberInput from '../../Components/Inputs/NumberInput';
@@ -272,7 +273,7 @@ export default function Login({ navigation }) {
           keyboardVerticalOffset={Platform.OS === 'ios' ? 20 : 0}
         >
           {/* Video background */}
-          <Video
+          {/* <Video
             source={require('../../../assets/Videos/LoginScreen.mp4')}
             rate={1.0}
             volume={1.0}
@@ -281,7 +282,11 @@ export default function Login({ navigation }) {
             shouldPlay
             isLooping
             style={[StyleSheet.absoluteFill]}
-          />
+          /> */}
+          <Image
+           style={[StyleSheet.absoluteFill]}
+          
+          source={require('../../../assets/images/loginBg.png')}/>
 
           {/* Gradient overlay */}
           <LinearGradient

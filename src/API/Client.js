@@ -3,7 +3,7 @@ import axios from 'axios';
 // import { getToken } from '../utils/storage';
 
 
-const API_BASE_URL = "http://192.168.1.3:5093/api"
+const API_BASE_URL = "https://pureplus-backend.onrender.com/api"
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,

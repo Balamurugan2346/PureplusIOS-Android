@@ -4,6 +4,9 @@ import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
 import com.facebook.react.defaults.DefaultReactActivityDelegate
+import android.os.Bundle
+import androidx.core.view.WindowCompat
+
 
 class MainActivity : ReactActivity() {
 
@@ -12,6 +15,13 @@ class MainActivity : ReactActivity() {
    * rendering of the component.
    */
   override fun getMainComponentName(): String = "pureplusApp"
+
+ override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(null)
+
+        // Force edge-to-edge for all Android versions
+        // WindowCompat.setDecorFitsSystemWindows(window, false)
+    }
 
   /**
    * Returns the instance of the [ReactActivityDelegate]. We use [DefaultReactActivityDelegate]

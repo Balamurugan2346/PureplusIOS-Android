@@ -45,7 +45,7 @@ export const AppContextProvider = ({ children }) => {
         const updatedCart = [...prevCart];
         updatedCart[existingIndex] = {
           ...updatedCart[existingIndex],
-          quantity: updatedCart[existingIndex].quantity + 1,
+          quantity: updatedCart[existingIndex].quantity + 3,
         };
         return updatedCart;
       } else {
@@ -58,7 +58,7 @@ export const AppContextProvider = ({ children }) => {
             price: product.price,
             oldPrice:product.oldPrice,
             img: product.img,
-            quantity: 1,
+            quantity: 3,
           }
         ];
       }
@@ -79,10 +79,10 @@ export const AppContextProvider = ({ children }) => {
         const updatedCart = [...prevCart];
         const currentQty = updatedCart[existingIndex].quantity;
 
-        if (currentQty > 1) {
+        if (currentQty > 3) {
           updatedCart[existingIndex] = {
             ...updatedCart[existingIndex],
-            quantity: currentQty - 1,
+            quantity: currentQty - 3,
           };
           return updatedCart;
         } else {

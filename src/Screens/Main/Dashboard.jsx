@@ -8,6 +8,7 @@ import Fonts from '../../../assets/fonts/Fonts';
 import  Ionicons  from 'react-native-vector-icons/Ionicons';
 import React, { useEffect, useState } from 'react';
 import {
+  Alert,
   Dimensions,
   Image,
   RefreshControl,
@@ -30,6 +31,8 @@ import Tag from '../../Components/Tag';
 import useScrollDirection from '../../Components/UseScrollDirection';
 import { TagData } from '../../Data/TagData';
 import AddressScreen from '../Address/AddressScreen';
+import ProductCardRect from '../../Components/Product/ProductCardRect'
+import OrderTimeline from '../../Components/OrderTracking/OrderTimeLIne'
 
 // Placeholder Carousel Data
 const bannerData = [
@@ -494,17 +497,26 @@ const Dashboard = ({ navigation }) => {
               style={styles.productGrid}
             >
               {products.map((product, index) => (
-                <Product
-                  key={index}
-                  product={product}
-                  onPress={() =>
-                    navigation.navigate("DetailedProductScreen", { product })
-                  }
-                  onInfoClick={() => {
-                    setShowBottomSheet((prev) => !prev);
-                    setBottomSheetProductDetailsData(product);
-                  }}
-                />
+
+          <ProductCardRect
+          key={index}
+          category="Soft Drink"
+          title="Sparkle Cola 300ml"
+          navigate={()=>navigation.navigate("DetailedProductScreen", { product })}
+          price="$1.50"
+          onRefillQuantityChange={(q) => Alert.alert(`Cola quantity set to ${q}`)}
+        />       
+                // <Product
+                //   key={index}
+                //   product={product}
+                //   onPress={() =>
+                //     navigation.navigate("DetailedProductScreen", { product })
+                //   }
+                //   onInfoClick={() => {
+                //     setShowBottomSheet((prev) => !prev);
+                //     setBottomSheetProductDetailsData(product);
+                //   }}
+                // />
               ))}
             </ScrollView>
           {/* )} */}

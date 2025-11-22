@@ -9,8 +9,8 @@ export const TagData = [
   },
   {
     id: '2',
-    title: 'Wishlist',
-    icon: require('../../assets/images/wishlist.png'),
+    title: 'Recent orders',
+    icon: require('../../assets/images/clipboard.png'),
     routeName: 'WishlistScreen',
     badgeNeed : false,
   },

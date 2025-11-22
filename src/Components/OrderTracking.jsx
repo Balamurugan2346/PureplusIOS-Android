@@ -6,7 +6,7 @@ import { Image, LayoutAnimation, Linking, Platform, StyleSheet, Text, TouchableO
 import Fonts from '../../assets/fonts/Fonts';
 import VectorBg from './VectorBg';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
-
+import OrderTimeline from '../Components/OrderTracking/OrderTimeLIne'
 const OrdetTracking = ({ title, description, img }) => {
 
 
@@ -132,8 +132,9 @@ const OrdetTracking = ({ title, description, img }) => {
                             </View>
                         </View>
 
+                        <OrderTimeline/>
                         {/* MAP VIEW */}
-                        <MapView
+                        {/* <MapView
                            style={{ height: 300, width: "100%", marginTop: 10, borderRadius: 20 }}
                             provider={PROVIDER_GOOGLE}
                             initialRegion={{
@@ -154,13 +155,13 @@ const OrdetTracking = ({ title, description, img }) => {
                                 title="Nandanam"
                             />
 
-                            {/* End marker */}
+                           
                             <Marker
                                 coordinate={{ latitude: 13.0213, longitude: 80.2270 }}
                                 title="Saidapet"
                             />
 
-                            {/* Path */}
+                          
                             <Polyline
                                 coordinates={[
                                     { latitude: 13.0296, longitude: 80.2405 }, // Nandanam
@@ -170,7 +171,7 @@ const OrdetTracking = ({ title, description, img }) => {
                                 strokeColor="#FF0000"   // red
                                 strokeWidth={4}
                             />
-                        </MapView>
+                        </MapView> */}
                         {/* <Image source={require('../../assets/images/StaticMapView.jpeg')} style={{ height: 300, width: "100%", marginTop: 10, borderRadius: 20 }} /> */}
                     </View>
                 )}

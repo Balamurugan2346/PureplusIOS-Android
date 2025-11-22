@@ -35,7 +35,7 @@ export default function AppNavigator() {
     <>
 
       <Stack.Navigator
-        initialRouteName='GetStarted'
+        initialRouteName='DashBoard'
         screenOptions={{
 
           headerShown: false, // No header by default

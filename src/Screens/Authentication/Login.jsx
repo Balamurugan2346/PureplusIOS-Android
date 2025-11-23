@@ -273,17 +273,9 @@ export default function Login({ navigation }) {
           keyboardVerticalOffset={Platform.OS === 'ios' ? 20 : 0}
         >
           {/* Video background */}
-          {/* <Video
-            source={require('../../../assets/Videos/LoginScreen.mp4')}
-            rate={1.0}
-            volume={1.0}
-            isMuted={false}
-            resizeMode="cover"
-            shouldPlay
-            isLooping
-            style={[StyleSheet.absoluteFill]}
-          /> */}
+      
           <Image
+          resizeMode='contain'
            style={[StyleSheet.absoluteFill]}
           
           source={require('../../../assets/images/loginBg.png')}/>

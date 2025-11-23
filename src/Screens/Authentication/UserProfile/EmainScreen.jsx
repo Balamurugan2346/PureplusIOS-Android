@@ -12,9 +12,12 @@ import {
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { useTheme } from '../../../Context/ThemeContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const EmailScreen = ({navigation}) => {
 
 
+
+    const insets = useSafeAreaInsets()
 
     const emailRef = useRef(null);
     const [email, setEmail] = useState({
@@ -51,7 +54,7 @@ const EmailScreen = ({navigation}) => {
 
                 <TouchableOpacity
                     onPress={() => navigation.goBack()}
-                    style={{ zIndex: 1, position: "absolute", marginVertical: 46, marginHorizontal: 20 }}
+                    style={{ zIndex: 1, position: "absolute", marginVertical: insets.top + 10, marginHorizontal: 20 }}
                 >
                     {/* <Image
                         source={require('../../../assets/images/arrowLeft.png')}
@@ -103,7 +106,7 @@ const EmailScreen = ({navigation}) => {
                         </View>
                         <AppButton onAction={() => {
                             if(!email.error && email.data){
-                                navigation.navigate("LocationScreen")
+                                navigation.navigate("DashBoard")
                                 console.log('email',email)
                             }else{
                             Toast.show({

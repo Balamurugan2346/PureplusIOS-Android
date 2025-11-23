@@ -20,16 +20,6 @@ const TIMELINE_DATA = [
         ],
     },
     {
-        id: '2',
-        status: 'Shipped',
-        statusDate: 'Tue, 1st Apr \'25',
-        events: [
-            { text: 'Ekart Logistics - FMPC4675889769', isBold: true }, 
-            { text: 'Your item has been shipped.', time: 'Tue, 1st Apr \'25 - 12:42pm' },
-            { text: 'Your item has been received In the hub nearest to you', time: '' }, 
-        ],
-    },
-    {
         id: '3',
         status: 'Out For Delivery',
         statusDate: 'Wed, 2nd Apr \'25',
@@ -52,20 +42,20 @@ const TIMELINE_DATA = [
  * Theme-based reusable component for displaying an order timeline.
  * Assumes useTheme() provides a theme object with colors.
  */
-const OrderTimeline = ({ data = TIMELINE_DATA }) => {
+const OrderTimeline = ({ data = TIMELINE_DATA ,style,fromWhiteBg=false}) => {
     // ⚠️ IMPORTANT: Assume useTheme() and Fonts are defined in your environment
     const { theme } = useTheme();
 
     const paratextConfig = {
-        color: theme.secondaryText || '#A7B3C4', // Use theme secondaryText for body/para
+        color: theme.secondaryText || '#A7B3C4', 
         fontFamily: Fonts.family.semiBold,
         fontSize: Fonts.size.xs,
     };
 
     const headerConfig = {
-        color: theme.highlightedText || 'white', // Use theme highlightedText for headers
-        fontFamily: Fonts.family.bold,
-        fontSize: Fonts.size.lg, // This seems unusually small for a header, check your Fonts.size.xs
+        color: fromWhiteBg ?  theme.background : theme.highlightedText ,
+        fontFamily: Fonts.family.semiBold,
+        fontSize: Fonts.size.sm, // This seems unusually small for a header, check your Fonts.size.xs
     };
 
     // The provided incomplete line: `const` is fixed by defining a function/style variable here if needed.
@@ -75,7 +65,7 @@ const OrderTimeline = ({ data = TIMELINE_DATA }) => {
     const dynamicStyles = getStyles(theme);
 
     return (
-        <View style={[dynamicStyles.container]}>
+        <View style={[dynamicStyles.container,style]}>
             {data.map((item, index) => (
                 <View key={item.id} style={dynamicStyles.timelineItem}>
                     {/* Timeline indicator (circle and line) */}
@@ -124,7 +114,7 @@ const getStyles = (theme) => StyleSheet.create({
     timelineIndicator: {
         width: 20, 
         alignItems: 'center',
-        marginRight: 15,
+        marginRight: 5,
     },
     circle: {
         width: 10,

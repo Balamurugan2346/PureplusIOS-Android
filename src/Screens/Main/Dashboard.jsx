@@ -5,7 +5,7 @@ import { useTheme } from '../../Context/ThemeContext';
 import { clearBanners, loadBanners } from '../../Redux/Slices/BannerSlice';
 import { clearProducts, loadProducts } from '../../Redux/Slices/ProductsSlice';
 import Fonts from '../../../assets/fonts/Fonts';
-import  Ionicons  from 'react-native-vector-icons/Ionicons';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
@@ -33,20 +33,21 @@ import { TagData } from '../../Data/TagData';
 import AddressScreen from '../Address/AddressScreen';
 import ProductCardRect from '../../Components/Product/ProductCardRect'
 import OrderTimeline from '../../Components/OrderTracking/OrderTimeLIne'
-
+import ProductCard1 from '../../Components/Product/ProductCard1';
+import {  useSafeAreaInsets } from 'react-native-safe-area-context';
 // Placeholder Carousel Data
 const bannerData = [
   {
     id: '1',
-    image: require('../../../assets/images/otpbg.png'),
-    title: "Summer Special Offer!",
-    description: "Get 20L Bisleri cans at ₹50 only — Free delivery for orders above ₹300!"
+    image: require('../../../assets/images/canBusinessLogic.png'),
+    title: "Minimum Quantity!",
+    description: "1 unit = 4 water can"
   },
   {
     id: '2',
-    image: require('../../../assets/images/EmailBG.png'),
-    title: "Monthly Subscription",
-    description: "Subscribe & Save — Hassle-free scheduled water can deliveries at your doorstep."
+    image: require('../../../assets/images/deliveryPersonRiding.png'),
+    title: "Latest News",
+    description: "If in case delivery person late, no need to pay for the delivery charge"
   },
   {
     id: '3',
@@ -71,6 +72,7 @@ const ITEM_WIDTH = width * 0.8;
 const Dashboard = ({ navigation }) => {
 
 
+  const insets = useSafeAreaInsets()
 
   const [refreshing, setRefreshing] = React.useState(false);
 
@@ -226,7 +228,7 @@ const Dashboard = ({ navigation }) => {
       }>
 
 
-        <View style={[styles.header, { backgroundColor: theme.background }, shadow]}>
+        <View style={[styles.header, { backgroundColor: theme.background,paddingTop: insets.top + 10}, shadow]}>
           <View style={styles.topAppBar}>
             <TouchableOpacity style={{}} onPress={() => navigation.navigate('ProfileScreen')}>
               <Image source={require('../../../assets/images/person.png')} style={{ width: 30, height: 30, borderRadius: 30 }} />
@@ -312,40 +314,40 @@ const Dashboard = ({ navigation }) => {
 
           {/* === Data State === */}
           {/* {isBannerFetched && !error && list.length > 0 && ( */}
-            <View style={styles.carouselContainer}>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                onScroll={(e) => {
-                  const index = Math.round(
-                    e.nativeEvent.contentOffset.x / ITEM_WIDTH
-                  );
-                  setActiveIndex(index);
-                }}
-              >
-                {bannerData.map((item, index) => (
-                  <Banner
-                    key={index}
-                    description={item.description}
-                    title={item.title}
-                    img={item.image}
-                  />
-                ))}
-              </ScrollView>
+          <View style={styles.carouselContainer}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              onScroll={(e) => {
+                const index = Math.round(
+                  e.nativeEvent.contentOffset.x / ITEM_WIDTH
+                );
+                setActiveIndex(index);
+              }}
+            >
+              {bannerData.map((item, index) => (
+                <Banner
+                  key={index}
+                  description={item.description}
+                  title={item.title}
+                  img={item.image}
+                />
+              ))}
+            </ScrollView>
 
-              {/* === Indicators === */}
-              <View style={styles.indicatorContainer}>
-                {bannerData.map((_, index) => (
-                  <View
-                    key={index}
-                    style={[
-                      styles.indicatorDot,
-                      { backgroundColor: index === activeIndex ? '#007AFF' : '#ccc' },
-                    ]}
-                  />
-                ))}
-              </View>
+            {/* === Indicators === */}
+            <View style={styles.indicatorContainer}>
+              {bannerData.map((_, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.indicatorDot,
+                    { backgroundColor: index === activeIndex ? '#007AFF' : '#ccc' },
+                  ]}
+                />
+              ))}
             </View>
+          </View>
           {/* )} */}
         </View>
 
@@ -399,14 +401,14 @@ const Dashboard = ({ navigation }) => {
 
         </View> */}
 
-        <View style={{ flexDirection: 'row', justifyContent: "space-between", marginHorizontal: 15 }}>
+        <View style={{ flexDirection: 'row', justifyContent: "space-around", marginHorizontal: 15 }}>
 
           {TagData.map((item, index) => (
-            <Tag key={item.id} icon={item.icon} title={item.title} badgeNeed={item.badgeNeed} onPress={() => {
-              if(item.id ==1){
-                navigation.navigate(item.routeName)
-              }
-            }} />
+              <Tag key={item.id} icon={item.icon} title={item.title} badgeNeed={item.badgeNeed} onPress={() => {
+                if (item.id == 1) {
+                  navigation.navigate(item.routeName)
+                }
+              }} />
           ))}
         </View>
 
@@ -414,7 +416,7 @@ const Dashboard = ({ navigation }) => {
 
 
 
-{/* product section */}
+        {/* product section */}
         <View style={[styles.productSection]}>
           <Text style={[textConfig, { paddingVertical: 5 }]}>Our products</Text>
 
@@ -483,7 +485,7 @@ const Dashboard = ({ navigation }) => {
               </TouchableOpacity>
             </View>
           )} */}
-{/* 
+          {/* 
           {isProductsFetched && !productError && productList.length === 0 && (
             <Text style={[headerConfig, { alignSelf: "center", margin: 10 }]}>
               No Products Found
@@ -491,34 +493,34 @@ const Dashboard = ({ navigation }) => {
           )} */}
 
           {/* {isProductsFetched && !productError && productList.length > 0 && ( */}
-            <ScrollView
-              showsHorizontalScrollIndicator={false}
-              horizontal
-              style={styles.productGrid}
-            >
-              {products.map((product, index) => (
+          <ScrollView
+            showsHorizontalScrollIndicator={false}
+            horizontal
+            style={styles.productGrid}
+          >
+            {products.map((product, index) => (
 
-          <ProductCardRect
-          key={index}
-          category="Soft Drink"
-          title="Sparkle Cola 300ml"
-          navigate={()=>navigation.navigate("DetailedProductScreen", { product })}
-          price="$1.50"
-          onRefillQuantityChange={(q) => Alert.alert(`Cola quantity set to ${q}`)}
-        />       
-                // <Product
-                //   key={index}
-                //   product={product}
-                //   onPress={() =>
-                //     navigation.navigate("DetailedProductScreen", { product })
-                //   }
-                //   onInfoClick={() => {
-                //     setShowBottomSheet((prev) => !prev);
-                //     setBottomSheetProductDetailsData(product);
-                //   }}
-                // />
-              ))}
-            </ScrollView>
+              // <ProductCardRect
+              //   key={index}
+              //   category="Soft Drink"
+              //   title="Sparkle Cola 300ml"
+              //   navigate={() => navigation.navigate("DetailedProductScreen", { product })}
+              //   price="$1.50"
+              //   onRefillQuantityChange={(q) => Alert.alert(`Cola quantity set to ${q}`)}
+              // />
+              <ProductCard1
+                key={index}
+                product={product}
+                onPress={() =>
+                  navigation.navigate("DetailedProductScreen", { product })
+                }
+                onInfoClick={() => {
+                  setShowBottomSheet((prev) => !prev);
+                  setBottomSheetProductDetailsData(product);
+                }}
+              />
+            ))}
+          </ScrollView>
           {/* )} */}
         </View>
 
@@ -563,7 +565,6 @@ const styles = StyleSheet.create({
 
   },
   header: {
-    paddingTop: 50,
     paddingBottom: 20,
     paddingHorizontal: 20,
     marginBottom: 20,

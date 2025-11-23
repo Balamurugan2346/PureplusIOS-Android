@@ -10,6 +10,7 @@ import Line from '../../../Components/Line';
 import OrderProdItem from '../../../Components/Order/OrderProdItem';
 import TopAppBar from '../../../Components/TopAppBar';
 import VectorBg from '../../../Components/VectorBg';
+import OrderTimeline from '../../../Components/OrderTracking/OrderTimeLIne';
 
 const OrderDetailedScreen = ({navigation}) => {
 
@@ -120,6 +121,8 @@ const OrderDetailedScreen = ({navigation}) => {
 
                     </View>
 
+                    {/* timeline */}
+                       <OrderTimeline fromWhiteBg={true} style={[styles.cardContainer,{ backgroundColor: theme.cardContainer }]}/>
 
                     {/* <OrderProdItem/> */}
                     <View style={[styles.cardContainer, { backgroundColor: theme.cardContainer }]}>
@@ -138,6 +141,7 @@ const OrderDetailedScreen = ({navigation}) => {
                         )}
                     </View>
 
+                   {/*Order summary */}
                     <OrderSummary isOrderDetails={true} />
                 </View>
             </ScrollView>

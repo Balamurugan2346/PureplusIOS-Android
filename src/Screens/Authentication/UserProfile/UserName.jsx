@@ -17,6 +17,7 @@ import Toast from 'react-native-toast-message';
 import { useDispatch } from 'react-redux';
 import AppModal from '../../../Components/AppModal';
 import { useTheme } from '../../../Context/ThemeContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const UserName = ({ navigation }) => {
 
 
@@ -47,7 +48,8 @@ const UserName = ({ navigation }) => {
         }, [])
     )
 
-
+    
+    const insets = useSafeAreaInsets()
 
     return (
         <KeyboardAvoidingView
@@ -92,7 +94,7 @@ const UserName = ({ navigation }) => {
 
                 <TouchableOpacity
                     onPress={() => setModalVisible(true)}
-                    style={{ zIndex: 1, position: "absolute", marginVertical: 46, marginHorizontal: 20 }}
+                    style={{ zIndex: 1, position: "absolute", marginVertical: insets.top + 10, marginHorizontal: 20 }}
                 >
                     {/* <Image
                         source={require('../../../assets/images/arrowLeft.png')}

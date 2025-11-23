@@ -16,40 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const { width, height } = Dimensions.get('window');
 // AIzaSyB52U540AQbDeKq__z0IDhrDfm5ZiACqFk
 const LocationScreen = ({ navigation, route }) => {
-    const [routeCoords, setRouteCoords] = useState([]);
-    useEffect(() => {
-        const getRoute = async () => {
-            try {
-                const response = await fetch(
-                    "https://maps.googleapis.com/maps/api/directions/json?" +
-                    "origin=13.0296,80.2405&destination=13.0213,80.2270&key=sfcsdgfvzs"
-                );
-                const data = await response.json();
 
-                console.log("data",data)
-                if (data.routes.length) {
-                    const points = PolylineDecoder.decode(
-                        data.routes[0].overview_polyline.points
-                    );
-                    const coords = points.map(([lat, lng]) => ({
-                        latitude: lat,
-                        longitude: lng,
-                    }));
-                    setRouteCoords(coords);
-                }
-            } catch (err) {
-                console.error(err);
-            }
-        };
-
-        getRoute();
-    }, []);
-
-
-    useEffect(()=>{
-
-        console.log("routes",routeCoords)
-    },[routeCoords])
 
     const initialText = route.params?.text ?? '';
 
@@ -95,10 +62,50 @@ const LocationScreen = ({ navigation, route }) => {
     }
 
 
-    const [areaName] = useState('Chamiers Road, Nandanam');
-    const [fullAddress] = useState(
-        '20, Mangaiyarkarasi Street, Santosh Nagar, Kurinji Nagar, Chennai, Tamil Nadu, India'
-    );
+    // const [areaName] = useState('Chamiers Road, Nandanam');
+    // const [fullAddress] = useState(
+    //     '20, Mangaiyarkarasi Street, Santosh Nagar, Kurinji Nagar, Chennai, Tamil Nadu, India'
+    // );
+
+
+    const [selectedLatLng, setSelectedLatLng] = useState({
+        latitude: 13.0296,
+        longitude: 80.2405
+    });
+
+    const [areaName, setAreaName] = useState('');
+    const [fullAddress, setFullAddress] = useState('');
+
+    const handleRegionChange = async (region) => {
+        const { latitude, longitude } = region;
+
+        console.log('called')
+        setSelectedLatLng({ latitude, longitude });
+
+        try {
+            const geoRes = await fetch(
+                `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=AIzaSyDV2_xy58r15K6TskZy4KWMuhUDVq67jqM`
+            );
+
+            const geoData = await geoRes.json();
+
+            if (geoData.results.length > 0) {
+                const formatted = geoData.results[0].formatted_address;
+                setFullAddress(formatted);
+
+                // Extract area/locality name
+                const locality =
+                    geoData.results[0].address_components.find(c =>
+                        c.types.includes("locality")
+                    )?.long_name;
+                setAreaName(locality || 'Selected Location');
+            }else{
+                console.log("no result")
+            }
+        } catch (e) {
+            console.log("Reverse Geocode Error", e);
+        }
+    };
 
     return (
         <View style={styles.container}>
@@ -121,8 +128,21 @@ const LocationScreen = ({ navigation, route }) => {
             {/* MAP VIEW */}
             {/* <Image source={require('../../../../assets/images/StaticMapView.jpeg')} resizeMode='cover' style={{ height: "60%", width: "100%" }} />
          */}
+
+            <View style={{
+                position: 'absolute',
+                top: '45%',
+                left: '50%',
+                marginLeft: -15,
+                zIndex: 10,
+            }}>
+                <Ionicons name='location-sharp' size={30} color='red' />
+            </View>
+
+
             <MapView
                 style={{ flex: 1, marginHorizontal: 10 }}
+                onRegionChangeComplete={handleRegionChange}
                 provider={PROVIDER_GOOGLE}
                 initialRegion={{
                     latitude: 13.0296,
@@ -137,27 +157,7 @@ const LocationScreen = ({ navigation, route }) => {
                 pitchEnabled={true}
                 rotateEnabled={true}
             >
-                <Marker
-                    coordinate={{ latitude: 13.0296, longitude: 80.2405 }}
-                    title="Nandanam"
-                />
 
-                {/* End marker */}
-                <Marker
-                    coordinate={{ latitude: 13.0213, longitude: 80.2270 }}
-                    title="Saidapet"
-                />
-
-                {/* Path */}
-                <Polyline
-                    coordinates={[
-                        { latitude: 13.0296, longitude: 80.2405 }, // Nandanam
-                        { latitude: 13.025, longitude: 80.235 },   // Midpoint
-                        { latitude: 13.0213, longitude: 80.2270 }, // Saidapet
-                    ]}
-                    strokeColor="#FF0000"   // red
-                    strokeWidth={4}
-                />
             </MapView>
 
 

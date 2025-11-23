@@ -34,7 +34,7 @@ const ProductCardRect = ({
    const { theme, toggleTheme, isDark } = useTheme();
 
      const headerConfig = {
-    color: theme.text,
+    color: theme.cardBackground,
     fontFamily: Fonts.family.semiBold,
     fontSize: Fonts.size.sm
   }
@@ -42,7 +42,7 @@ const ProductCardRect = ({
   const textConfig = {
     fontFamily: Fonts.family.regular,
     color:theme.card,
-    fontSize: Fonts.size.sm,
+    fontSize: Fonts.size.xs,
   }
 
   const titleConfig = {
@@ -83,9 +83,9 @@ const ProductCardRect = ({
           style={styles.productImage} 
         />
       </View>
-        <Text style={styles.titleText}>{title}</Text>
-        <Text style={textConfig}>Note:1 unit equal to 3 cans</Text>
-        <Text style={styles.priceText}>{price}</Text>
+        <Text style={headerConfig}>{title}</Text>
+        {/* <Text style={textConfig}>Note:1 unit equal to 3 cans</Text> */}
+        {/* <Text style={[textConfig,{color:theme.primary}]}>{price}</Text>s */}
 
        
       </View>

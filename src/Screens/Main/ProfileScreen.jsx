@@ -187,20 +187,23 @@ import {
   Switch,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // You'll need to install this library: npm install react-native-vector-icons
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import TopAppBar from '../../Components/TopAppBar';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // --- Data Structure for the main list items ---
 const SETTINGS_ITEMS = [
-  { name: 'Notification', icon: 'bell-outline', type: 'toggle', key: 'notification' },
-  { name: 'Language Settings', icon: 'web', type: 'link', key: 'language' },
-  { name: 'Privacy Policy', icon: 'shield-lock-outline', type: 'link', key: 'privacy' },
-  { name: 'Terms and Conditions', icon: 'file-document-outline', type: 'link', key: 'terms' },
+  { name: 'Notification', icon: 'notifications', type: 'toggle', key: 'notification' },
+  { name: 'Language Settings', icon: 'language', type: 'link', key: 'language' },
+  { name: 'Privacy Policy', icon: 'clipboard-outline', type: 'link', key: 'privacy' },
+  { name: 'Terms and Conditions', icon: 'document', type: 'link', key: 'terms' },
 ];
 
 /**
  * Reusable component for the profile list and actions,
  * excluding the main header/image section.
  */
-const ProfileScreen = () => {
+const ProfileScreen = ({navigation}) => {
   // State for the Notification Switch
   const [isNotificationEnabled, setIsNotificationEnabled] = useState(true);
 
@@ -236,18 +239,19 @@ const ProfileScreen = () => {
         activeOpacity={isLink || isDestructive ? 0.7 : 1}
       >
         <View style={styles.iconBackground}>
-          <Icon 
+           <Ionicons name={item.icon} color={'#3498db'} size={22} />
+          {/* <Icon 
             name={item.icon} 
             size={22} 
             color={isDestructive ? '#e74c3c' : '#3498db'} // Red for destructive, blue otherwise
-          />
+          /> */}
         </View>
         <Text style={[styles.itemText, isDestructive && styles.destructiveText]}>
           {item.name}
         </Text>
 
         {isLink && (
-          <Icon name="chevron-right" size={24} color="#bdc3c7" />
+            <Ionicons name={'arrow-forward-outline'} color={'#3498db'} size={22} />
         )}
 
         {isToggle && (
@@ -264,26 +268,29 @@ const ProfileScreen = () => {
   };
   // -----------------------------------------------
 
+  const insets = useSafeAreaInsets()
+
   return (
-    <View style={styles.screenContainer}>
+    <View style={[styles.screenContainer,{marginBottom:insets.bottom}]}>
+       <TopAppBar title='Profile' navigation={navigation}/>
       <ScrollView contentContainerStyle={styles.contentContainer}>
         
         {/* --- Profile Information Section --- */}
         <View style={styles.infoSection}>
           <Text style={styles.infoLabel}>Profile</Text>
           <View style={styles.infoItem}>
-            <Icon name="account-outline" size={20} color="#3498db" style={styles.infoIcon} />
+            <Ionicons name={'person'} color={'#3498db'} size={22} />
             <Text style={styles.infoValue}>Balamurugan</Text>
             {/* The pencil icon for edit is excluded as per "no header with back navigation" */}
           </View>
 
           <View style={styles.infoItem}>
-            <Icon name="phone-outline" size={20} color="#3498db" style={styles.infoIcon} />
+      <Ionicons name={'call'} color={'#3498db'} size={22} />
             <Text style={styles.infoValue}>7397014106</Text>
           </View>
 
           <View style={styles.infoItem}>
-            <Icon name="email-outline" size={20} color="#3498db" style={styles.infoIcon} />
+             <Ionicons name={'mail'} color={'#3498db'} size={22} />
             <Text style={styles.infoValue}>balaiItsme23@gmail.com</Text>
             <TouchableOpacity style={styles.manageButton} onPress={() => handleAction('Manage Email')}>
               <Text style={styles.manageButtonText}>MANAGE</Text>
@@ -291,7 +298,7 @@ const ProfileScreen = () => {
           </View>
 
           <View style={styles.infoItem}>
-            <Icon name="home-outline" size={20} color="#3498db" style={styles.infoIcon} />
+             <Ionicons name={'home'} color={'#3498db'} size={22} />
             <Text style={styles.infoValue}>
               123, Bharathi Nagar, Main Road, Coimbatore, 641001
             </Text>
@@ -300,6 +307,7 @@ const ProfileScreen = () => {
 
         {/* --- Settings List Section --- */}
         <View style={styles.settingsSection}>
+          <Text style={styles.infoLabel}>Settings</Text>
           {SETTINGS_ITEMS.map((item) => (
             <SettingsItem item={item} key={item.key} />
           ))}
@@ -313,12 +321,12 @@ const ProfileScreen = () => {
             activeOpacity={0.7}
           >
             <View style={styles.iconBackground}>
-              <Icon name="delete-outline" size={22} color="#e74c3c" />
+                <Ionicons name={'remove-circle'} color={'red'} size={22} />
             </View>
             <Text style={[styles.itemText, styles.destructiveText]}>
               Delete Account
             </Text>
-            <Icon name="chevron-right" size={24} color="#bdc3c7" />
+              {/* <Ionicons name={'arrow-forward-outline'} color={'red'} size={22} /> */}
           </TouchableOpacity>
         </View>
 
@@ -378,6 +386,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     color: '#333',
+    marginLeft:10,
     lineHeight: 20,
   },
   manageButton: {
@@ -401,7 +410,7 @@ const styles = StyleSheet.create({
   settingsSection: {
     backgroundColor: 'white',
     marginBottom: 10,
-    paddingHorizontal: 5,
+    paddingHorizontal: 10,
   },
   listItem: {
     flexDirection: 'row',

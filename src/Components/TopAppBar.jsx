@@ -29,8 +29,8 @@ const TopAppBar = ({title="Default",style,navigation}) => {
   }
 
     return (
-        <View style={[styles.topBar, style =  { backgroundColor: theme.background, paddingTop: insets.top + padAmount.paddingBottom }]}>
-            <View style={{ flexDirection: "row" }}>
+        <View style={[styles.topBar, style =  { backgroundColor: theme.background, paddingTop: insets.top }]}>
+            <View style={{ flexDirection: "row",alignItems:"center" }}>
                 <TouchableOpacity
                     onPress={() => navigation.goBack()}
                 >

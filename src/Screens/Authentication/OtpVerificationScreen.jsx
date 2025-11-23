@@ -20,6 +20,7 @@ import AppNavButton from '../../Components/AppNavButton';
 import OtpInput from '../../Components/Inputs/OTPInput';
 import { useTheme } from '../../Context/ThemeContext';
 import useKeyboardVisible from '../../Utils/IsKeyboardVisible';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const OtpVerificationScreen = ({ navigation }) => {
 
@@ -32,6 +33,8 @@ const OtpVerificationScreen = ({ navigation }) => {
     const { loading: isLoginLoading, error: isLoginError, isFetched: isLoginApiFetched, isSuccess: isLoginApiSuccess, } = loginState
 
     const timer = 5
+
+    const insets = useSafeAreaInsets()
 
     useMemo(() => {
         console.log("mobile number is ", mobileNumber)
@@ -196,7 +199,7 @@ const OtpVerificationScreen = ({ navigation }) => {
 
                     <TouchableOpacity
                         onPress={() => navigation.goBack()}
-                        style={{ zIndex: 1, position: "absolute", marginVertical: 46, marginHorizontal: 20 }}
+                        style={{ zIndex: 1, position: "absolute", marginVertical: insets.top + 10, marginHorizontal: 20 }}
                     >
                         {/* <Image
                         source={require('../../../assets/images/arrowLeft.png')}

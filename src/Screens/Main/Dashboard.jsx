@@ -35,6 +35,7 @@ import ProductCardRect from '../../Components/Product/ProductCardRect'
 import OrderTimeline from '../../Components/OrderTracking/OrderTimeLIne'
 import ProductCard1 from '../../Components/Product/ProductCard1';
 import {  useSafeAreaInsets } from 'react-native-safe-area-context';
+import { getCurrentLocation } from '../../Utils/LocationUtil';
 // Placeholder Carousel Data
 const bannerData = [
   {
@@ -67,6 +68,15 @@ const bannerData = [
 const { width } = Dimensions.get('window');
 const ITEM_WIDTH = width * 0.8;
 
+async function getLatLong() {
+  try {
+    const pos = await getCurrentLocation();
+    console.log('Location:', pos);
+    return pos;
+  } catch (err) {
+    console.log('Error getting location:', err.message);
+  }
+}
 
 
 const Dashboard = ({ navigation }) => {
@@ -109,6 +119,7 @@ const Dashboard = ({ navigation }) => {
 
 
 
+
   const [showAddressBottomSheet, setShowAddressBottomSheet] = useState(false)
 
 
@@ -126,6 +137,8 @@ const Dashboard = ({ navigation }) => {
     isDialogVisibleAtOnce,
     setIsDialogVisibleAtOnce,
     products,
+    currentLocation,
+    setCurrentLocation,
     setProducts,
     cart,
     usersAddress,
@@ -134,6 +147,13 @@ const Dashboard = ({ navigation }) => {
     setWareHouses,
     suggestedWarehouseList
   } = useAppContext()
+
+
+  
+  useEffect(()=>{
+    getLatLong()
+  },[])
+
 
 
   const headerConfig = {

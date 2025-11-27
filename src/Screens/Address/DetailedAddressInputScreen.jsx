@@ -42,11 +42,11 @@ const DetailedAddressInputScreen = ({ navigation }) => {
 
                     {/* <HighLightedText text={"Add Address"} style={{ color: theme.greyText }} /> */}
 
-                    <AddressInputForm />
+                    <AddressInputForm  navigation={navigation}/>
                 </View>
 
 
-                <TouchableOpacity  style={[{
+                {/* <TouchableOpacity  style={[{
                     backgroundColor: theme.primary,
                     paddingVertical: 10,
                     marginHorizontal:10,
@@ -56,7 +56,7 @@ const DetailedAddressInputScreen = ({ navigation }) => {
                 }]}
                 >
                     <Text style={[headerConfig,{color:theme.buttonText}]}>Save Address</Text>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
 
             </ScrollView>
 

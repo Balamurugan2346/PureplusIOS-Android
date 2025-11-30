@@ -3,12 +3,15 @@ import { useAppContext } from '../../Context/AppContext';
 import { useTabBarVisibility } from '../../Context/BottomBarContext';
 import { useTheme } from '../../Context/ThemeContext';
 import { clearBanners, loadBanners } from '../../Redux/Slices/BannerSlice';
+import { clearDecodedAddress, decodeAddress } from '../../Redux/Slices/LocationSlice';
 import { clearProducts, loadProducts } from '../../Redux/Slices/ProductsSlice';
 import Fonts from '../../../assets/fonts/Fonts';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
+  AppState,
+  Button,
   Dimensions,
   Image,
   RefreshControl,
@@ -34,8 +37,9 @@ import AddressScreen from '../Address/AddressScreen';
 import ProductCardRect from '../../Components/Product/ProductCardRect'
 import OrderTimeline from '../../Components/OrderTracking/OrderTimeLIne'
 import ProductCard1 from '../../Components/Product/ProductCard1';
-import {  useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getCurrentLocation } from '../../Utils/LocationUtil';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { fetchCurrentLocation } from '../../Utils/LocationUtil';
+import AppLoading from '../../Components/AppLoading';
 // Placeholder Carousel Data
 const bannerData = [
   {
@@ -58,26 +62,8 @@ const bannerData = [
   }
 ];
 
-
-
-
-
-
-
-
 const { width } = Dimensions.get('window');
 const ITEM_WIDTH = width * 0.8;
-
-async function getLatLong() {
-  try {
-    const pos = await getCurrentLocation();
-    console.log('Location:', pos);
-    return pos;
-  } catch (err) {
-    console.log('Error getting location:', err.message);
-  }
-}
-
 
 const Dashboard = ({ navigation }) => {
 
@@ -90,6 +76,36 @@ const Dashboard = ({ navigation }) => {
 
   const dispatch = useDispatch();
   const { list, loading, error, isFetched: isBannerFetched } = useSelector((state) => state.banners);
+
+
+  //LOCATIONS + GEOCODING API LOGIC
+  const {error : LocationError,display_name,address:DetailedAddress,isFetched : isLocationApiFetched,entireGEOData,loading:isGEOcodingApiLoading} = useSelector((state)=>state.locations)
+
+    const [refreshLocation, setRefreshLocation] = useState(false);
+  const [coords, setCoords] = useState(null);
+  const [isLocationFetching, setIsLocationFetching] = useState(false);
+
+  const refreshLocation1 = async () => {
+    try {
+      setIsLocationFetching(true)
+      const pos = await fetchCurrentLocation();
+      if(pos){
+        console.log("before sending to api","lat",pos.latitude,"lonh",pos.longitude)
+       dispatch(decodeAddress({ lat: pos.latitude, long: pos.longitude }));
+      }
+      console.log("position", pos)
+      setCoords(pos);
+    } finally {
+      setIsLocationFetching(false)
+    }
+  };
+
+  useEffect(() => {
+    console.log("running....")
+    refreshLocation1()
+  }, [refreshLocation]);
+
+
 
   const {
     productList,
@@ -148,14 +164,6 @@ const Dashboard = ({ navigation }) => {
     suggestedWarehouseList
   } = useAppContext()
 
-
-  
-  useEffect(()=>{
-    getLatLong()
-  },[])
-
-
-
   const headerConfig = {
     color: theme.text,
     fontFamily: Fonts.family.semiBold,
@@ -172,11 +180,6 @@ const Dashboard = ({ navigation }) => {
     fontFamily: Fonts.family.semiBold,
     fontSize: Fonts.size.lg
   }
-
-  const [filterTags, setFilterTags] = useState({
-    suggested: ['distance'],
-    nearby: ['distance'],
-  });
 
   const { setIsTabBarVisible, isTabBarVisible } = useTabBarVisibility();
 
@@ -218,6 +221,7 @@ const Dashboard = ({ navigation }) => {
     setRefreshing(true);
     dispatch(loadBanners())
     dispatch(loadProducts())
+    setRefreshLocation(prev => !prev)
     setTimeout(() => {
       setRefreshing(false);
     }, 2000);
@@ -232,11 +236,17 @@ const Dashboard = ({ navigation }) => {
 
 
 
+  const isAddressBarLoading  = (isGEOcodingApiLoading || isLocationFetching) 
+ 
+
   return (
     <View
       style={[styles.container, { backgroundColor: theme.secondaryBackground }]}
     >
 
+     {/* {isLocationFetching && (
+            <AppLoading isVisible={isLocationFetching}/>
+          )} */}
 
       {isDialogVisible && <CustomDialog visible={isDialogVisible} setVisible={setIsDialogVisible} />}
 
@@ -248,7 +258,7 @@ const Dashboard = ({ navigation }) => {
       }>
 
 
-        <View style={[styles.header, { backgroundColor: theme.background,paddingTop: insets.top + 10}, shadow]}>
+        <View style={[styles.header, { backgroundColor: theme.background, paddingTop: insets.top + 10 }, shadow]}>
           <View style={styles.topAppBar}>
             <TouchableOpacity style={{}} onPress={() => navigation.navigate('ProfileScreen')}>
               <Image source={require('../../../assets/images/person.png')} style={{ width: 30, height: 30, borderRadius: 30 }} />
@@ -267,7 +277,7 @@ const Dashboard = ({ navigation }) => {
 
           <Text style={[headerConfig, { marginTop: 10 }]}>Delivery within <Text style={titleConfig}>5 mins</Text></Text>
 
-          <AddressBar onClick={() => setShowAddressBottomSheet(true)} address={usersAddress != null ? usersAddress : 'No Address found'} />
+          <AddressBar  onClick={() => setShowAddressBottomSheet(true)} address={isAddressBarLoading ? "Loading...." : display_name ? display_name : "Not fetched Please refresh"} />
         </View>
 
         {/* === Carousel === */}
@@ -334,6 +344,8 @@ const Dashboard = ({ navigation }) => {
 
           {/* === Data State === */}
           {/* {isBannerFetched && !error && list.length > 0 && ( */}
+
+          
           <View style={styles.carouselContainer}>
             <ScrollView
               horizontal
@@ -354,6 +366,10 @@ const Dashboard = ({ navigation }) => {
                 />
               ))}
             </ScrollView>
+
+            <Button title='press' onPress={() => {
+              refreshLocation1()
+            }} />
 
             {/* === Indicators === */}
             <View style={styles.indicatorContainer}>
@@ -424,11 +440,11 @@ const Dashboard = ({ navigation }) => {
         <View style={{ flexDirection: 'row', justifyContent: "space-around", marginHorizontal: 15 }}>
 
           {TagData.map((item, index) => (
-              <Tag key={item.id} icon={item.icon} title={item.title} badgeNeed={item.badgeNeed} onPress={() => {
-                if (item.id == 1) {
-                  navigation.navigate(item.routeName)
-                }
-              }} />
+            <Tag key={item.id} icon={item.icon} title={item.title} badgeNeed={item.badgeNeed} onPress={() => {
+              if (item.id == 1) {
+                navigation.navigate(item.routeName)
+              }
+            }} />
           ))}
         </View>
 

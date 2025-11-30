@@ -1,4 +1,8 @@
 export default {
+
+
+  //FREEGEOFENCINGAPI
+   REVERSEGEOCODER:'reverse',
   SENDMOBILENUMBER:'/Auth/UserLog',
   LOGIN: '/Auth/OTP',
   REGISTER: '/auth/register',
@@ -15,4 +19,7 @@ export default {
     CREATEORDERADDRESS:'/EndUser/create-order-delivery-address',
     CREATEADDRESS:'/EndUser/create-customer-delivery-address',
     GETALLUSERADDRESS:'/EndUser/create-customer-delivery-addressess/{userId}'
+
+
+
 };

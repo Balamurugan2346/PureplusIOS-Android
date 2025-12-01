@@ -38,7 +38,7 @@ const Banner = ({ title, description, img }) => {
             style={styles.container}>
 
             <ImageBackground
-                source={img}
+                source={{uri:img}}
                 blurRadius={4}
                 style={[{ overflow: "hidden", borderRadius: 16, zIndex: -1, height: 150, width: 300, backgroundColor: theme.primary }, StyleSheet.absoluteFill]}
                 resizeMode="cover"
@@ -56,7 +56,7 @@ const Banner = ({ title, description, img }) => {
 
                 {/* Right Image Section */}
                 <Image
-                    source={img}
+                    source={{uri:img}}
                     style={styles.image}
                     resizeMode="cover"
                 />

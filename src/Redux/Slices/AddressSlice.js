@@ -30,6 +30,20 @@ export const getAddressList = createAsyncThunk(
   }
 );
 
+
+export const deleteAddress = createAsyncThunk(
+  "address/deleteAddress",
+  async (id,{rejectWithValue})=>{
+    try{
+       const data = await AddressRepository.deleteAddress(id)
+       return data
+    }catch(e){
+      console.log("delete error from redux",e)
+      return rejectWithValue(e.message)
+    }
+  }
+)
+
 const addressSlice = createSlice({
   name: "address",
   initialState: {
@@ -37,7 +51,11 @@ const addressSlice = createSlice({
     selectedAddress: null,
     loading: false,
     error: null,
-    isFetched: false
+    isFetched: false,
+
+    loadingDelete:false,
+    deletedResponse:{},
+    deleteApiError:null
   },
   reducers: {
     clearAddressState: (state) => {
@@ -46,7 +64,11 @@ const addressSlice = createSlice({
       state.error = null;
       state.loading = false;
       state.isFetched = false;
-    }
+
+      state.deleteApiError = null;
+      state.loadingDelete = false;
+      state.deletedResponse = {}
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -72,13 +94,28 @@ const addressSlice = createSlice({
       })
       .addCase(getAddressList.fulfilled, (state, action) => {
         state.loading = false;
-        state.addressList = action.payload;
+        state.addressList = action.payload.addressId;
         state.isFetched = true;
       })
       .addCase(getAddressList.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
         state.isFetched = false;
+      })
+
+
+       ////// Delete Address //////
+      .addCase(deleteAddress.pending, (state) => {
+        state.loadingDelete = true;
+        state.deleteApiError = null;
+      })
+      .addCase(deleteAddress.fulfilled, (state, action) => {
+        state.loadingDelete = false;
+        state.deletedResponse = action.payload;
+      })
+      .addCase(deleteAddress.rejected, (state, action) => {
+        state.loadingDelete = false;
+        state.deleteApiError = action.payload;
       });
   }
 });

@@ -3,11 +3,11 @@ import { LocationRepository } from '../../Repository/LocationRepository';
 
 export const decodeAddress = createAsyncThunk(
   'locations/decodeAddress',
-  async ({lat,long}, { rejectWithValue }) => {
+  async ({ lat, long }, { rejectWithValue }) => {
     try {
-   console.log("before sending to repo","lat",lat,"lonh",long)
-      const data = await LocationRepository.getAddress(lat,long);
-      console.log("from thubk",data)
+      console.log("before sending to repo", "lat", lat, "lonh", long)
+      const data = await LocationRepository.getAddress(lat, long);
+      console.log("from thubk", data)
       return data
     } catch (err) {
       return rejectWithValue(err.message);
@@ -17,7 +17,7 @@ export const decodeAddress = createAsyncThunk(
 
 const locationSlice = createSlice({
   name: 'locations',
-  initialState: { display_name : "" , address:{} , isFetched : false, loading : false,error:null ,entireGEOData:{}},
+  initialState: { display_name: "",address_line1 : "",address_line2 : "", address: {}, isFetched: false, loading: false, error: null, entireGEOData: {} },
   reducers: {
     clearDecodedAddress: (state) => {
       state.list = {};
@@ -34,9 +34,15 @@ const locationSlice = createSlice({
       })
       .addCase(decodeAddress.fulfilled, (state, action) => {
         state.loading = false;
-        state.display_name = action.payload.display_name;
-        state.address = action.payload.address
-        state.entireGEOData = action.payload;
+
+        const feature = action.payload?.features?.[0];
+        const props = feature?.properties;
+
+        state.display_name = props?.formatted || "";
+        state.address_line1 = props?.address_line1 || "";
+        state.address_line2 = props?.address_line2 || "";
+        state.address = props || {}
+        state.entireGEOData = action.payload || {};
         state.isFetched = true
       })
       .addCase(decodeAddress.rejected, (state, action) => {

@@ -13,42 +13,32 @@ import {
     View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRoute } from '@react-navigation/native';
+import { useDispatch, useSelector } from 'react-redux';
+import {decodeAddress,clearDecodedAddress} from '../../../Redux/Slices/LocationSlice'
+
+
+
+
 const { width, height } = Dimensions.get('window');
-// AIzaSyB52U540AQbDeKq__z0IDhrDfm5ZiACqFk
-const LocationScreen = ({ navigation, route }) => {
-
-
-    const initialText = route.params?.text ?? '';
-
-    const [text, setText] = useState(initialText);
-
-    const insets = useSafeAreaInsets();
-    // if you expect the param to change later, sync it
-    useEffect(() => {
-        if (route.params?.text !== undefined) {
-            setText(route.params.text);
-        }
-        // const userLoc = GetUserLocation()
-
-    }, [route.params?.text]);
+const LocationScreen = ({ navigation }) => {
 
 
     const { theme } = useTheme()
-
-    const mapRef = useRef(null);
-
-    useEffect(() => {
-        setTimeout(() => {
-            mapRef.current?.animateCamera({
-                center: { latitude: 37.78825, longitude: -122.4324 },
-                pitch: 60,   // tilt (0 = flat, 90 = straight down)
-                heading: 45, // bearing (compass direction)
-                zoom: 18,
-            });
-        }, 1000);
-    }, []);
+    const dispatch = useDispatch()
+    //LOCATIONS + GEOCODING API DATA  
+    const { error: LocationError,
+         display_name, 
+         address_line1 : a1,
+         address_line2 : a2,
+         address: DetailedAddress, 
+         isFetched: isLocationApiFetched, 
+         entireGEOData,
+          loading: isGEOcodingApiLoading
+         } = useSelector((state) => state.locations)
 
 
+    //ui logic
     const headerConfig = {
         color: theme.background,
         fontFamily: Fonts.family.semiBold,
@@ -61,50 +51,90 @@ const LocationScreen = ({ navigation, route }) => {
         fontSize: Fonts.size.xs
     }
 
-
-    // const [areaName] = useState('Chamiers Road, Nandanam');
-    // const [fullAddress] = useState(
-    //     '20, Mangaiyarkarasi Street, Santosh Nagar, Kurinji Nagar, Chennai, Tamil Nadu, India'
-    // );
+    //get route params
+    const route = useRoute();
 
 
-    const [selectedLatLng, setSelectedLatLng] = useState({
-        latitude: 13.0296,
-        longitude: 80.2405
+    //states
+    const [isLocationFetching, setIsLocationFetching] = useState(false);
+    const [refresh, setRefresh] = useState(false)
+    const [text, setText] = useState()
+    const [address, setAddress] = useState({
+        addressline1: "",
+        addressline2: "",
+        formattedAddress:"",
+        state: "",
+        city: "",
+        latitude: 0.0,
+        longitude: 0.0
     });
 
-    const [areaName, setAreaName] = useState('');
-    const [fullAddress, setFullAddress] = useState('');
+
+
+    const insets = useSafeAreaInsets();
+
+    useEffect(() => {
+        const { fromEdit, data, lat, long } = route.params ?? {};
+
+        console.log("params data:",lat,long)
+        // Case 1: Add New (fromEdit = false)
+        if (fromEdit === false && lat  && long ) {
+            dispatch(decodeAddress({lat,long}))
+            setAddress(prev => ({
+                ...prev,
+                addressline1: a1,
+                addressline2:a2,
+                formattedAddress:display_name,
+                latitude: lat,
+                longitude: long
+            }));
+            return;
+        }
+
+        // Case 2: Edit mode (fromEdit = true)
+        if (fromEdit === true && data) {
+            setAddress({
+                addressline1: data.addressLine1,
+                addressline2: data.addressLine2,
+                formattedAddress:`${data.addressLine1}\n${data.addressLine2}`,
+                state: data.state,
+                city: data.city,
+                latitude: data.latitude,
+                longitude: data.longitude
+            });
+        }
+
+    }, [route.params]);
+
+
+
+
+
+    const mapRef = useRef(null);
+
+    useEffect(() => {
+        console.log("address", address)
+    }, [address])
+
+
+    useEffect(() => {
+        if (address.latitude !== 0 && address.longitude !== 0) {
+            mapRef.current?.animateCamera({
+                center: { latitude: address.latitude, longitude: address.longitude },
+                pitch: 60,
+                heading: 45,
+                zoom: 18,
+            });
+        }
+    }, [address]);
+
+
+
 
     const handleRegionChange = async (region) => {
-        const { latitude, longitude } = region;
+        const { latitude: latReg, longitude } = region;
 
-        console.log('called')
-        setSelectedLatLng({ latitude, longitude });
-
-        try {
-            const geoRes = await fetch(
-                `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=AIzaSyDV2_xy58r15K6TskZy4KWMuhUDVq67jqM`
-            );
-
-            const geoData = await geoRes.json();
-
-            if (geoData.results.length > 0) {
-                const formatted = geoData.results[0].formatted_address;
-                setFullAddress(formatted);
-
-                // Extract area/locality name
-                const locality =
-                    geoData.results[0].address_components.find(c =>
-                        c.types.includes("locality")
-                    )?.long_name;
-                setAreaName(locality || 'Selected Location');
-            }else{
-                console.log("no result")
-            }
-        } catch (e) {
-            console.log("Reverse Geocode Error", e);
-        }
+        console.log('called', latReg)
     };
 
     return (
@@ -118,7 +148,7 @@ const LocationScreen = ({ navigation, route }) => {
             <View style={[styles.searchBarContainer]}>
                 <Ionicons name="search" size={20} color="#999" style={{ marginHorizontal: 8 }} />
                 <TextInput
-                    value={text && text}
+                    value={text}
                     placeholder="Search area or address"
                     style={styles.searchInput}
                     placeholderTextColor="#999"
@@ -138,36 +168,32 @@ const LocationScreen = ({ navigation, route }) => {
             }}>
                 <Ionicons name='location-sharp' size={30} color='red' />
             </View>
-
-
             <MapView
                 style={{ flex: 1, marginHorizontal: 10 }}
                 onRegionChangeComplete={handleRegionChange}
                 provider={PROVIDER_GOOGLE}
                 initialRegion={{
-                    latitude: 13.0296,
-                    longitude: 80.2405,
-                    latitudeDelta: 0.0922,
-                    longitudeDelta: 0.0421,
+
+                    latitude: address.latitude,
+                    longitude: address.longitude,
+                    latitudeDelta: 0.0022,
+                    longitudeDelta: 0.0021,
                 }}
-                showsBuildings={true}
-                showsTraffic={true}
-                showsCompass={true}
-                showsIndoorLevelPicker={true}
-                pitchEnabled={true}
+                showsTraffic={false}
+                showsCompass={false}
+                showsIndoorLevelPicker={false}
+                pitchEnabled={false}
                 rotateEnabled={true}
             >
+                <Marker coordinate={{ latitude: address.latitude, longitude: address.longitude }}>
 
+                </Marker>
             </MapView>
-
-
-
-
 
             {/* FOOTER */}
             <View style={[styles.footer, { marginBottom: insets.bottom }]}>
-                <Text style={[headerConfig]}>{areaName}</Text>
-                <Text style={[paratextConfig]}>{fullAddress}</Text>
+                <Text style={[headerConfig]}>{address.addressline1}</Text>
+                <Text style={[paratextConfig]}>{address.addressline2}</Text>
                 <AppButton title={"Confirm Location"} onAction={() => navigation.navigate('DetailedAddressInputScreen')} />
             </View>
         </View>

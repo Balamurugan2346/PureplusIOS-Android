@@ -18,7 +18,8 @@ export default {
 
     CREATEORDERADDRESS:'/EndUser/create-order-delivery-address',
     CREATEADDRESS:'/EndUser/create-customer-delivery-address',
-    GETALLUSERADDRESS:'/EndUser/create-customer-delivery-addressess/{userId}'
+    GETALLUSERADDRESS:'/EndUser/customer-delviery-addressess',
+    DELETEADDRESS:"/EndUser/soft-delete-customer-address"
 
 
 

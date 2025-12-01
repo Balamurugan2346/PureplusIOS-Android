@@ -76,7 +76,7 @@ const PayButtonWithAddressBar = ({ navigation ,showBottomSheet}) => {
                         Delivering To Other
                     </Text>
                     <Text style={[paratextConfig, { color: '#666' }]}>
-                        {displayTrimmedAddress(usersAddress)}
+                        {/* {displayTrimmedAddress(usersAddress)} */}
                     </Text>
                 </View>
 

@@ -1,4 +1,4 @@
-import { saveAddress , getAllAddress } from '../API/Services/AddressService';
+import { saveAddress , getAllAddress , deleteAddress } from '../API/Services/AddressService';
 
 export const AddressRepository = {
     saveAddress: async (address) => {
@@ -18,6 +18,16 @@ export const AddressRepository = {
             return response.data
         }catch(e){
             console.log("error while getting all address")
+            throw e
+        }
+    },
+
+    deleteAddress : async (id)=> {
+        try{
+            const response = await deleteAddress(id)
+            return response.data
+        }catch(e){
+            console.log("delte error from repo")
             throw e
         }
     }

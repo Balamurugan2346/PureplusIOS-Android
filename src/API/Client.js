@@ -16,6 +16,7 @@ const apiClient = axios.create({
 // apiClient.interceptors.request.use(req => {
 //   console.log("AXIOS REQUEST:", JSON.stringify({
 //     url: req.url,
+//     baseURL:req.baseURL,
 //     method: req.method,
 //     headers: req.headers,
 //     data: req.data

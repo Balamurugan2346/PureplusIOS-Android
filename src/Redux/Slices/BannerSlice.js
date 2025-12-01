@@ -6,7 +6,6 @@ export const loadBanners = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const data = await BannerRepoitory.getBanners();
-      // console.log("from thubk",data)
       return data
     } catch (err) {
       return rejectWithValue(err.message);
@@ -33,7 +32,7 @@ const bannerSlice = createSlice({
       })
       .addCase(loadBanners.fulfilled, (state, action) => {
         state.loading = false;
-        state.list = action.payload;
+        state.list = action.payload.jsonData;
         state.isFetched = true
       })
       .addCase(loadBanners.rejected, (state, action) => {

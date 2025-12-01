@@ -3,6 +3,7 @@ import { useAppContext } from '../../Context/AppContext';
 import { useTabBarVisibility } from '../../Context/BottomBarContext';
 import { useTheme } from '../../Context/ThemeContext';
 import { clearBanners, loadBanners } from '../../Redux/Slices/BannerSlice';
+import {clearAddressState,getAddressList} from '../../Redux/Slices/AddressSlice'
 import { clearDecodedAddress, decodeAddress } from '../../Redux/Slices/LocationSlice';
 import { clearProducts, loadProducts } from '../../Redux/Slices/ProductsSlice';
 import Fonts from '../../../assets/fonts/Fonts';
@@ -40,6 +41,7 @@ import ProductCard1 from '../../Components/Product/ProductCard1';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { fetchCurrentLocation } from '../../Utils/LocationUtil';
 import AppLoading from '../../Components/AppLoading';
+import ShimmerPlaceholder from 'react-native-shimmer-placeholder';
 // Placeholder Carousel Data
 const bannerData = [
   {
@@ -68,101 +70,8 @@ const ITEM_WIDTH = width * 0.8;
 const Dashboard = ({ navigation }) => {
 
 
-  const insets = useSafeAreaInsets()
-
-  const [refreshing, setRefreshing] = React.useState(false);
-
-
-
-  const dispatch = useDispatch();
-  const { list, loading, error, isFetched: isBannerFetched } = useSelector((state) => state.banners);
-
-
-  //LOCATIONS + GEOCODING API LOGIC
-  const {error : LocationError,display_name,address:DetailedAddress,isFetched : isLocationApiFetched,entireGEOData,loading:isGEOcodingApiLoading} = useSelector((state)=>state.locations)
-
-    const [refreshLocation, setRefreshLocation] = useState(false);
-  const [coords, setCoords] = useState(null);
-  const [isLocationFetching, setIsLocationFetching] = useState(false);
-
-  const refreshLocation1 = async () => {
-    try {
-      setIsLocationFetching(true)
-      const pos = await fetchCurrentLocation();
-      if(pos){
-        console.log("before sending to api","lat",pos.latitude,"lonh",pos.longitude)
-       dispatch(decodeAddress({ lat: pos.latitude, long: pos.longitude }));
-      }
-      console.log("position", pos)
-      setCoords(pos);
-    } finally {
-      setIsLocationFetching(false)
-    }
-  };
-
-  useEffect(() => {
-    console.log("running....")
-    refreshLocation1()
-  }, [refreshLocation]);
-
-
-
-  const {
-    productList,
-    loading: productsLoading,
-    error: productError,
-    isFetched: isProductsFetched
-  } = useSelector((state) => state.products)
-
-
-
-  //INITAL API CALLS WHEN THE DASHBOARD RENDERS 
-  useEffect(() => {
-    if (!isProductsFetched) {
-      dispatch(loadProducts())
-      // console.log("APICALL PRODUCTS triggered");
-      // console.log("product list ", productList)
-    }
-  }, [isProductsFetched, dispatch])
-
-  useEffect(() => {
-    if (!isBannerFetched) {
-      // console.log("APICALL BANNER triggered");
-      dispatch(loadBanners());
-      // console.log("product list ", list)
-    }
-  }, [dispatch, isBannerFetched]); // 🔹 only run on mount
-
-
-
-
-  const [showAddressBottomSheet, setShowAddressBottomSheet] = useState(false)
-
-
-  const shadow = {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 80,
-  }
-
+  //UI LOGIC
   const { theme, toggleTheme, isDark } = useTheme();
-
-  const {
-    isDialogVisibleAtOnce,
-    setIsDialogVisibleAtOnce,
-    products,
-    currentLocation,
-    setCurrentLocation,
-    setProducts,
-    cart,
-    usersAddress,
-    setCart,
-    warehouses,
-    setWareHouses,
-    suggestedWarehouseList
-  } = useAppContext()
 
   const headerConfig = {
     color: theme.text,
@@ -181,8 +90,39 @@ const Dashboard = ({ navigation }) => {
     fontSize: Fonts.size.lg
   }
 
+  const shadow = {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 80,
+  }
+
+  const {
+    isDialogVisibleAtOnce,
+    setIsDialogVisibleAtOnce,
+    products,
+    currentLocation,
+    setCurrentLocation,
+    setProducts,
+    cart,
+    usersAddress,
+    setCart,
+    warehouses,
+    setWareHouses,
+    suggestedWarehouseList
+  } = useAppContext()
+
+
+
+  const insets = useSafeAreaInsets()
   const { setIsTabBarVisible, isTabBarVisible } = useTabBarVisibility();
 
+  const [refreshing, setRefreshing] = React.useState(false);
+  const [refreshLocation, setRefreshLocation] = useState(false);
+  const [coords, setCoords] = useState(null);
+  const [isLocationFetching, setIsLocationFetching] = useState(false);
+  const [showAddressBottomSheet, setShowAddressBottomSheet] = useState(false)
   //this state is for to show the dialog
   const [isDialogVisible, setIsDialogVisible] = useState(false)
   const [activeIndex, setActiveIndex] = useState(0);
@@ -190,18 +130,60 @@ const Dashboard = ({ navigation }) => {
   const [bottomSheetProductDetailsData, setBottomSheetProductDetailsData] = useState(null)
 
 
-  const onScroll = useScrollDirection((direction) => {
-    if (direction === 'down') setIsTabBarVisible(false);
-    else setIsTabBarVisible(true);
-  });
+  //REDUX
+  const dispatch = useDispatch();
+  //BANNERS API DATA
+  const { list, loading, error, isFetched: isBannerFetched } = useSelector((state) => state.banners);
+  //PRODUCTS API DATA
+  const { productList, loading: productsLoading, error: productError, isFetched: isProductsFetched } = useSelector((state) => state.products)
+  //LOCATIONS + GEOCODING API DATA  
+  const { error: LocationError, display_name, address: DetailedAddress, isFetched: isLocationApiFetched, entireGEOData, loading: isGEOcodingApiLoading } = useSelector((state) => state.locations)
 
+  //ADDRESS 
+  const {addressList} = useSelector((state)=>state.address)
+
+
+
+
+  const refreshLocation1 = async () => {
+    try {
+      setIsLocationFetching(true)
+      const pos = await fetchCurrentLocation();
+      if (pos) {
+        console.log("before sending to api", "lat", pos.latitude, "lonh", pos.longitude)
+          // dispatch(decodeAddress({ lat: pos.latitude, long: pos.longitude }));
+      }
+      console.log("position", pos)
+      setCoords(pos);
+    } finally {
+      setIsLocationFetching(false)
+    }
+  };
+
+  useEffect(() => {
+    console.log("running....")
+    refreshLocation1()
+  }, [refreshLocation]);
+
+  //INITIAL API CALLS WHEN THE DASHBOARD RENDERS 
+  useEffect(() => {
+    if (!isProductsFetched) {
+      dispatch(loadProducts())
+      dispatch(getAddressList(259))
+    }
+  }, [isProductsFetched, dispatch])
+
+  useEffect(() => {
+    if (!isBannerFetched) {
+      dispatch(loadBanners());
+    }
+  }, [dispatch, isBannerFetched]); // 🔹 only run on mount
 
   useEffect(() => {
     if (!isDialogVisibleAtOnce) {
       setIsDialogVisible(true)
       setIsDialogVisibleAtOnce(true)
     }
-
   }, [])
 
   useEffect(() => {
@@ -212,12 +194,11 @@ const Dashboard = ({ navigation }) => {
   }, [showAddressBottomSheet])
 
 
-
-
   const handleRefresh = () => {
     console.log("reloading...")
     dispatch(clearProducts())
     dispatch(clearBanners())
+    dispatch(clearDecodedAddress())
     setRefreshing(true);
     dispatch(loadBanners())
     dispatch(loadProducts())
@@ -227,24 +208,20 @@ const Dashboard = ({ navigation }) => {
     }, 2000);
   }
 
+  useEffect(()=>{
+    console.log("from dashboard",addressList)
+  },[addressList])
 
-  //for only logs 
-  // useEffect(() => {
-  //   console.log("banners", list)
-  //   console.log("products list", productList)
-  // }, [list, productList])
+  //RENDER UI CONDITION
+  const isAddressBarLoading = (isGEOcodingApiLoading || isLocationFetching)
 
-
-
-  const isAddressBarLoading  = (isGEOcodingApiLoading || isLocationFetching) 
- 
 
   return (
     <View
       style={[styles.container, { backgroundColor: theme.secondaryBackground }]}
     >
 
-     {/* {isLocationFetching && (
+      {/* {isLocationFetching && (
             <AppLoading isVisible={isLocationFetching}/>
           )} */}
 
@@ -253,7 +230,7 @@ const Dashboard = ({ navigation }) => {
       <StatusBar />
 
       {/* === Header === */}
-      <ScrollView onScroll={onScroll} refreshControl={
+      <ScrollView  refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
       }>
 
@@ -275,78 +252,14 @@ const Dashboard = ({ navigation }) => {
             </TouchableOpacity>
           </View>
 
-          <Text style={[headerConfig, { marginTop: 10 }]}>Delivery within <Text style={titleConfig}>5 mins</Text></Text>
+          {/* <Text style={[headerConfig, { marginTop: 10 }]}>Delivery within <Text style={titleConfig}>5 mins</Text></Text> */}
 
-          <AddressBar  onClick={() => setShowAddressBottomSheet(true)} address={isAddressBarLoading ? "Loading...." : display_name ? display_name : "Not fetched Please refresh"} />
+          <AddressBar onClick={() => setShowAddressBottomSheet(true)} address={isAddressBarLoading ? "Loading...." : display_name ? display_name : "Not fetched Please refresh"} />
         </View>
 
         {/* === Carousel === */}
-        <View style={styles.carouselSection}>
-
-          {/* === Loading Shimmer === */}
-          {/* {loading && (
-            <View style={{ flexDirection: "row", marginBottom: 10 }}>
-              <ShimmerPlaceHolder
-                LinearGradient={LinearGradient}
-                shimmerColors={['#F3F3F980', '#ccd9e990', '#F3F3F980']}
-                style={{
-                  height: 150,
-                  width: 200,
-                  borderRadius: 12,
-                  marginBottom: 12,
-                  marginHorizontal: 10,
-                  backgroundColor: '#F3F3F980'
-                }}
-              />
-              <ShimmerPlaceHolder
-                LinearGradient={LinearGradient}
-                shimmerColors={['#F3F3F980', '#ccd9e990', '#F3F3F980']}
-                style={{
-                  height: 150,
-                  width: 200,
-                  borderRadius: 12,
-                  marginHorizontal: 10,
-                  backgroundColor: '#F3F3F980'
-                }}
-              />
-            </View>
-          )} */}
-
-          {/* === Error State === */}
-          {/* {error && !loading && (
-            <View style={{ alignSelf: "center", marginBottom: 10 }}>
-              <Text style={[headerConfig, { color: theme.error, fontFamily: Fonts.family.regular }]}>
-                Couldn’t load banners
-              </Text>
-              <TouchableOpacity
-                style={{
-                  backgroundColor: theme.error,
-                  borderRadius: 10,
-                  padding: 10,
-                  alignSelf: "center",
-                  marginTop: 10
-                }}
-                onPress={() => {
-                  dispatch(clearBanners())
-                  dispatch(loadBanners())
-                }}
-              >
-                <Text style={[headerConfig, { color: theme.buttonText }]}>Retry</Text>
-              </TouchableOpacity>
-            </View>
-          )} */}
-
-          {/* === No Data State === */}
-          {/* {isBannerFetched && !error && list.length === 0 && (
-            <Text style={[headerConfig, { alignSelf: "center", margin: 10 }]}>
-            </Text>
-          )} */}
-
-          {/* === Data State === */}
-          {/* {isBannerFetched && !error && list.length > 0 && ( */}
-
-          
-          <View style={styles.carouselContainer}>
+        {list && list.length >=1 && (
+          <View style={[styles.carouselContainer]}>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -357,23 +270,18 @@ const Dashboard = ({ navigation }) => {
                 setActiveIndex(index);
               }}
             >
-              {bannerData.map((item, index) => (
+              { list && list.map((item, index) => (
                 <Banner
                   key={index}
-                  description={item.description}
-                  title={item.title}
-                  img={item.image}
+                  description={item.bannerDescription}
+                  title={item.bannerName}
+                  img={item.bannerImageURL}
                 />
               ))}
             </ScrollView>
-
-            <Button title='press' onPress={() => {
-              refreshLocation1()
-            }} />
-
             {/* === Indicators === */}
             <View style={styles.indicatorContainer}>
-              {bannerData.map((_, index) => (
+              {list && list.map((_, index) => (
                 <View
                   key={index}
                   style={[
@@ -384,59 +292,7 @@ const Dashboard = ({ navigation }) => {
               ))}
             </View>
           </View>
-          {/* )} */}
-        </View>
-
-
-
-
-
-        {/*<View style={styles.suggestedWareHouseContainer}>
-          <View style={{ flexDirection: "row", flex: 1, justifyContent: "space-between", paddingHorizontal: 10 }}>
-            <HighLightedText text={"Suggested suppliers"} style={{ color: theme.background }} />
-            <UnderLinedText text={"View All"} />
-          </View>
-          
-          sort by filter
-          <View style={{flexDirection:"row",paddingHorizontal:10,alignItems:"center"}}>
-             <RegularText text={"Sort by"} style={{ color: theme.background }} />
-         {filterTags.suggested.map((tag,index)=>(
-            <FilterTag text={tag} key={index}/>
-          ))}
-          </View>
- 
-          <View >
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {suggestedWarehouseList.map((warehouse, index) => (
-                <WarehouseCard warehouse={warehouse} key={warehouse.id} />
-              ))}
-            </ScrollView>
-
-          </View>
-
-        </View> */}
-
-        {/* <View style={styles.warehouseContainer}>
-          <View style={{ flexDirection: "row", flex: 1, justifyContent: "space-between", paddingHorizontal: 10 }}>
-            <HighLightedText text={"Our suppliers"} style={{ color: theme.background }} />
-            <UnderLinedText text={"View All"} />
-          </View>
-          <View style={{alignSelf:"flex-end",flexDirection:"row",paddingHorizontal:10,alignItems:"center"}}>
-             <RegularText text={"Sort by"} style={{ color: theme.background }} />
-         {filterTags.suggested.map((tag,index)=>(
-            <FilterTag text={tag} key={index}/>
-          ))}
-          </View>
-          <View >
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {warehouses.map((warehouse, index) => (
-                <WarehouseCard warehouse={warehouse} key={warehouse.id} />
-              ))}
-            </ScrollView>
-          </View>
-
-        </View> */}
-
+        )}
         <View style={{ flexDirection: 'row', justifyContent: "space-around", marginHorizontal: 15 }}>
 
           {TagData.map((item, index) => (

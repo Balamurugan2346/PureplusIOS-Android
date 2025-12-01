@@ -2,7 +2,8 @@
 import axios from 'axios';
 
 
-const MAP_BASE_URL = "https://geocode.maps.co"
+// const MAP_BASE_URL = "https://geocode.maps.co"
+const MAP_BASE_URL = "https://api.geoapify.com/v1/geocode/"
 
 const mapApiClient = axios.create({
   baseURL: MAP_BASE_URL,
@@ -14,6 +15,7 @@ const mapApiClient = axios.create({
 mapApiClient.interceptors.request.use(req => {
   console.log("AXIOS REQUEST:", JSON.stringify({
     url: req.url,
+    baseUrl:req.baseURL,
     method: req.method,
     headers: req.headers,
     data: req.data

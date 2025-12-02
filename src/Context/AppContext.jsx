@@ -21,10 +21,13 @@ export const AppContextProvider = ({ children }) => {
 
  const [usersAddress, setUsersAddress] = useState(null);
 
+ //currently in use --IMPORTANT
  const [currentLocation,setCurrentLocation] = useState({
   lat:0.0,
   long:0.0,
+  displayAddress:""
  })
+ const [hasLocationPermission,setHasLocationPermission] = useState(false)
 
  //some times the screen dont have bottom bar at that time we need to do something in ui so we track this state
  const [isBottomBarVisible,setIsBottomBarVisible] = useState(false)

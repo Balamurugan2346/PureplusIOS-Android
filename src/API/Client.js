@@ -1,4 +1,5 @@
 import axios from 'axios';
+import EndPoint from './EndPoint';
 // import { API_BASE_URL } from '../constants/config';
 // import { getToken } from '../utils/storage';
 
@@ -11,6 +12,23 @@ const apiClient = axios.create({
   timeout: 10000,
   headers: { 'Content-Type': 'application/json' },
 });
+
+const AUTH_WHITELIST = [EndPoint.SENDOTP, EndPoint.VERIFYOTP];
+
+apiClient.interceptors.request.use(
+  async (config) => {
+    // check if request is NOT in whitelist
+    if (!AUTH_WHITELIST.some(path => config.url.includes(path))) {
+      const token =  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjE4IiwidHlwZSI6ImF1dGgiLCJleHAiOjE3NjQ3MTE2MDIsImlzcyI6IlB1cmVQbHVzQVBJIiwiYXVkIjoiUHVyZVBsdXNDbGllbnQifQ.eTofqA7jlAVQhey0ORkeFSJUfS0x-Xp_FRmwLU8pfKY"
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    }
+    console.log("config url",config.url)
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 
 // apiClient.interceptors.request.use(req => {

@@ -14,7 +14,7 @@ const AddressInputForm = ({ navigation }) => {
     const { loading, error } = useSelector((state) => state.address);
 
     const [formData, setFormData] = useState({
-        userId: 300,
+        userId: 18,
         addressType: '',
         addressLine1: '',
         addressLine2: '',

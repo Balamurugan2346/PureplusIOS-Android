@@ -3,7 +3,7 @@ import { useAppContext } from '../../Context/AppContext';
 import { useTabBarVisibility } from '../../Context/BottomBarContext';
 import { useTheme } from '../../Context/ThemeContext';
 import { clearBanners, loadBanners } from '../../Redux/Slices/BannerSlice';
-import {clearAddressState,getAddressList} from '../../Redux/Slices/AddressSlice'
+import { clearAddressState, getAddressList } from '../../Redux/Slices/AddressSlice'
 import { clearDecodedAddress, decodeAddress } from '../../Redux/Slices/LocationSlice';
 import { clearProducts, loadProducts } from '../../Redux/Slices/ProductsSlice';
 import Fonts from '../../../assets/fonts/Fonts';
@@ -140,9 +140,13 @@ const Dashboard = ({ navigation }) => {
   const { error: LocationError, display_name, address: DetailedAddress, isFetched: isLocationApiFetched, entireGEOData, loading: isGEOcodingApiLoading } = useSelector((state) => state.locations)
 
   //ADDRESS 
-  const {addressList} = useSelector((state)=>state.address)
+  const { addressList } = useSelector((state) => state.address)
 
 
+
+  useEffect(()=>{
+    console.log("currentLocation",currentLocation)
+  },[currentLocation])
 
 
   const refreshLocation1 = async () => {
@@ -150,8 +154,15 @@ const Dashboard = ({ navigation }) => {
       setIsLocationFetching(true)
       const pos = await fetchCurrentLocation();
       if (pos) {
-        console.log("before sending to api", "lat", pos.latitude, "lonh", pos.longitude)
-          // dispatch(decodeAddress({ lat: pos.latitude, long: pos.longitude }));
+        setCurrentLocation({
+          lat: pos.latitude,
+          long: pos.longitude,
+          displayAddress: ""
+        })
+        if (!isLocationApiFetched) {
+          dispatch(decodeAddress({ lat: pos.latitude, long: pos.longitude }));
+          console.log("before sending to api", "lat", pos.latitude, "lonh", pos.longitude)
+        }
       }
       console.log("position", pos)
       setCoords(pos);
@@ -196,21 +207,22 @@ const Dashboard = ({ navigation }) => {
 
   const handleRefresh = () => {
     console.log("reloading...")
+    setRefreshing(true);
     dispatch(clearProducts())
     dispatch(clearBanners())
     dispatch(clearDecodedAddress())
-    setRefreshing(true);
     dispatch(loadBanners())
     dispatch(loadProducts())
+    //need to fetch also address 
     setRefreshLocation(prev => !prev)
     setTimeout(() => {
       setRefreshing(false);
     }, 2000);
   }
 
-  useEffect(()=>{
-    console.log("from dashboard",addressList)
-  },[addressList])
+  useEffect(() => {
+    console.log("from dashboard", addressList)
+  }, [addressList])
 
   //RENDER UI CONDITION
   const isAddressBarLoading = (isGEOcodingApiLoading || isLocationFetching)
@@ -230,7 +242,7 @@ const Dashboard = ({ navigation }) => {
       <StatusBar />
 
       {/* === Header === */}
-      <ScrollView  refreshControl={
+      <ScrollView refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
       }>
 
@@ -242,7 +254,7 @@ const Dashboard = ({ navigation }) => {
             </TouchableOpacity>
 
             <Text style={titleConfig}>Pure Plus</Text>
-            <TouchableOpacity>
+            <TouchableOpacity style={{ opacity: 0 }}>
               <View>
                 <Ionicons name="notifications-outline" size={26} color="#000" style={{ color: theme.text }} />
                 <View style={{ backgroundColor: "red", alignItems: "center", borderRadius: 50, position: "absolute", alignSelf: "flex-end", marginTop: -6, marginRight: -6 }}>
@@ -258,7 +270,7 @@ const Dashboard = ({ navigation }) => {
         </View>
 
         {/* === Carousel === */}
-        {list && list.length >=1 && (
+        {list && list.length >= 1 && (
           <View style={[styles.carouselContainer]}>
             <ScrollView
               horizontal
@@ -270,7 +282,7 @@ const Dashboard = ({ navigation }) => {
                 setActiveIndex(index);
               }}
             >
-              { list && list.map((item, index) => (
+              {list && list.map((item, index) => (
                 <Banner
                   key={index}
                   description={item.bannerDescription}

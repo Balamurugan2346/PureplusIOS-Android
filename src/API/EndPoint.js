@@ -1,8 +1,11 @@
 export default {
 
 
-  //FREEGEOFENCINGAPI
+  //GEOAPIFY
    REVERSEGEOCODER:'reverse',
+   AUTOCOMPLETEADDRESS:'autocomplete',
+
+
   SENDMOBILENUMBER:'/Auth/UserLog',
   LOGIN: '/Auth/OTP',
   REGISTER: '/auth/register',
@@ -19,8 +22,11 @@ export default {
     CREATEORDERADDRESS:'/EndUser/create-order-delivery-address',
     CREATEADDRESS:'/EndUser/create-customer-delivery-address',
     GETALLUSERADDRESS:'/EndUser/customer-delviery-addressess',
-    DELETEADDRESS:"/EndUser/soft-delete-customer-address"
+    DELETEADDRESS:"/EndUser/soft-delete-customer-address",
 
 
+    //currently working auths
+    SENDOTP:'auth/send-otp',
+    VERIFYOTP:'auth/verify-otp',
 
 };

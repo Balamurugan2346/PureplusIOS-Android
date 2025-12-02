@@ -11,6 +11,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { clearAddressState, getAddressList, deleteAddress } from '../../Redux/Slices/AddressSlice'
 import AppLoading from '../../Components/AppLoading';
 import { fetchCurrentLocation } from '../../Utils/LocationUtil';
+import { decodeAddress } from '../../Redux/Slices/LocationSlice';
 
 
 const AddressScreen = ({ onClose, navigation }) => {
@@ -19,7 +20,9 @@ const AddressScreen = ({ onClose, navigation }) => {
 
     const {
         usersAddress,
-        setUsersAddress
+        setUsersAddress,
+        currentLocation,
+        setCurrentLocation
     } = useAppContext()
 
     const headerConfig = {
@@ -46,7 +49,7 @@ const AddressScreen = ({ onClose, navigation }) => {
 
     const dispatch = useDispatch()
 
-    const { addressList, error, loading } = useSelector((state) => state.address)
+    const { addressList, error, loading, isFetched : isAddressApiListFetched } = useSelector((state) => state.address)
     //LOCATIONS + GEOCODING API DATA  
     const { error: LocationError, display_name, address: DetailedAddress, isFetched: isLocationApiFetched, entireGEOData, loading: isGEOcodingApiLoading } = useSelector((state) => state.locations)
 
@@ -54,9 +57,14 @@ const AddressScreen = ({ onClose, navigation }) => {
         try {
             setIsLocationFetching(true)
             const pos = await fetchCurrentLocation();
+            setCurrentLocation({
+                lat:pos.latitude,
+                long:pos.longitude,
+                displayAddress:""
+            })
             if (pos) {
                 console.log("before sending to api", "lat", pos.latitude, "lonh", pos.longitude)
-                // dispatch(decodeAddress({ lat: pos.latitude, long: pos.longitude }));
+                dispatch(decodeAddress({ lat: pos.latitude, long: pos.longitude }));
             }
             console.log("position", pos)
             setCoords({
@@ -91,7 +99,7 @@ const AddressScreen = ({ onClose, navigation }) => {
                     onPress: async () => {
                         await dispatch(deleteAddress(id))
                         dispatch(clearAddressState())
-                        dispatch(getAddressList(300))
+                        dispatch(getAddressList(18))
                     },
                 },
             ],
@@ -101,7 +109,7 @@ const AddressScreen = ({ onClose, navigation }) => {
 
     const syncAddress = () => {
         dispatch(clearAddressState())
-        dispatch(getAddressList(300))
+        dispatch(getAddressList(18))
     }
 
     return (
@@ -125,22 +133,27 @@ const AddressScreen = ({ onClose, navigation }) => {
                 </TouchableOpacity>
                 <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
                     <Text style={headerConfig}>Saved Address</Text>
-                    {!isLocationFetching && (
+                    {/* {!isLocationFetching && ( */}
                         <TouchableOpacity onPress={() => {
                             navigation.navigate('UsersLocationScreen', {
                                 fromEdit: false,
-                                lat: coords.latitude,
-                                long: coords.longitude,
+                                lat: currentLocation.lat,
+                                long: currentLocation.long,
                                 data: null
                             })
                         }} style={{ flexDirection: "row", alignItems: "center", backgroundColor: "rgba(37, 119, 132, 0.1)", padding: 5, borderRadius: 30, paddingHorizontal: 10 }}>
                             <Ionicons color={theme.primary} name='add-circle' size={25} />
                             <Text style={[paratextConfig, { color: theme.primary }]}>Add New</Text>
                         </TouchableOpacity>
-                    )}
+                    {/* // )} */}
 
                 </View>
 
+                {addressList && addressList.length == 0  && isAddressApiListFetched && (
+                    <View style={{width:"100&",height:"50%",justifyContent:"center",alignItems:"center"}}>
+                        <Text style={headerConfig}>No Address Saved</Text>
+                    </View>
+                )}
 
                 <ScrollView style={{ marginTop: 10, flex: 1 }} contentContainerStyle={{ paddingBottom: 50 }}>
                     {addressList.map((item, index) => (

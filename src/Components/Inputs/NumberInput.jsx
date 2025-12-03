@@ -32,7 +32,8 @@ const NumberInput = forwardRef(({ onValidateNumber, returnKeyType = 'done', onSu
             onValidateNumber?.({ number: null, error: errorMessage });
         } else {
             setError('');
-            onValidateNumber?.({ number: `${country.code}${num}`, error: '' });
+            // ${country.code}
+            onValidateNumber?.({ number: `${num}`, error: '' });
         }
     }, [country, onValidateNumber]);
 

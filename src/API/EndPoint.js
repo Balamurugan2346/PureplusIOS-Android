@@ -6,12 +6,12 @@ export default {
    AUTOCOMPLETEADDRESS:'autocomplete',
 
 
+   //OLD API'S NEED TO DELETE
   SENDMOBILENUMBER:'/Auth/UserLog',
   LOGIN: '/Auth/OTP',
   REGISTER: '/auth/register',
   USER_PROFILE: '/users/profile',
   PRODUCTS: '/products',
-
   POSTS:'/posts',
   GETALLPRODUCTS:'/Product/GetAllProductDetails',
   GETPRODUCTBYID:'/Product/GetProductDetailsById',
@@ -26,7 +26,9 @@ export default {
 
 
     //currently working auths
-    SENDOTP:'auth/send-otp',
+    GETOTP:'auth/send-otp',
     VERIFYOTP:'auth/verify-otp',
+    CREATEPROFILE:'auth/create-user-profile',
+    UPDATEPROFILE:'auth/update-user-profile'
 
 };

@@ -4,30 +4,45 @@ import { AuthRepository } from '../../Repository/AuthRepository';
 // ✅ Send Mobile Number
 export const sendMobileNumber = createAsyncThunk(
     'auth/sendMobileNumber',
-    async ({ mobileNumber, otp }, { rejectWithValue }) => {
+    async ({ mobileNumber, onSuccess, onError }, { rejectWithValue }) => {
         try {
-            const { data } = await AuthRepository.sendMobileNumber(mobileNumber, otp);
-            console.log('data sent', mobileNumber);
-            return data;
+            const response = await AuthRepository.sendMobileNumber(mobileNumber);
+
+            // If API returns { data: {...} }
+            const result = response?.data ?? response;
+
+            if (onSuccess) onSuccess(result);
+
+            return result;
         } catch (err) {
+            if (onError) onError(err)
             return rejectWithValue(err.response?.data || err.message);
         }
     }
 );
 
+
 // ✅ Login
 export const Login = createAsyncThunk(
-    'auth/Login',
-    async ({ mobileNumber, otp }, { rejectWithValue }) => {
+    'auth/verifyOTP',
+    async ({ mobileNumber, otp, onSuccess, onError }, { rejectWithValue }) => {
         try {
-            const { data } = await AuthRepository.Login(mobileNumber, otp);
-            console.log('login data', data);
-            return data;
+            const response = await AuthRepository.verifyOTP(mobileNumber, otp);
+            console.log('verify OTP Data', response);
+            // If API returns { data: {...} }
+            const result = response?.data ?? response;
+
+            if (onSuccess) onSuccess(result);
+
+            return result;
         } catch (err) {
+            if (onError) onError(err)
             return rejectWithValue(err.response?.data || err.message);
         }
     }
 );
+
+
 
 const authSlice = createSlice({
     name: 'Authentication',
@@ -39,6 +54,7 @@ const authSlice = createSlice({
             isSuccess: false,
             error: null,
             mobileNumber: null,
+            otp: ''
         },
         // login state
         loginState: {
@@ -46,37 +62,29 @@ const authSlice = createSlice({
             isFetched: false,
             isSuccess: false,
             error: null,
+            isNewUser: false,
             loginData: null,
         },
     },
     reducers: {
-        saveNumberLocally: (state, action) => {
+        saveMobileNumberLocally: (state, action) => {
             state.sendMobile.mobileNumber = action.payload;
         },
         clearSavedNumber: (state) => {
             state.sendMobile.mobileNumber = null;
+            state.sendMobile.otp = ''
         },
         clearError: (state) => {
             state.sendMobile.error = null;
             state.loginState.error = null;
         },
+        clearIsFetched: (state) => {
+            state.sendMobile.isFetched = false
+        },
         clearState: (state) => {
-            // reset sendMobile state
-            state.sendMobile = {
-                loading: false,
-                isFetched: false,
-                isSuccess: false,
-                error: null,
-                mobileNumber: null,
-            };
+            state.sendMobile = { loading: false, isFetched: false, isSuccess: false, error: null, mobileNumber: null, otp: '' };
             // reset login state
-            state.loginState = {
-                loading: false,
-                isFetched: false,
-                isSuccess: false,
-                error: null,
-                loginData: null,
-            };
+            state.loginState = { loading: false, isFetched: false, isSuccess: false, error: null, loginData: null, };
         },
     },
     extraReducers: (builder) => {
@@ -88,11 +96,12 @@ const authSlice = createSlice({
                 state.sendMobile.isSuccess = false;
                 state.sendMobile.error = null;
             })
-            .addCase(sendMobileNumber.fulfilled, (state) => {
+            .addCase(sendMobileNumber.fulfilled, (state, action) => {
                 state.sendMobile.loading = false;
                 state.sendMobile.isFetched = true;
                 state.sendMobile.isSuccess = true;
                 state.sendMobile.error = null;
+                state.sendMobile.otp = action.payload.otp
             })
             .addCase(sendMobileNumber.rejected, (state, action) => {
                 state.sendMobile.loading = false;
@@ -113,6 +122,7 @@ const authSlice = createSlice({
                 state.loginState.isFetched = true;
                 state.loginState.isSuccess = true;
                 state.loginState.loginData = action.payload;
+                state.loginState.isNewUser = action.payload.isNewUser
                 state.loginState.error = null;
             })
             .addCase(Login.rejected, (state, action) => {
@@ -125,5 +135,5 @@ const authSlice = createSlice({
     },
 });
 
-export const { saveNumberLocally, clearState, clearError } = authSlice.actions;
+export const { saveMobileNumberLocally, clearState, clearError, clearIsFetched } = authSlice.actions;
 export default authSlice.reducer;

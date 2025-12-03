@@ -1,7 +1,7 @@
-import { clearError, Login, saveNumberLocally, sendMobileNumber } from '../../Redux/Slices/AuthSlice';
+import { clearError, clearIsFetched, Login, saveMobileNumberLocally, saveNumberLocally, sendMobileNumber } from '../../Redux/Slices/AuthSlice';
 import Fonts from '../../../assets/fonts/Fonts';
 import { useFocusEffect } from '@react-navigation/native';
-import  LinearGradient  from 'react-native-linear-gradient';
+import LinearGradient from 'react-native-linear-gradient';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
     ImageBackground,
@@ -21,47 +21,23 @@ import OtpInput from '../../Components/Inputs/OTPInput';
 import { useTheme } from '../../Context/ThemeContext';
 import useKeyboardVisible from '../../Utils/IsKeyboardVisible';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useToast } from '../../Components/Toast/ToastProvider';
+import { storeData } from '../../OfflineStore/OfflineStore';
 
 const OtpVerificationScreen = ({ navigation }) => {
 
     const dispatch = useDispatch();
+    const { showToast } = useToast()
 
     const { sendMobile, loginState } = useSelector((state) => state.auth);
 
-    const { loading, error, isFetched, isSuccess, mobileNumber } = sendMobile
+    const { loading, error, isFetched, isSuccess, mobileNumber, otp: savedOtp } = sendMobile
 
     const { loading: isLoginLoading, error: isLoginError, isFetched: isLoginApiFetched, isSuccess: isLoginApiSuccess, } = loginState
 
     const timer = 5
 
     const insets = useSafeAreaInsets()
-
-    useMemo(() => {
-        console.log("mobile number is ", mobileNumber)
-    }, [mobileNumber])
-
-
-    useFocusEffect(() => {
-        if (error && isFetched && !loading && !isSuccess) {
-            Toast.show({
-                type: 'error',
-                text1: 'Validation Failed',
-                text2: `${error} from otp`,
-                position: 'bottom',
-            });
-            dispatch(clearError())
-        }
-
-        if (isLoginError && isLoginApiFetched && !isLoginLoading && !isLoginApiSuccess) {
-            Toast.show({
-                type: 'error',
-                text1: 'Login Error',
-                text2: `${isLoginError} from Login`,
-                position: 'bottom',
-            });
-            dispatch(clearError())
-        }
-    });
 
     const { theme } = useTheme()
     const isKeyboardVisible = useKeyboardVisible();
@@ -92,46 +68,74 @@ const OtpVerificationScreen = ({ navigation }) => {
 
     const login = (mobileNumber, otp) => {
         if (mobileNumber != null && otp != null) {
-            dispatch(Login(mobileNumber, otp))
+            console.log("before sending to login api,", mobileNumber, otp)
+            dispatch(
+                Login({
+                    mobileNumber: `${mobileNumber}`,
+                    otp: otp,
+                    onSuccess: (data) => {
+                        console.log('dataaaaaaaa',data)
+                        try {
+                            if (savedOtp == otp) {
+                                if (data.success && data.isNewUser) {
+                                    showToast(`Successfully completed`)
+                                    storeData('preAuthToken',data.preAuthToken) //to check
+                                    navigation.replace('Username')
+                                } else if (data.success) {
+                                    showToast(`Successfully completed11`)
+                                    storeData('isLoggedIn',true) 
+                                    navigation.replace('Dashboard')
+                                }
+                            } else {
+                                showToast("Invalid OTP", true)
+                            }
+                        } catch (e) {
+                            showToast(`ERROR:${e}`)
+                        }
+
+                    },
+                    onError: (err) => {
+                        showToast(`ERROR: ${err} from login`, true)
+                        dispatch(clearError())
+                    }
+                })
+            );
         } else {
-            Toast.show({
-                type: 'error',
-                text1: 'Error while login',
-                text2: `Please try again later...`,
-                position: 'bottom',
-            });
+            showToast(`Please try again later...`, true)
         }
     }
 
-    useEffect(() => {
-        if (!isLoginError && isLoginApiFetched && isLoginApiSuccess) {
-            Toast.show({
-                type: 'success',
-                text1: 'Verification Completed',
-                text2: `Login Successfully completed`,
-                position: 'bottom',
-            });
-            navigation.replace('Username')
-            // dispatch(clearState())
-        }
-    }, [isLoginError, isLoginApiFetched, isLoginApiSuccess])
-
-
     const restartTimer = () => {
         if (mobileNumber != null) {
-            sendNumber(mobileNumber, 'otp')
+            console.log("mb", mobileNumber)
+            sendNumber(mobileNumber)
         } else {
-            Toast.show({
-                type: 'error',
-                text1: 'OtP failed To Send',
-                text2: `Please enter the mobile number again`,
-                position: 'bottom',
-            });
+            showToast(`Please enter the mobile number again`, true)
         }
         if (!loading) {
             startTimer();
         }
     };
+
+    const sendNumber = (ml) => {
+        dispatch(
+            sendMobileNumber({
+                mobileNumber: `${ml}`,
+                onSuccess: (data) => {
+                    console.log("received data", data)
+                    //   dispatch(saveMobileNumberLocally(ml))
+                    //   dispatch(clearIsFetched())
+                    showToast(`SUCCESS: OTP sent to ${ml} and OTP is ${data.otp}`)
+                    //   navigation.navigate("OtpVerification")
+                },
+                onError: (err) => {
+                    showToast(`ERROR: ${err} from login`, true)
+                    dispatch(clearError())
+                }
+            })
+        );
+
+    }
 
     useEffect(() => {
         if (!loading) {
@@ -140,29 +144,6 @@ const OtpVerificationScreen = ({ navigation }) => {
         return () => clearInterval(intervalRef.current); // cleanup on unmount
     }, [loading]);  // 👈 depend on loading
 
-
-    const sendNumber = (mobilenumber, otp) => {
-        dispatch(saveNumberLocally(mobilenumber))
-        // navigation.navigate('OtpVerification')
-        dispatch(sendMobileNumber(mobilenumber, otp))
-    }
-
-
-    const demoOnline = (mobileNumber, otp) => {
-        login(mobileNumber, otp)
-
-    }
-
-    const demoOffline = (mobileNumber, otp) => {
-        Toast.show({
-            type: 'success',
-            text1: 'Verification Completed',
-            text2: `Login Successfully completed`,
-            position: 'bottom',
-        });
-        navigation.replace("Username")
-        // dispatch(clearState())
-    }
 
     return (
         <TouchableWithoutFeedback accessible={false} onPress={() => Keyboard.dismiss()}>
@@ -182,12 +163,12 @@ const OtpVerificationScreen = ({ navigation }) => {
                 // keyboardShouldPersistTaps="handled"
                 >
 
-                    {isLoginLoading && !isLoginApiFetched && (
-                        <AppLoading isVisible={isLoginLoading && !isLoginApiFetched} />
+                    {isLoginLoading && (
+                        <AppLoading isVisible={isLoginLoading} />
                     )}
 
-                    {loading && !isFetched && (
-                        <AppLoading isVisible={loading && !isFetched} />
+                    {loading && (
+                        <AppLoading isVisible={loading} />
                     )}
 
                     <ImageBackground
@@ -201,21 +182,9 @@ const OtpVerificationScreen = ({ navigation }) => {
                         onPress={() => navigation.goBack()}
                         style={{ zIndex: 1, position: "absolute", marginVertical: insets.top + 10, marginHorizontal: 20 }}
                     >
-                        {/* <Image
-                        source={require('../../../assets/images/arrowLeft.png')}
-                        style={{ width: 30, height: 30 }}
-                    /> */}
                         <AppNavButton color={theme.secondary} />
                     </TouchableOpacity>
 
-                    {/* <Text style={{
-                    top: "24%", color: "white", marginLeft: 19,
-                    fontFamily: Fonts.family.bold, fontSize: Fonts.size.xxl,
-                    position: "absolute", zIndex: 2, elevation: 60,
-                    textShadowColor: "black", textShadowRadius: 10
-                }}>
-                    Verification
-                </Text> */}
 
                     <View style={[styles.container2, { backgroundColor: theme.background, height: isKeyboardVisible ? "70%" : "50%" }]}>
                         <View style={styles.innerContainer}>
@@ -230,8 +199,7 @@ const OtpVerificationScreen = ({ navigation }) => {
                             <View style={{ marginBottom: 0 }}>
                                 <OtpInput onOtpComplete={(otp) => {
                                     console.log("OTP entered:", otp);
-                                    // navigation.replace("Username")
-                                    demoOffline(mobileNumber, otp)
+                                    login(mobileNumber, otp)
                                 }} />
                             </View>
 

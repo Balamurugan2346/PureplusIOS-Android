@@ -6,11 +6,12 @@ import { ThemeProvider } from './src/Context/ThemeContext';
 import { store } from './src/Redux/Store';
 import { NavigationContainer } from '@react-navigation/native';
 import { Text } from 'react-native';
-
+import {ToastProvider} from './src/Components/Toast/ToastProvider'
 
  function App() {
   return (
     <NavigationContainer>
+      <ToastProvider>
     <AppContextProvider>
       <ThemeProvider>
         <TabBarVisibilityProvider>
@@ -20,6 +21,7 @@ import { Text } from 'react-native';
         </TabBarVisibilityProvider>
       </ThemeProvider>
     </AppContextProvider>
+      </ToastProvider>
     </NavigationContainer>
   );
 }

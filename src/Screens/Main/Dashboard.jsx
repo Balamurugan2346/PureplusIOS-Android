@@ -180,7 +180,6 @@ const Dashboard = ({ navigation }) => {
   useEffect(() => {
     if (!isProductsFetched) {
       dispatch(loadProducts())
-      dispatch(getAddressList(259))
     }
   }, [isProductsFetched, dispatch])
 
@@ -237,7 +236,8 @@ const Dashboard = ({ navigation }) => {
             <AppLoading isVisible={isLocationFetching}/>
           )} */}
 
-      {isDialogVisible && <CustomDialog visible={isDialogVisible} setVisible={setIsDialogVisible} />}
+          {/* //show dialog after demo or remodel the dialog */}
+      {/* {isDialogVisible && <CustomDialog visible={isDialogVisible} setVisible={setIsDialogVisible} />} */}
 
       <StatusBar />
 

@@ -1,9 +1,9 @@
-import { Login, sendMobileNumber } from '../API/Services/AuthService';
+import { Login, sendMobileNumber , verifyOTP } from '../API/Services/AuthService';
 
 export const AuthRepository = {
-    sendMobileNumber: async (mobileNumber,otp) => {
+    sendMobileNumber: async (mobileNumber) => {
         try {
-            const response = await sendMobileNumber(mobileNumber,otp)
+            const response = await sendMobileNumber(mobileNumber)
             return response.data
         } catch (e) {
             console.log("error while send mobile number", e)
@@ -11,12 +11,12 @@ export const AuthRepository = {
         }
     },
 
-    Login: async (mobileNumber,otp) => {
+    verifyOTP: async (mobileNumber,otp) => {
         try {
-            const response = await Login(mobileNumber,otp)
+            const response = await verifyOTP(mobileNumber,otp)
             return response.data
         } catch (e) {
-            console.log("error while Login", e)
+            console.log("error while verify otp", e)
             throw e
         }
     },

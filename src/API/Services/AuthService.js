@@ -16,3 +16,10 @@ export const verifyOTP = (mobileNumber, otpCode) => {
     otpCode
   });
 };
+
+export const createProfile =(fullName,email) => {
+  return apiClient.post(endpoints.CREATEPROFILE,{
+    fullName,
+    email
+  })
+}

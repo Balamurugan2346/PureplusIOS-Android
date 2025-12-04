@@ -1,4 +1,4 @@
-import { Login, sendMobileNumber , verifyOTP } from '../API/Services/AuthService';
+import { createProfile, sendMobileNumber , verifyOTP } from '../API/Services/AuthService';
 
 export const AuthRepository = {
     sendMobileNumber: async (mobileNumber) => {
@@ -20,4 +20,13 @@ export const AuthRepository = {
             throw e
         }
     },
+
+    createProfile : async (fullName,email) =>{
+        try{
+            const response = await createProfile(fullName,email)
+            return response.data
+        }catch(e){
+            console.log("error creating profile")
+        }
+    }
 }

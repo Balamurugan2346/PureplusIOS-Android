@@ -12,12 +12,10 @@ import {
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { useTheme } from '../../../Context/ThemeContext';
-import { storeData } from '../../../OfflineStore/OfflineStore';
 const LocationScreen = ({ navigation  }) => {
 
    
 
-    storeData('UsersCurrentAddress',"12a Nandanam Extenstion chamiers road..")
 
 
     const locationRef = useRef(null);

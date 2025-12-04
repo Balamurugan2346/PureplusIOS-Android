@@ -1,7 +1,7 @@
 import AppButton from '../../../Components/AppButton';
 import AppNavButton from '../../../Components/AppNavButton';
 import CustomInput from '../../../Components/Inputs/CustomInput';
-import { clearState } from '../../../Redux/Slices/AuthSlice';
+import { clearState,saveTempUserDetails } from '../../../Redux/Slices/AuthSlice';
 import useKeyboardVisible from '../../../Utils/IsKeyboardVisible';
 import Fonts from '../../../../assets/fonts/Fonts';
 import { useFocusEffect } from '@react-navigation/native';
@@ -18,10 +18,12 @@ import { useDispatch } from 'react-redux';
 import AppModal from '../../../Components/AppModal';
 import { useTheme } from '../../../Context/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useToast } from '../../../Components/Toast/ToastProvider';
 const UserName = ({ navigation }) => {
 
 
     const dispatch = useDispatch()
+    const {showToast} = useToast()
     const [modalVisible, setModalVisible] = useState(false);
     const usernameRef = useRef(null);
     const [userName, setUserName] = useState({
@@ -150,14 +152,10 @@ const UserName = ({ navigation }) => {
                         <AppButton onAction={() => {
                             if (userName.data != null) {
                                 console.log("username", userName)
+                                dispatch(saveTempUserDetails({ userName: userName }));
                                 navigation.navigate("EmailScreen")
                             } else {
-                                Toast.show({
-                                    type: 'error',
-                                    text1: 'Incomplete Username',
-                                    text2: userName.error ? `${userName.error}` : "Username required",
-                                    position: 'bottom',
-                                });
+                                showToast('Incomplete Username',true)
                             }
                         }} title={"Continue"} />
                     </View>

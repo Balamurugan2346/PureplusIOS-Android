@@ -37,7 +37,7 @@
 //         fontSize: Fonts.size.xs
 //     }
 
-  
+
 //   const shadow = {
 //     shadowColor: '#000',
 //     shadowOffset: { width: 0, height: -4 },
@@ -47,11 +47,11 @@
 //   }
 
 //   return (
-    
+
 //     <View style={[styles.container,{backgroundColor:'#EDEFF2'}]}>
 
 //       {/* Profile Header */}
-  
+
 //      <View style={[styles.header, { backgroundColor: theme.background }, shadow]}>
 //         <TouchableOpacity
 //                     onPress={() => navigation.goBack()}
@@ -73,7 +73,7 @@
 //         </View>
 
 
-      
+
 //       <View style={{alignItems:"center",flex:1}}>
 //   {/* Editable Fields */}
 //       <View style={styles.inputContainer}>
@@ -92,7 +92,7 @@
 //       </View>
 //       </View>
 
-    
+
 //     </View>
 //   );
 // };
@@ -178,11 +178,11 @@
 
 
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
   TouchableOpacity,
   Switch,
 } from 'react-native';
@@ -190,6 +190,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // You'll n
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import TopAppBar from '../../Components/TopAppBar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { removeData } from '../../OfflineStore/OfflineStore';
 
 // --- Data Structure for the main list items ---
 const SETTINGS_ITEMS = [
@@ -203,7 +204,7 @@ const SETTINGS_ITEMS = [
  * Reusable component for the profile list and actions,
  * excluding the main header/image section.
  */
-const ProfileScreen = ({navigation}) => {
+const ProfileScreen = ({ navigation }) => {
   // State for the Notification Switch
   const [isNotificationEnabled, setIsNotificationEnabled] = useState(true);
 
@@ -215,8 +216,11 @@ const ProfileScreen = ({navigation}) => {
   };
 
   const handleLogout = () => {
-    console.log('Logging out...');
-    alert('Logged Out!');
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "Login" }],
+    });
+    removeData('isLoggedIn')
     // Implement your actual logout logic (clear tokens, navigate to login)
   };
 
@@ -239,7 +243,7 @@ const ProfileScreen = ({navigation}) => {
         activeOpacity={isLink || isDestructive ? 0.7 : 1}
       >
         <View style={styles.iconBackground}>
-           <Ionicons name={item.icon} color={'#3498db'} size={22} />
+          <Ionicons name={item.icon} color={'#3498db'} size={22} />
           {/* <Icon 
             name={item.icon} 
             size={22} 
@@ -251,7 +255,7 @@ const ProfileScreen = ({navigation}) => {
         </Text>
 
         {isLink && (
-            <Ionicons name={'arrow-forward-outline'} color={'#3498db'} size={22} />
+          <Ionicons name={'arrow-forward-outline'} color={'#3498db'} size={22} />
         )}
 
         {isToggle && (
@@ -271,10 +275,10 @@ const ProfileScreen = ({navigation}) => {
   const insets = useSafeAreaInsets()
 
   return (
-    <View style={[styles.screenContainer,{marginBottom:insets.bottom}]}>
-       <TopAppBar title='Profile' navigation={navigation}/>
+    <View style={[styles.screenContainer, { marginBottom: insets.bottom }]}>
+      <TopAppBar title='Profile' navigation={navigation} />
       <ScrollView contentContainerStyle={styles.contentContainer}>
-        
+
         {/* --- Profile Information Section --- */}
         <View style={styles.infoSection}>
           <Text style={styles.infoLabel}>Profile</Text>
@@ -285,12 +289,12 @@ const ProfileScreen = ({navigation}) => {
           </View>
 
           <View style={styles.infoItem}>
-      <Ionicons name={'call'} color={'#3498db'} size={22} />
+            <Ionicons name={'call'} color={'#3498db'} size={22} />
             <Text style={styles.infoValue}>7397014106</Text>
           </View>
 
           <View style={styles.infoItem}>
-             <Ionicons name={'mail'} color={'#3498db'} size={22} />
+            <Ionicons name={'mail'} color={'#3498db'} size={22} />
             <Text style={styles.infoValue}>balaiItsme23@gmail.com</Text>
             <TouchableOpacity style={styles.manageButton} onPress={() => handleAction('Manage Email')}>
               <Text style={styles.manageButtonText}>MANAGE</Text>
@@ -298,7 +302,7 @@ const ProfileScreen = ({navigation}) => {
           </View>
 
           <View style={styles.infoItem}>
-             <Ionicons name={'home'} color={'#3498db'} size={22} />
+            <Ionicons name={'home'} color={'#3498db'} size={22} />
             <Text style={styles.infoValue}>
               123, Bharathi Nagar, Main Road, Coimbatore, 641001
             </Text>
@@ -321,17 +325,17 @@ const ProfileScreen = ({navigation}) => {
             activeOpacity={0.7}
           >
             <View style={styles.iconBackground}>
-                <Ionicons name={'remove-circle'} color={'red'} size={22} />
+              <Ionicons name={'remove-circle'} color={'red'} size={22} />
             </View>
             <Text style={[styles.itemText, styles.destructiveText]}>
               Delete Account
             </Text>
-              {/* <Ionicons name={'arrow-forward-outline'} color={'red'} size={22} /> */}
+            {/* <Ionicons name={'arrow-forward-outline'} color={'red'} size={22} /> */}
           </TouchableOpacity>
         </View>
 
         {/* Padding View to ensure content scrolls above the fixed footer */}
-        <View style={{ height: 100 }} /> 
+        <View style={{ height: 100 }} />
       </ScrollView>
 
       {/* --- Fixed Logout Button (Footer) --- */}
@@ -386,7 +390,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     color: '#333',
-    marginLeft:10,
+    marginLeft: 10,
     lineHeight: 20,
   },
   manageButton: {
@@ -405,7 +409,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: 'bold',
   },
-  
+
   // --- Settings List Item Styles ---
   settingsSection: {
     backgroundColor: 'white',

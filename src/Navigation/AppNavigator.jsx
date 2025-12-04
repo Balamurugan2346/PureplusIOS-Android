@@ -20,7 +20,8 @@ import CartScreen from '../Screens/Product/CartScreen';
 import DetailedProductScreen from '../Screens/Product/DetailedProductScreen';
 import MyOrdersScreen from '../Screens/Product/Order/MyOrdersScreen';
 import OrderDetailedScreen from '../Screens/Product/Order/OrderDetailedScreen';
-
+import ActivityEntry from '../Navigation/ActivityEntry'
+import AppEntry from '../Navigation/ActivityEntry';
 
 const Stack = createNativeStackNavigator();
 
@@ -35,13 +36,14 @@ export default function AppNavigator() {
     <>
 
       <Stack.Navigator
-        initialRouteName='Login'
+        // initialRouteName='GetStarted'
         screenOptions={{
 
           headerShown: false, // No header by default
         }}
       >
         
+          <Stack.Screen name="AppEntry" component={AppEntry} />
 
          {/* {devloping purpose } */}
         <Stack.Screen name='MainBottomNav' component={MainBottomNav}/>

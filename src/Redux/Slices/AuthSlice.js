@@ -43,6 +43,26 @@ export const Login = createAsyncThunk(
 );
 
 
+export const createProfile = createAsyncThunk(
+    'auth/createProfile',
+    async ({ fullName, email, onSuccess, onError }, { rejectWithValue }) => {
+        try {
+            const response = await AuthRepository.createProfile(fullName, email);
+            console.log('create profile', response);
+            // If API returns { data: {...} }
+            const result = response?.data ?? response;
+
+            if (onSuccess) onSuccess(result);
+
+            return result;
+        } catch (err) {
+            if (onError) onError(err)
+            return rejectWithValue(err.response?.data || err.message);
+        }
+    }
+);
+
+
 
 const authSlice = createSlice({
     name: 'Authentication',
@@ -65,6 +85,18 @@ const authSlice = createSlice({
             isNewUser: false,
             loginData: null,
         },
+
+        tempUserDetails: {
+            email: '',
+            userName: ''
+        },
+
+        createProfile : {
+            error : null,
+            isSuccess : false,
+            loading : false,
+            data : null 
+        }
     },
     reducers: {
         saveMobileNumberLocally: (state, action) => {
@@ -74,14 +106,27 @@ const authSlice = createSlice({
             state.sendMobile.mobileNumber = null;
             state.sendMobile.otp = ''
         },
+        clearTempUserDetails: (state) => {
+            state.tempUserDetails.email = '',
+                state.tempUserDetails.userName = ''
+        },
+        saveTempUserDetails: (state, action) => {
+            state.tempUserDetails = {
+                ...state.tempUserDetails,
+                ...action.payload,
+            };
+        },
         clearError: (state) => {
             state.sendMobile.error = null;
             state.loginState.error = null;
+            state.createProfile.error = null
         },
         clearIsFetched: (state) => {
             state.sendMobile.isFetched = false
         },
         clearState: (state) => {
+            state.createProfile = {error:null,data:null,loading:false,isSuccess:false}
+            state.tempUserDetails ={email:'',userName:''}
             state.sendMobile = { loading: false, isFetched: false, isSuccess: false, error: null, mobileNumber: null, otp: '' };
             // reset login state
             state.loginState = { loading: false, isFetched: false, isSuccess: false, error: null, loginData: null, };
@@ -131,9 +176,29 @@ const authSlice = createSlice({
                 state.loginState.isSuccess = false;
                 state.loginState.loginData = null;
                 state.loginState.error = action.payload;
+            })
+
+
+            //create profile
+             .addCase(createProfile.pending, (state) => {
+                state.createProfile.loading = true;
+                state.createProfile.isSuccess = false;
+                state.createProfile.error = null;
+            })
+            .addCase(createProfile.fulfilled, (state, action) => {
+                state.createProfile.loading = false;
+                state.createProfile.error = null;
+                state.createProfile.isSuccess = true;
+                state.createProfile.data = action.payload;
+            })
+            .addCase(createProfile.rejected, (state, action) => {
+                state.createProfile.loading = false;
+                state.createProfile.isSuccess = false;
+                state.createProfile.data = null;
+                state.createProfile.error = action.payload;
             });
     },
 });
 
-export const { saveMobileNumberLocally, clearState, clearError, clearIsFetched } = authSlice.actions;
+export const { saveMobileNumberLocally, clearState, clearError, clearIsFetched , saveTempUserDetails } = authSlice.actions;
 export default authSlice.reducer;

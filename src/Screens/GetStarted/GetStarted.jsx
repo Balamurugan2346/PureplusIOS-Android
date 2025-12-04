@@ -7,6 +7,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import Fonts from '../../../assets/fonts/Fonts';
 import AppButton from '../../Components/AppButton';
 import AppToast from '../../Components/AppToast';
+import { storeData } from '../../OfflineStore/OfflineStore';
 
 const { width } = Dimensions.get('window');
 
@@ -36,6 +37,7 @@ export default function GetStarted({ navigation }) {
     if(page<2){
      setPage((prevPage)=>prevPage + 1)
     }else if(page==2){
+      storeData("isGetStartedViewed","1")
       navigation.navigate('Login')
       // setPage(0)
       // setShowToast(true)

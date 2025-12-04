@@ -3,7 +3,7 @@ import AppNavButton from '../../../Components/AppNavButton';
 import EmailInput from '../../../Components/Inputs/EmailInput';
 import useKeyboardVisible from '../../../Utils/IsKeyboardVisible';
 import Fonts from '../../../../assets/fonts/Fonts';
-import  LinearGradient  from 'react-native-linear-gradient';
+import LinearGradient from 'react-native-linear-gradient';
 import { useRef, useState } from 'react';
 import {
     ImageBackground,
@@ -13,11 +13,19 @@ import {
 import Toast from 'react-native-toast-message';
 import { useTheme } from '../../../Context/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-const EmailScreen = ({navigation}) => {
+import { clearError, clearState, createProfile, saveTempUserDetails } from '../../../Redux/Slices/AuthSlice';
+import { useToast } from '../../../Components/Toast/ToastProvider';
+import { useSelector, useDispatch } from 'react-redux';
+import { storeData } from '../../../OfflineStore/OfflineStore';
+import AppLoading from '../../../Components/AppLoading';
+const EmailScreen = ({ navigation }) => {
 
 
 
     const insets = useSafeAreaInsets()
+
+    const { showToast } = useToast()
+    const dispatch = useDispatch()
 
     const emailRef = useRef(null);
     const [email, setEmail] = useState({
@@ -26,6 +34,8 @@ const EmailScreen = ({navigation}) => {
     })
     const { theme, isDark, toggleTheme } = useTheme()
     const isKeyboardVisible = useKeyboardVisible();
+
+    const { tempUserDetails, loginData , createProfile : createProfileState } = useSelector((state) => state.auth)
     return (
         <KeyboardAvoidingView
             style={[styles.mainContainer]}
@@ -33,7 +43,9 @@ const EmailScreen = ({navigation}) => {
             keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
         >
 
-            {/* <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill} /> */}
+            {createProfileState.loading && (
+                <AppLoading isVisible={createProfileState.loading}/>
+            )}
 
             {/* Gradient overlay */}
             <LinearGradient
@@ -47,7 +59,6 @@ const EmailScreen = ({navigation}) => {
 
                 <ImageBackground
                     source={require('../../../../assets/images/EmailBG.png')}
-                    // blurRadius={4}
                     style={{ zIndex: -1, width: "100%", height: "100%", backgroundColor: theme.primary }}
                     resizeMode='cover'
                 />
@@ -56,21 +67,9 @@ const EmailScreen = ({navigation}) => {
                     onPress={() => navigation.goBack()}
                     style={{ zIndex: 1, position: "absolute", marginVertical: insets.top + 10, marginHorizontal: 20 }}
                 >
-                    {/* <Image
-                        source={require('../../../assets/images/arrowLeft.png')}
-                        style={{ width: 30, height: 30 }}
-                    /> */}
+
                     <AppNavButton color={theme.secondary} />
                 </TouchableOpacity>
-
-                {/* <Text style={{
-                    top: "24%", color: "white", marginLeft: 19,
-                    fontFamily: Fonts.family.bold, fontSize: Fonts.size.xxl,
-                    position: "absolute", zIndex: 2, elevation: 60,
-                    textShadowColor: "black", textShadowRadius: 10
-                }}>
-                    Verification
-                </Text> */}
 
                 <View style={[styles.container2, { height: isKeyboardVisible ? "70%" : "50%" }]}>
                     <View style={styles.innerContainer}>
@@ -95,26 +94,42 @@ const EmailScreen = ({navigation}) => {
 
                         <View style={{ marginBottom: 0 }}>
                             <EmailInput
-                            style={{marginTop:10}}
+                                style={{ marginTop: 10 }}
                                 ref={emailRef}
                                 onValidEmail={(data) => {
                                     setEmail({ data: data.email, error: data.error })
                                 }}
                                 returnKeyType="done"
-                                // onSubmitEditing={() => addressRef.current?.focus()}
+                            // onSubmitEditing={() => addressRef.current?.focus()}
                             />
                         </View>
                         <AppButton onAction={() => {
-                            if(!email.error && email.data){
-                                navigation.navigate("DashBoard")
-                                console.log('email',email)
-                            }else{
-                            Toast.show({
-                                type: 'error',
-                                text1: 'Incomplete Email',
-                                text2: email.error ? `${email.error}` : "Email required",
-                                position: 'bottom',
-                            });
+                            if (!email.error && email.data) {
+                                dispatch(saveTempUserDetails({ email: email.data }));
+                                const userName = tempUserDetails.userName
+                                if (userName && email.data) {
+                                    dispatch(createProfile({
+                                        fullName: userName.data,
+                                        email: email.data,
+                                        onSuccess: (data) => {
+                                            console.log('dataaaaaaaa', data)
+                                            if (data.success) {
+                                                storeData("accessToken", data.token)
+                                                storeData('isLoggedIn',"1") 
+                                                dispatch(clearState())
+                                                navigation.navigate("DashBoard")
+                                            } else {
+                                                showToast(`Something went wrong`, true)
+                                            }
+                                        },
+                                        onError: (err) => {
+                                            showToast(`ERROR: ${err}`, true)
+                                            dispatch(clearError())
+                                        }
+                                    }))
+                                }
+                            } else {
+                                showToast(`Incomplete Email : ${email.error}`, true)
                             }
                         }} title={"Continue"} />
                     </View>
@@ -132,10 +147,10 @@ const styles = StyleSheet.create({
     },
     innerContainer: {
         width: "100%",
-         marginTop: 30,
+        marginTop: 30,
 
         height: "100%",
-        justifyContent:"flex-start"
+        justifyContent: "flex-start"
     },
     container2: {
         zIndex: 2,

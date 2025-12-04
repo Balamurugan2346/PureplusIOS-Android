@@ -1,7 +1,7 @@
 import axios from 'axios';
 import EndPoint from './EndPoint';
 // import { API_BASE_URL } from '../constants/config';
-// import { getToken } from '../utils/storage';
+import { getData } from '../OfflineStore/OfflineStore';
 
 
 const API_BASE_URL = "https://pureplus-backend.onrender.com/api"
@@ -13,28 +13,51 @@ const apiClient = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-const AUTH_WHITELIST = [EndPoint.SENDOTP, EndPoint.VERIFYOTP,EndPoint.CREATEPROFILE];
+const AUTH_WHITELIST = [
+  EndPoint.SENDOTP,
+  EndPoint.VERIFYOTP,
+  EndPoint.CREATEPROFILE
+];
 
 apiClient.interceptors.request.use(
   async (config) => {
-    // check if request is NOT in whitelist
-    if (!AUTH_WHITELIST.some(path => config.url.includes(path))) {
-      const token =  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjE4IiwidHlwZSI6ImF1dGgiLCJleHAiOjE3NjQ3ODQ5NjEsImlzcyI6IlB1cmVQbHVzQVBJIiwiYXVkIjoiUHVyZVBsdXNDbGllbnQifQ.js5Za3Y9BvsqZ8IPYTh37S-XyUo_VhTJM7OhcmJ4Nw8"
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
+
+    const isCreateProfile = config.url.includes(EndPoint.CREATEPROFILE);
+
+    // 1️⃣ CREATEPROFILE → use preAuth header only
+    if (isCreateProfile) {
+      const preAuthToken = await getData('preAuthToken')
+      config.headers['preAuth'] = preAuthToken;
+      console.log("Using preAuth header for CREATEPROFILE",preAuthToken);
+      return config;
     }
-    console.log("config url",config.url)
+
+    // 2️⃣ Other whitelist APIs → skip token
+    if (AUTH_WHITELIST.some((path) => config.url.includes(path))) {
+      console.log("Whitelist API, skipping Authorization:", config.url);
+      return config;
+    }
+
+    // 3️⃣ All other APIs → attach Authorization
+    const token =  await getData('accessToken') // your token
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    console.log("Normal API → Added Authorization:", config.url);
     return config;
   },
+
   (error) => Promise.reject(error)
 );
+
 
 
 apiClient.interceptors.request.use(req => {
   console.log("AXIOS REQUEST:", JSON.stringify({
     url: req.url,
-    baseURL:req.baseURL,
+    baseURL: req.baseURL,
     method: req.method,
     headers: req.headers,
     data: req.data

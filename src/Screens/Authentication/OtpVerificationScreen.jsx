@@ -74,17 +74,22 @@ const OtpVerificationScreen = ({ navigation }) => {
                     mobileNumber: `${mobileNumber}`,
                     otp: otp,
                     onSuccess: (data) => {
-                        console.log('dataaaaaaaa',data)
+                        console.log('dataaaaaaaa', data)
                         try {
                             if (savedOtp == otp) {
                                 if (data.success && data.isNewUser) {
                                     showToast(`Successfully completed`)
-                                    storeData('preAuthToken',data.preAuthToken) //to check
+                                    storeData('preAuthToken',data.preAuthToken)
                                     navigation.replace('Username')
                                 } else if (data.success) {
                                     showToast(`Successfully completed11`)
-                                    storeData('isLoggedIn',true) 
-                                    navigation.replace('Dashboard')
+                                    storeData('isLoggedIn', "1")
+                                    storeData('accessToken',data.token)
+                                    navigation.reset({
+                                        index: 0,
+                                        routes: [{ name: 'DashBoard' }],
+                                    });
+
                                 }
                             } else {
                                 showToast("Invalid OTP", true)

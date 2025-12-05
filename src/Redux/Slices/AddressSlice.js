@@ -6,15 +6,15 @@ export const saveAddress = createAsyncThunk(
   "address/saveAddress",
   async (body, { rejectWithValue }) => {
     try {
-      const data = await AddressRepository.saveAddress(body);
-      console.log("data from redux",data)
-      return data;
+      const response = await AddressRepository.saveAddress(body);
+
+      return response?.data ?? response;
     } catch (err) {
-      console.log("saveAddress thunk error:", err);
-      return rejectWithValue(err.message);
+      return rejectWithValue(err.response?.data || err.message);
     }
   }
 );
+
 
 // GET ADDRESS LIST 
 export const getAddressList = createAsyncThunk(
@@ -33,12 +33,12 @@ export const getAddressList = createAsyncThunk(
 
 export const deleteAddress = createAsyncThunk(
   "address/deleteAddress",
-  async (id,{rejectWithValue})=>{
-    try{
-       const data = await AddressRepository.deleteAddress(id)
-       return data
-    }catch(e){
-      console.log("delete error from redux",e)
+  async (id, { rejectWithValue }) => {
+    try {
+      const data = await AddressRepository.deleteAddress(id)
+      return data
+    } catch (e) {
+      console.log("delete error from redux", e)
       return rejectWithValue(e.message)
     }
   }
@@ -53,14 +53,14 @@ const addressSlice = createSlice({
     error: null,
     isFetched: false,
 
-    loadingDelete:false,
-    deletedResponse:{},
-    deleteApiError:null
+    loadingDelete: false,
+    deletedResponse: {},
+    deleteApiError: null
   },
   reducers: {
     clearAddressState: (state) => {
       state.addressList = [];
-      state.selectedAddress = null;
+      // state.selectedAddress = null;
       state.error = null;
       state.loading = false;
       state.isFetched = false;
@@ -69,6 +69,9 @@ const addressSlice = createSlice({
       state.loadingDelete = false;
       state.deletedResponse = {}
     },
+    saveSelectedAddress: (state, action) => {
+      state.selectedAddress = action.payload
+    }
   },
   extraReducers: (builder) => {
     builder
@@ -79,7 +82,7 @@ const addressSlice = createSlice({
       })
       .addCase(saveAddress.fulfilled, (state, action) => {
         state.loading = false;
-        state.selectedAddress = action.payload;
+        state.selectedAddress = action.payload.addressId;
       })
       .addCase(saveAddress.rejected, (state, action) => {
         state.loading = false;
@@ -104,7 +107,7 @@ const addressSlice = createSlice({
       })
 
 
-       ////// Delete Address //////
+      ////// Delete Address //////
       .addCase(deleteAddress.pending, (state) => {
         state.loadingDelete = true;
         state.deleteApiError = null;
@@ -120,5 +123,5 @@ const addressSlice = createSlice({
   }
 });
 
-export const { clearAddressState } = addressSlice.actions;
+export const { clearAddressState, saveSelectedAddress } = addressSlice.actions;
 export default addressSlice.reducer;

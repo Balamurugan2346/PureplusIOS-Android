@@ -2,22 +2,25 @@ import { useAppContext } from '../../Context/AppContext';
 import { useTheme } from '../../Context/ThemeContext';
 import Fonts from '../../../assets/fonts/Fonts';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Toast from 'react-native-toast-message';
 import SearchBar from '../../Components/SearchBar';
 import Addresses from '../../Data/Adresses';
 import { useDispatch, useSelector } from 'react-redux';
-import { clearAddressState, getAddressList, deleteAddress } from '../../Redux/Slices/AddressSlice'
+import { clearAddressState, getAddressList, deleteAddress, saveSelectedAddress } from '../../Redux/Slices/AddressSlice'
 import AppLoading from '../../Components/AppLoading';
 import { fetchCurrentLocation } from '../../Utils/LocationUtil';
 import { decodeAddress } from '../../Redux/Slices/LocationSlice';
-
+import { getData, storeData } from '../../OfflineStore/OfflineStore';
+import { useToast } from '../../Components/Toast/ToastProvider';
+import { getSelectedAddressId } from '../../Utils/GetSelectedAddress'
 
 const AddressScreen = ({ onClose, navigation }) => {
 
     const { theme } = useTheme()
-
+    const [userID, setUserID] = useState(-1)
+    const { showToast } = useToast()
     const {
         usersAddress,
         setUsersAddress,
@@ -46,10 +49,20 @@ const AddressScreen = ({ onClose, navigation }) => {
     const [isLocationFetching, setIsLocationFetching] = useState(false);
 
 
+    useEffect(() => {
+        const loadUserId = async () => {
+            const storedId = await getData('userID');
+            const parsed = Number(storedId);
+            setUserID(isNaN(parsed) ? -1 : parsed);
+        };
+        loadUserId();
+    }, []);
+
+
 
     const dispatch = useDispatch()
 
-    const { addressList, error, loading, isFetched : isAddressApiListFetched } = useSelector((state) => state.address)
+    const { addressList, error, loading, isFetched: isAddressApiListFetched, selectedAddress } = useSelector((state) => state.address)
     //LOCATIONS + GEOCODING API DATA  
     const { error: LocationError, display_name, address: DetailedAddress, isFetched: isLocationApiFetched, entireGEOData, loading: isGEOcodingApiLoading } = useSelector((state) => state.locations)
 
@@ -58,9 +71,9 @@ const AddressScreen = ({ onClose, navigation }) => {
             setIsLocationFetching(true)
             const pos = await fetchCurrentLocation();
             setCurrentLocation({
-                lat:pos.latitude,
-                long:pos.longitude,
-                displayAddress:""
+                lat: pos.latitude,
+                long: pos.longitude,
+                displayAddress: ""
             })
             if (pos) {
                 console.log("before sending to api", "lat", pos.latitude, "lonh", pos.longitude)
@@ -83,7 +96,7 @@ const AddressScreen = ({ onClose, navigation }) => {
 
 
     useEffect(() => {
-        syncAddress()
+        // syncAddress()
         refreshLocation1()
     }, [refresh])
 
@@ -99,7 +112,7 @@ const AddressScreen = ({ onClose, navigation }) => {
                     onPress: async () => {
                         await dispatch(deleteAddress(id))
                         dispatch(clearAddressState())
-                        dispatch(getAddressList(18))
+                        dispatch(getAddressList(userID))
                     },
                 },
             ],
@@ -109,8 +122,39 @@ const AddressScreen = ({ onClose, navigation }) => {
 
     const syncAddress = () => {
         dispatch(clearAddressState())
-        dispatch(getAddressList(18))
+        dispatch(getAddressList(userID))
     }
+
+    useEffect(() => {
+        if (userID === -1) return;
+        syncAddress();
+    }, [userID, refresh]);
+
+
+
+
+    const [selectedId, setSelectedId] = useState(-1);
+
+    useEffect(() => {
+        const loadSelected = async () => {
+            const id = await getSelectedAddressId();
+            setSelectedId(id);
+        };
+        loadSelected();
+    }, []);
+
+    const sortedAddressList = useMemo(() => {
+        if (!selectedId) return addressList;
+
+        // Bring selected item to top
+        const selectedItem = addressList.find(a => a.id === selectedId);
+        if (!selectedItem) return addressList;
+
+        const remaining = addressList.filter(a => a.id !== selectedId);
+
+        return [selectedItem, ...remaining];
+    }, [addressList, selectedId]);
+
 
     return (
         <View style={styles.container}>
@@ -134,70 +178,122 @@ const AddressScreen = ({ onClose, navigation }) => {
                 <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
                     <Text style={headerConfig}>Saved Address</Text>
                     {/* {!isLocationFetching && ( */}
-                        <TouchableOpacity onPress={() => {
-                            navigation.navigate('UsersLocationScreen', {
-                                fromEdit: false,
-                                lat: currentLocation.lat,
-                                long: currentLocation.long,
-                                data: null
-                            })
-                        }} style={{ flexDirection: "row", alignItems: "center", backgroundColor: "rgba(37, 119, 132, 0.1)", padding: 5, borderRadius: 30, paddingHorizontal: 10 }}>
-                            <Ionicons color={theme.primary} name='add-circle' size={25} />
-                            <Text style={[paratextConfig, { color: theme.primary }]}>Add New</Text>
-                        </TouchableOpacity>
+                    <TouchableOpacity onPress={() => {
+                        navigation.navigate('UsersLocationScreen', {
+                            fromEdit: false,
+                            lat: currentLocation.lat,
+                            long: currentLocation.long,
+                            data: null
+                        })
+                    }} style={{ flexDirection: "row", alignItems: "center", backgroundColor: "rgba(37, 119, 132, 0.1)", padding: 5, borderRadius: 30, paddingHorizontal: 10 }}>
+                        <Ionicons color={theme.primary} name='add-circle' size={25} />
+                        <Text style={[paratextConfig, { color: theme.primary }]}>Add New</Text>
+                    </TouchableOpacity>
                     {/* // )} */}
 
                 </View>
 
-                {addressList && addressList.length == 0  && isAddressApiListFetched && (
-                    <View style={{width:"100&",height:"50%",justifyContent:"center",alignItems:"center"}}>
+                {addressList && addressList.length == 0 && isAddressApiListFetched && (
+                    <View style={{ width: "100&", height: "50%", justifyContent: "center", alignItems: "center" }}>
                         <Text style={headerConfig}>No Address Saved</Text>
                     </View>
                 )}
 
                 <ScrollView style={{ marginTop: 10, flex: 1 }} contentContainerStyle={{ paddingBottom: 50 }}>
-                    {addressList.map((item, index) => (
+                    {console.log("se", selectedAddress)}
+                    {sortedAddressList.map((item, index) => (
                         <TouchableOpacity
-                            style={styles.card}
                             key={index}
+                            style={[
+                                styles.card,
+                                selectedId === item.id && {
+                                    borderColor: "#4CAF50",
+                                    borderWidth: 2,
+                                    backgroundColor: "rgba(76,175,80,0.08)",
+                                }
+                            ]}
                             onPress={() => {
-                                //add logic to set the default address 
-                                setUsersAddress(item.address)
-                                onClose()
-                                Toast.show({
-                                    type: 'info',
-                                    text1: 'Address Added',
-                                    text2: `Note : It wont save permenant until you set as default`,
-                                    position: 'bottom',
-                                });
+                                setUsersAddress(item.address);
+                                // dispatch(saveSelectedAddress(item.id));
+                                storeData('selectedAddress', JSON.stringify(item))
+                                onClose();
+                                showToast("Address Added");
                             }}
                             onLongPress={() => handleLongPress(item.id)}
                         >
                             <View style={styles.row}>
 
-                                <View >
-                                    <Text style={[headerConfig, { color: theme.background }]}>{item.addressType}</Text>
-                                    <Text style={[paratextConfig, { color: theme.textForWhiteBG }]}>{item.addressLine1 + `\n ${item.addressLine2}`}</Text>
+                                {/* LEFT SIDE TEXT */}
+                                <View style={{ flex: 1, marginRight: 10 }}>
+                                    <Text style={[headerConfig, { color: theme.background }]}>
+                                        {item.addressType}
+                                    </Text>
+
+                                    {/* LIMIT LONG TEXT */}
+                                    <Text
+                                        style={[paratextConfig, { color: theme.textForWhiteBG }]}
+                                        numberOfLines={2}
+                                    >
+                                        {item.addressLine1 + "\n" + item.addressLine2}
+                                    </Text>
                                 </View>
-                                <View style={{ flexDirection: "row" }}>
-                                    <TouchableOpacity onPress={() => {
-                                        navigation.navigate('UsersLocationScreen', {
-                                            fromEdit: true,
-                                            data: item
-                                        })
-                                    }}>
-                                        <Image source={require("../../../assets/images/edit.png")} style={{ width: 25, height: 25, marginRight: 10 }} />
+
+                                {/* RIGHT ICONS */}
+                                <View style={styles.iconContainer}>
+                                    <TouchableOpacity
+                                        onPress={() =>
+                                            navigation.navigate('UsersLocationScreen', {
+                                                fromEdit: true,
+                                                data: item
+                                            })
+                                        }>
+                                        <Image source={require("../../../assets/images/edit.png")} style={styles.icon} />
                                     </TouchableOpacity>
-                                    <TouchableOpacity onPress={() => {
-                                        handleLongPress(item.id)
-                                    }}>
-                                        <Image source={require("../../../assets/images/bin.png")} style={{ width: 25, height: 25 }} />
+
+                                    <TouchableOpacity onPress={() => handleLongPress(item.id)}>
+                                        <Image source={require("../../../assets/images/bin.png")} style={styles.icon} />
                                     </TouchableOpacity>
                                 </View>
                             </View>
-
-
                         </TouchableOpacity>
+
+                        // <TouchableOpacity
+                        //     style={styles.card}
+                        //     key={index}
+                        //     onPress={() => {
+                        //         //add logic to set the default address 
+                        //         setUsersAddress(item.address)
+                        //         dispatch(saveSelectedAddress(item.id))
+                        //         onClose()
+                        //         showToast("Address Added")
+                        //     }}
+                        //     onLongPress={() => handleLongPress(item.id)}
+                        // >
+                        //     <View style={styles.row}>
+
+                        //         <View >
+                        //             <Text style={[headerConfig, { color: theme.background }]}>{item.addressType}</Text>
+                        //             <Text style={[paratextConfig, { color: theme.textForWhiteBG }]}>{item.addressLine1 + `\n ${item.addressLine2}`}</Text>
+                        //         </View>
+                        //         <View style={{ flexDirection: "row" }}>
+                        //             <TouchableOpacity onPress={() => {
+                        //                 navigation.navigate('UsersLocationScreen', {
+                        //                     fromEdit: true,
+                        //                     data: item
+                        //                 })
+                        //             }}>
+                        //                 <Image source={require("../../../assets/images/edit.png")} style={{ width: 25, height: 25, marginRight: 10 }} />
+                        //             </TouchableOpacity>
+                        //             <TouchableOpacity onPress={() => {
+                        //                 handleLongPress(item.id)
+                        //             }}>
+                        //                 <Image source={require("../../../assets/images/bin.png")} style={{ width: 25, height: 25 }} />
+                        //             </TouchableOpacity>
+                        //         </View>
+                        //     </View>
+
+
+                        // </TouchableOpacity>
                     ))}
                 </ScrollView>
             </View>
@@ -222,17 +318,25 @@ const styles = StyleSheet.create({
         flex: 1
     },
     card: {
-        backgroundColor: '#f9f9f9',
-        borderRadius: 12,
         padding: 12,
-        marginBottom: 12,
-        borderWidth: 1,
-        borderColor: '#ddd',
+        backgroundColor: "#fff",
+        borderRadius: 10,
+        marginVertical: 8,
+        // elevation: 2,
     },
     row: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 6,
+        flexDirection: "row",
+        alignItems: "center",
+    },
+    iconContainer: {
+        width: 60,
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+    },
+    icon: {
+        width: 24,
+        height: 24,
     },
     label: {
         fontSize: 16,

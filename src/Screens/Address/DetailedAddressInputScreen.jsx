@@ -1,19 +1,22 @@
 import { useAppContext } from '../../Context/AppContext';
 import { useTheme } from '../../Context/ThemeContext';
 import Fonts from '../../../assets/fonts/Fonts';
-import  LinearGradient  from 'react-native-linear-gradient';
+import LinearGradient from 'react-native-linear-gradient';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AddressWithChangeButton from '../../Components/AddressWithChangeButton';
 import TopAppBar from '../../Components/TopAppBar';
 import AddressInputForm from '../../Screens/Address/AddressInputForms';
+import { useRoute } from '@react-navigation/native';
 const DetailedAddressInputScreen = ({ navigation }) => {
 
 
     const insets = useSafeAreaInsets();
     const { addToCart, cart, reduceQuantity, removeFromCart, usersAddress } = useAppContext()
     const { theme } = useTheme()
-
+    const route = useRoute();
+    const { pickedAddress } = route.params || {};
+    console.log("Got address:", pickedAddress);
     const headerConfig = {
         color: theme.greyText,
         fontFamily: Fonts.family.semiBold,
@@ -28,21 +31,21 @@ const DetailedAddressInputScreen = ({ navigation }) => {
 
 
     return (
-        <View style={[styles.container, { backgroundColor: theme.secondaryBackground,marginBottom:insets.bottom }]}>
+        <View style={[styles.container, { backgroundColor: theme.secondaryBackground, marginBottom: insets.bottom }]}>
 
             <TopAppBar title='Add Address' navigation={navigation} />
             <ScrollView>
                 <View style={[styles.content]}>
-                    <LinearGradient style={styles.cardContainer} colors={[theme.cardContainer, theme.cardContainer]}>
+                    {/* <LinearGradient style={styles.cardContainer} colors={[theme.cardContainer, theme.cardContainer]}>
                         <Image source={require('../../../assets/images/StaticMapView.jpeg')} style={{ width: "100%", borderRadius: 20, height: 200 }} />
 
                         <AddressWithChangeButton navigation={navigation} />
 
-                    </LinearGradient>
+                    </LinearGradient> */}
 
                     {/* <HighLightedText text={"Add Address"} style={{ color: theme.greyText }} /> */}
 
-                    <AddressInputForm  navigation={navigation}/>
+                    <AddressInputForm navigation={navigation} pickedAddress ={pickedAddress}/>
                 </View>
 
 

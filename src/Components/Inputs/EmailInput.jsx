@@ -4,8 +4,8 @@ import { Image, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useTheme } from '../../Context/ThemeContext';
 
 
-const EmailInput = ({ onValidEmail, ref, returnKeyType = 'next', onSubmitEditing ,style,styleText }) => {
-  const [email, setEmail] = useState('')
+const EmailInput = ({ onValidEmail, ref, returnKeyType = 'next', onSubmitEditing ,style,styleText,initialValue='',tintColor ='#E0F1E5' }) => {
+  const [email, setEmail] = useState(initialValue)
 
   const [error, setError] = useState('')
   const [isFocused, setIsFocused] = useState(false)
@@ -45,10 +45,10 @@ const EmailInput = ({ onValidEmail, ref, returnKeyType = 'next', onSubmitEditing
             style
           ]}>
 
-        <Image source={require('../../../assets/images/mail.png')} style={{ width: 20, tintColor: theme.text, marginLeft: 5, height: 20 }} />
+        <Image source={require('../../../assets/images/mail.png')} style={{ width: 20, tintColor: tintColor, marginLeft: 5, height: 20 }} />
         <TextInput
           ref={ref}
-          style={{ marginLeft: 10, width: "100%", color: theme.text, fontSize: Fonts.size.sm, fontFamily: Fonts.family.regular }}
+          style={[{ marginLeft: 10, width: "100%", color: theme.text, fontSize: Fonts.size.sm, fontFamily: Fonts.family.regular },styleText]}
           value={email}
           onChangeText={validateEmail}
           keyboardType='email-address'

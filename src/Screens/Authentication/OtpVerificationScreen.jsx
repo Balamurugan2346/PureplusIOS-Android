@@ -79,12 +79,13 @@ const OtpVerificationScreen = ({ navigation }) => {
                             if (savedOtp == otp) {
                                 if (data.success && data.isNewUser) {
                                     showToast(`Successfully completed`)
-                                    storeData('preAuthToken',data.preAuthToken)
+                                    storeData('preAuthToken', data.preAuthToken)
                                     navigation.replace('Username')
                                 } else if (data.success) {
                                     showToast(`Successfully completed11`)
                                     storeData('isLoggedIn', "1")
-                                    storeData('accessToken',data.token)
+                                    storeData('accessToken', data.token)
+                                    storeData('userID', data.user.id.toString())
                                     navigation.reset({
                                         index: 0,
                                         routes: [{ name: 'DashBoard' }],

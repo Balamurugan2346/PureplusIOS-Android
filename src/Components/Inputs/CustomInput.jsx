@@ -7,6 +7,7 @@ import { useTheme } from '../../Context/ThemeContext';
 const CustomInput = ({
   onValidateInput,
   style,
+  textStyle,
   type,
   label,
   icon,
@@ -14,8 +15,10 @@ const CustomInput = ({
   inputRef,
   returnKeyType = 'next',
   onSubmitEditing,
+  initialValue = '',
+  tintColor = '#E0F1E5'
 }) => {
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState(initialValue);
   const [error, setError] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const { theme } = useTheme();
@@ -46,10 +49,10 @@ const CustomInput = ({
           borderWidth: isFocused ? 1 : 1,
           backgroundColor: theme.inputContainer
         },style]}>
-        <Image source={icon} style={{ width: 20, tintColor: theme.text, marginLeft: 5, height: 20 }} />
+        <Image source={icon} style={{ width: 20, tintColor: tintColor, marginLeft: 5, height: 20 }} />
         <TextInput
           ref={inputRef}
-          style={{ marginLeft: 10, width: "100%", color: theme.text , fontSize:Fonts.size.sm, fontFamily:Fonts.family.regular}}
+          style={[{ marginLeft: 10, width: "100%", color: theme.text , fontSize:Fonts.size.sm, fontFamily:Fonts.family.regular},textStyle]}
           value={input}
           onChangeText={validateInput}
           keyboardType='default'

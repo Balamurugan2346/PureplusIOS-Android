@@ -1,32 +1,35 @@
 import { useTheme } from '../../Context/ThemeContext';
 import Fonts from '../../../assets/fonts/Fonts';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { clearAddressState, saveAddress } from '../../Redux/Slices/AddressSlice';
+import { clearAddressState, getAddressList, saveAddress } from '../../Redux/Slices/AddressSlice';
 import AppLoading from '../../Components/AppLoading';
+import { useToast } from '../../Components/Toast/ToastProvider';
+import { getData } from '../../OfflineStore/OfflineStore';
 
-
-const AddressInputForm = ({ navigation }) => {
+const AddressInputForm = ({ navigation, pickedAddress }) => {
     const { theme } = useTheme();
+    const [userID, setUserID] = useState(-1)
     const dispatch = useDispatch();
     const { loading, error } = useSelector((state) => state.address);
-
+    const { loginData } = useSelector((s) => s.auth)
+    const { showToast } = useToast()
     const [formData, setFormData] = useState({
-        userId: 18,
+        userId: userID,
         addressType: '',
-        addressLine1: '',
-        addressLine2: '',
-        city: '',
-        state: '',
-        pinCode: '',
+        addressLine1: pickedAddress.addressline1 ?? "",
+        addressLine2: pickedAddress.addressline2 ?? "",
+        city: pickedAddress.city ?? "",
+        state: pickedAddress.state ?? "",
+        pinCode: pickedAddress.pinCode ?? "",
         landmark: '',
         tag: 'Home',
         receiverName: '',
         receiverNumber: '',
-        latitude: 0.0,
-        longitude: 0.0,
+        latitude: pickedAddress.latitude,
+        longitude: pickedAddress.longitude,
     });
 
     const [errors, setErrors] = useState({});
@@ -73,27 +76,50 @@ const AddressInputForm = ({ navigation }) => {
         </View>
     );
 
+    useEffect(() => {
+        const loadUserId = async () => {
+            const storedId = await getData('userID');
+            const parsed = Number(storedId);
+            setUserID(isNaN(parsed) ? -1 : parsed);
+        };
+        loadUserId();
+    }, []);
+
+    useEffect(() => {
+        if (userID !== -1) {
+            setFormData(prev => ({
+                ...prev,
+                userId: userID,
+            }));
+        }
+    }, [userID]);
+
+
 
     const validateAddressForm = (formData) => {
         let errors = {};
 
-        // Base required fields
         const baseRequiredFields = [
             "addressLine1",
             "city",
             "state",
             "pinCode",
             "landmark",
-            "addressType"  // this was missing earlier
+            "addressType"
         ];
 
         baseRequiredFields.forEach((field) => {
-            if (!formData[field] || formData[field].trim() === "") {
-                errors[field] = `${field} is required`;
+            if (!formData[field] || formData[field].trim?.() === "") {
+                if (field === "addressType") {
+                    errors[field] = "Please choose residence type";
+                    showToast("Please choose residence type", true);
+                } else {
+                    errors[field] = `${field} is required`;
+                }
             }
         });
 
-        // Conditional validation for "Others" tag
+        // Conditional validation for "Others"
         if (formData.tag === "Others") {
             if (!formData.receiverName?.trim()) {
                 errors.receiverName = "Receiver name is required";
@@ -108,7 +134,8 @@ const AddressInputForm = ({ navigation }) => {
 
 
 
-    const handleAddressSubmit = () => {
+
+    const handleAddressSubmit = async () => {
         const validationErrors = validateAddressForm(formData);
 
         if (Object.keys(validationErrors).length > 0) {
@@ -116,9 +143,38 @@ const AddressInputForm = ({ navigation }) => {
             return;
         }
 
-        console.log("Submitting:", formData);
-        dispatch(saveAddress(formData));
+        if (formData.userId === -1) {
+            showToast("Something went wrong", true);
+            return;
+        }
+
+        try {
+            // 1️⃣ Save Address
+            const res = await dispatch(saveAddress(formData));
+
+            if (res.error) {
+                showToast("Failed to save address", true);
+                return;
+            }
+
+            // 2️⃣ Fetch updated list
+            const listRes = await dispatch(getAddressList(formData.userId));
+
+            if (listRes.error) {
+                showToast("Address saved, but failed to refresh list", true);
+                navigation.goBack();
+                return;
+            }
+
+            // 3️⃣ Success
+            showToast("Address added successfully");
+            navigation.goBack();
+
+        } catch (e) {
+            showToast("Unexpected error occurred", true);
+        }
     };
+
 
 
 
@@ -133,9 +189,14 @@ const AddressInputForm = ({ navigation }) => {
 
                 <View>
                     <Text style={[styles.headerText, { color: theme.buttonText }]}>Delivery Address</Text>
-                    <Text style={[styles.uneditableText, { color: theme.secondaryText }]}>
-                        Nandanam Extension, Chamiers Road
+                    <Text
+                        style={[styles.uneditableText, { color: theme.secondaryText, marginRight: 10 }]}
+                        numberOfLines={4}
+                        ellipsizeMode="tail"
+                    >
+                        {pickedAddress.formattedAddress ?? ""}
                     </Text>
+
                 </View>
             </View>
 
@@ -156,8 +217,13 @@ const AddressInputForm = ({ navigation }) => {
                         </Text>
                     </TouchableOpacity>
                 ))}
-            </View>
 
+            </View>
+            {errors.addressType && (
+                <Text style={{ color: "red", marginTop: 6 }}>
+                    {errors.addressType}
+                </Text>
+            )}
             {/* Inputs */}
             {renderInput('Address Line 1', 'addressLine1')}
             {renderInput('Address Line 2', 'addressLine2', 'default', true)}
@@ -203,7 +269,7 @@ const AddressInputForm = ({ navigation }) => {
             )}
 
             <TouchableOpacity
-                onPress={handleAddressSubmit}
+                onPress={() => handleAddressSubmit()}
                 style={[styles.saveBtn, { backgroundColor: theme.primary }]}
             >
                 <Text style={[styles.saveText, { color: theme.buttonText }]}>

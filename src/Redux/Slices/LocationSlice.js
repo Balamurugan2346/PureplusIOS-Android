@@ -32,6 +32,9 @@ const locationSlice = createSlice({
     address_line1: "",
     address_line2: "",
     address: {},
+    pinCode:'',
+    city:'',
+    state:'',
     entireGEOData: {},
     isFetched: false,
     loading: false,
@@ -52,10 +55,14 @@ const locationSlice = createSlice({
       state.isFetched = false;
       state.loading = false;
       state.error = null;
+      state.pinCode = ''
+      state.state = ''
+      state.city = ''
     },
     clearAutoComplete: (state) => {
       state.autoList = [];
       state.autoLoading = false;
+      state.autoError = null 
     }
   },
   extraReducers: (builder) => {
@@ -75,6 +82,9 @@ const locationSlice = createSlice({
         state.display_name = props?.formatted || "";
         state.address_line1 = props?.address_line1 || "";
         state.address_line2 = props?.address_line2 || "";
+        state.pinCode = props?.postcode || "";
+        state.city = props?.city || "";
+        state.state = props?.state || "";
         state.address = props || {};
         state.entireGEOData = action.payload || {};
         state.isFetched = true;

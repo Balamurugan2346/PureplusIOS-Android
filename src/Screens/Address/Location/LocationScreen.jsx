@@ -1,12 +1,11 @@
+import React, { useEffect, useState, useRef } from 'react';
 import AppButton from '../../../Components/AppButton';
 import TopAppBar from '../../../Components/TopAppBar';
 import { useTheme } from '../../../Context/ThemeContext';
 import Fonts from '../../../../assets/fonts/Fonts';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { useEffect, useState, useRef, useCallback } from 'react';
-import MapView, { PROVIDER_GOOGLE, Marker } from 'react-native-maps';
+import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
 import {
-    Dimensions,
     StyleSheet,
     Text,
     TextInput,
@@ -22,8 +21,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
     decodeAddress,
     clearDecodedAddress,
-    // assume you have an autocomplete thunk/action
-    autocompleteAddress,
     clearAutoComplete,
     autoCompleteAddress,
 } from '../../../Redux/Slices/LocationSlice';
@@ -37,11 +34,10 @@ const DISTANCE_THRESHOLD_METERS = 50; // only re-decode when moved > 50m
 const SEARCH_DEBOUNCE_MS = 400;
 const REGION_DEBOUNCE_MS = 700;
 
-
 const LocationScreen = ({ navigation }) => {
     const { theme } = useTheme();
     const dispatch = useDispatch();
-    const {showToast}  = useToast()
+    const { showToast } = useToast()
     const {
         error: LocationError,
         display_name,
@@ -51,9 +47,11 @@ const LocationScreen = ({ navigation }) => {
         isFetched: isLocationApiFetched,
         entireGEOData,
         loading: isGEOcodingApiLoading,
-        // expected: autocomplete results array from your slice
         autoList,
-        autoLoading
+        autoLoading,
+        pinCode,
+        state: s,
+        city: c
     } = useSelector((state) => state.locations);
 
     const route = useRoute();
@@ -68,12 +66,13 @@ const LocationScreen = ({ navigation }) => {
         formattedAddress: '',
         state: '',
         city: '',
+        pinCode: '',
         latitude: 0.0,
         longitude: 0.0,
     });
     const [isLocationFetching, setIsLocationFetching] = useState(false);
 
-    //REFS
+    // REFS
     const mapRef = useRef(null);
     const searchRef = useRef(null);
     // keep last decoded coordinate to avoid repeated decode on small moves
@@ -81,6 +80,9 @@ const LocationScreen = ({ navigation }) => {
     // debounce refs
     const searchDebounceRef = useRef(null);
     const regionDebounceRef = useRef(null);
+
+    // programmatic move guard: when we call animateCamera we set this true briefly so region-change ignores it
+    const isProgrammaticMoveRef = useRef(false);
 
     // helper: haversine distance (meters)
     const haversineDistance = (lat1, lon1, lat2, lon2) => {
@@ -98,29 +100,36 @@ const LocationScreen = ({ navigation }) => {
         return R * c;
     };
 
-    const isEditing = route?.params?.fromEdit === true;
-    // On navigation params (edit/add)
+    const params = route.params ?? {};
+    const isEditing = params.fromEdit === true;
+
+    // ---------------------------
+    // Handle route params (edit / add)
+    // ---------------------------
     useEffect(() => {
         const { fromEdit, data, lat, long } = route.params ?? {};
 
-        // Edit existing address
+        // EDIT existing address: set state EXACTLY from params and animate map (do NOT decode)
         if (fromEdit === true && data) {
-            console.log("data from params", data)
             setAddress({
-                addressline1: data.addressLine1,
-                addressline2: data.addressLine2,
-                formattedAddress: `${data.addressLine1}\n${data.addressLine2}`,
-                state: data.state,
-                city: data.city,
-                latitude: data.latitude,
-                longitude: data.longitude,
+                addressline1: data.addressLine1 ?? '',
+                addressline2: data.addressLine2 ?? '',
+                formattedAddress: `${data.addressLine1 ?? ''}\n${data.addressLine2 ?? ''}`,
+                state: data.state ?? '',
+                city: data.city ?? '',
+                latitude: Number(data.latitude) || 0,
+                longitude: Number(data.longitude) || 0,
+                pinCode: data.pinCode ?? ''
             });
 
-            lastDecodedRef.current = { lat: data.latitude, lng: data.longitude, addressline1: data.addressLine1, addressline2: data.addressLine2 };
-            // animate map to edit position
+            lastDecodedRef.current = { lat: Number(data.latitude) || 0, lng: Number(data.longitude) || 0, addressline1: data.addressLine1 ?? '', addressline2: data.addressLine2 ?? '' };
+
+            // animate programmatically, ignore region-change triggered by this
+            isProgrammaticMoveRef.current = true;
+            setTimeout(() => { isProgrammaticMoveRef.current = false; }, 500);
             setTimeout(() => {
                 mapRef.current?.animateCamera({
-                    center: { latitude: data.latitude, longitude: data.longitude },
+                    center: { latitude: Number(data.latitude) || 0, longitude: Number(data.longitude) || 0 },
                     zoom: 18,
                     pitch: 0,
                     heading: 0,
@@ -130,22 +139,32 @@ const LocationScreen = ({ navigation }) => {
             return;
         }
 
-        // Add new using lat/long passed (from e.g. map pick)
-        if (fromEdit === false && lat && long) {
-            // dispatch decode to fill address fields (debounced inside reducer if needed)
+        // ADD new address with lat/long passed from previous screen — decode & set address
+        if (fromEdit === false && lat != null && long != null) {
+            // mark programmatic move while animating map
+            isProgrammaticMoveRef.current = true;
+            setTimeout(() => { isProgrammaticMoveRef.current = false; }, 500);
+
+            // trigger decode to populate fields from coords
             dispatch(decodeAddress({ lat, long }));
+
             setAddress((prev) => ({
                 ...prev,
                 addressline1: a1 ?? prev.addressline1,
                 addressline2: a2 ?? prev.addressline2,
                 formattedAddress: display_name ?? prev.formattedAddress,
-                latitude: lat,
-                longitude: long,
+                latitude: Number(lat),
+                longitude: Number(long),
+                pinCode: pinCode ?? prev.pinCode,
+                city: c ?? prev.city,
+                state: s ?? prev.state
             }));
-            lastDecodedRef.current = { lat, lng: long, addressline1: a1, addressline2: a2 };
+
+            lastDecodedRef.current = { lat: Number(lat), lng: Number(long), addressline1: a1 ?? '', addressline2: a2 ?? '' };
+
             setTimeout(() => {
                 mapRef.current?.animateCamera({
-                    center: { latitude: lat, longitude: long },
+                    center: { latitude: Number(lat), longitude: Number(long) },
                     zoom: 18,
                 });
             }, 200);
@@ -153,87 +172,104 @@ const LocationScreen = ({ navigation }) => {
         }
     }, [route.params]);
 
-    // When decodeAddress finishes and updates display_name / address_line fields, reflect them
+    // ---------------------------
+    // Apply decode results — but DO NOT override when initially editing (isEditing)
+    // This effect runs when decodeAddress finishes and location slice updates a1/a2/display_name/pinCode/c/s
+    // ---------------------------
     useEffect(() => {
-        // if(isEditing) return 
+        // if (isEditing) return; // critical — block overriding initial edit data
+
         if (isLocationApiFetched) {
             setAddress((prev) => ({
                 ...prev,
+                pinCode: pinCode ?? prev.pinCode,
+                state: s ?? prev.state,
+                city: c ?? prev.city,
                 addressline1: a1 ?? prev.addressline1,
                 addressline2: a2 ?? prev.addressline2,
                 formattedAddress: display_name ?? prev.formattedAddress,
             }));
         }
-    }, [isLocationApiFetched, a1, a2, display_name]);
+    }, [isLocationApiFetched, a1, a2, display_name, pinCode, c, s, isEditing]);
 
+    // ---------------------------
     // Debounced search for autocomplete
-    const { } = useSelector(s => s.locations);
-
+    // ---------------------------
     const debounceRef = useRef(null);
-
     const onSearchChange = (txt) => {
         setText(txt);
 
-        if (debounceRef.current) {
-            clearTimeout(debounceRef.current);
-        }
-
+        if (debounceRef.current) clearTimeout(debounceRef.current);
         debounceRef.current = setTimeout(() => {
             if (txt.length > 2) {
                 dispatch(autoCompleteAddress(txt));
             } else {
                 dispatch(clearAutoComplete());
             }
-        }, 500);
+        }, SEARCH_DEBOUNCE_MS);
     };
 
+    // ---------------------------
     // When user selects an autocomplete suggestion
+    // ---------------------------
     const onSelectSuggestion = (item) => {
-        // item must contain lat/lon or id to fetch details
-        // adapt to your autocomplete payload
-        const lat = item.properties.lat
-        const lon = item.properties.lon
-        // fallback: if no coordinates, you might need to call a details endpoint
-        if (lat && lon) {
-            setAddress((prev) => ({
-                ...prev,
-                addressline1: item.properties.address_line1 ?? '',
-                addressline2: item.properties.address_line2 ?? '',
-                formattedAddress: item.properties.display_name ?? '',
-                latitude: Number(lat),
-                longitude: Number(lon),
-            }));
+        const lat = Number(item.properties.lat);
+        const lon = Number(item.properties.lon);
 
-            // set last decoded so region-change doesn't immediately re-decode
-            lastDecodedRef.current = { lat: Number(lat), lng: Number(lon) };
-
-            // move map
-            mapRef.current?.animateCamera({
-                center: { latitude: Number(lat), longitude: Number(lon) },
-                zoom: 18,
-            });
-
-            // optionally call decodeAddress to fill full details if needed
-            dispatch(decodeAddress({ lat: Number(lat), long: Number(lon) }));
-            dispatch(clearAutoComplete());
-            // hide suggestions and keyboard
-            setShowAutocomplete(false);
-            setText('');
-            Keyboard.dismiss();
-            searchRef.current?.blur();
-        } else {
-            //show error toast
-            // if suggestion doesn't contain coordinates, attempt to fetch details via your API
-            // dispatch(autoCompleteAddress({ query: item.id, details: true }));
+        if (isNaN(lat) || isNaN(lon)) {
+            showToast("No coordinates available for this suggestion", true);
+            return;
         }
+
+        // update address fields immediately
+        setAddress((prev) => ({
+            ...prev,
+            pinCode: item.properties.postcode ?? '',
+            city: item.properties.city ?? '',
+            state: item.properties.state ?? '',
+            addressline1: item.properties.address_line1 ?? '',
+            addressline2: item.properties.address_line2 ?? '',
+            formattedAddress: item.properties.display_name ?? '',
+            latitude: lat,
+            longitude: lon,
+        }));
+
+        // prevent immediate region-change decode caused by animateCamera
+        isProgrammaticMoveRef.current = true;
+        setTimeout(() => { isProgrammaticMoveRef.current = false; }, 500);
+
+        // move map
+        mapRef.current?.animateCamera({
+            center: { latitude: lat, longitude: lon },
+            zoom: 18,
+        });
+
+        // update last decoded to this suggestion
+        lastDecodedRef.current = { lat, lng: lon, addressline1: item.properties.address_line1 ?? '', addressline2: item.properties.address_line2 ?? '' };
+
+        // optionally call decodeAddress to fill more details (keeps UI consistent)
+        dispatch(decodeAddress({ lat, long: lon }));
+        dispatch(clearAutoComplete());
+
+        // hide suggestions, keyboard
+        setShowAutocomplete(false);
+        setText('');
+        Keyboard.dismiss();
+        searchRef.current?.blur();
     };
 
+    // ---------------------------
     // handle region change complete with debounce & threshold
+    // ---------------------------
     const handleRegionChangeComplete = (region) => {
+        // ignore region-change triggered by our programmatic animateCamera calls
+        if (isProgrammaticMoveRef.current) {
+            return;
+        }
+
         searchRef.current?.blur();
-        setShowAutocomplete(false)
-        console.log("region", region)
-        // region: { latitude, longitude, latitudeDelta, longitudeDelta }
+        setShowAutocomplete(false);
+
         if (regionDebounceRef.current) clearTimeout(regionDebounceRef.current);
         regionDebounceRef.current = setTimeout(() => {
             const prev = lastDecodedRef.current;
@@ -256,7 +292,9 @@ const LocationScreen = ({ navigation }) => {
         }, REGION_DEBOUNCE_MS);
     };
 
+    // ---------------------------
     // sync to current device location (uses your fetchCurrentLocation util)
+    // ---------------------------
     const syncToCurrentLocation = async () => {
         try {
             setIsLocationFetching(true)
@@ -273,6 +311,10 @@ const LocationScreen = ({ navigation }) => {
 
             lastDecodedRef.current = { lat, lng: lon };
 
+            // prevent decode from running on animateCamera
+            isProgrammaticMoveRef.current = true;
+            setTimeout(() => { isProgrammaticMoveRef.current = false; }, 500);
+
             mapRef.current?.animateCamera({
                 center: { latitude: lat, longitude: lon },
                 zoom: 18,
@@ -282,27 +324,52 @@ const LocationScreen = ({ navigation }) => {
             dispatch(decodeAddress({ lat, long: lon }));
         } catch (err) {
             console.warn('failed to fetch current location', err);
+            showToast("Failed to fetch current location", true);
         } finally {
             setIsLocationFetching(false)
         }
     };
 
+    // ---------------------------
+    // render suggestion item
+    // ---------------------------
     const renderSuggestion = ({ item }) => (
         <TouchableOpacity
             style={[styles.suggestionRow]}
             onPress={() => onSelectSuggestion(item)}
         >
-            {console.log("item", item)}
-
             <Text style={[styles.suggestionText, { color: theme.text }]}>
                 {item.properties.formatted || item.properties.address_line1 || item.properties.address_line2}
             </Text>
-            <Text style={[styles.suggestionSubText, { color: 'white' }]}>
-                {item.properties?.city || item.properties?.state || ''}-{item.properties.postcode}
+            <Text style={[styles.suggestionSubText, { color: theme.secondaryText }]}>
+                {(item.properties?.city || item.properties?.state || '') + (item.properties?.postcode ? ` - ${item.properties.postcode}` : '')}
             </Text>
         </TouchableOpacity>
     );
 
+    // ---------------------------
+    // Confirm location -> navigate to details screen
+    // ---------------------------
+    const onConfirmLocation = () => {
+        const safeAddress = {
+            addressLine1: address?.addressline1 ?? "",
+            addressLine2: address?.addressline2 ?? "",
+            formattedAddress: address?.formattedAddress ?? "",
+            state: address?.state ?? "",
+            city: address?.city ?? "",
+            pinCode: address?.pinCode ?? "",
+            latitude: address?.latitude ?? 0.0,
+            longitude: address?.longitude ?? 0.0,
+        };
+
+        navigation.navigate('DetailedAddressInputScreen', {
+            pickedAddress: safeAddress,
+        })
+    };
+
+    // ---------------------------
+    // JSX
+    // ---------------------------
     return (
         <View style={[styles.container]}>
             <TopAppBar navigation={navigation} title="Location" />
@@ -317,17 +384,15 @@ const LocationScreen = ({ navigation }) => {
                     style={[styles.searchInput, { color: theme.text }]}
                     placeholderTextColor="#999"
                     onChangeText={onSearchChange}
-                    onPress={() => setShowAutocomplete(true)}
+                    onPressIn={() => setShowAutocomplete(true)}
                     onFocus={() => setShowAutocomplete(true)}
                 />
 
-                <TouchableOpacity onPress={()=>{
-                    showToast("Hello from top!")
-                }} style={styles.syncButton}>
+                <TouchableOpacity onPress={syncToCurrentLocation} style={styles.syncButton}>
                     <Ionicons name="locate" size={20} color={theme.text} />
                 </TouchableOpacity>
             </View>
-            {console.log("shw", showAutocomplete)}
+
             {/* AUTOCOMPLETE OVERLAY */}
             {showAutocomplete && (
                 <View style={[styles.autocompleteOverlay, { marginTop: insets.top + 130 }]} pointerEvents="box-none">
@@ -340,7 +405,6 @@ const LocationScreen = ({ navigation }) => {
                                 keyExtractor={(i, idx) => (i.id ?? i.place_id ?? idx).toString()}
                                 renderItem={renderSuggestion}
                                 keyboardShouldPersistTaps="handled"
-                                // style={{ maxHeight: 220 }}
                                 ItemSeparatorComponent={() => <View style={styles.separator} />}
                                 ListEmptyComponent={() => (
                                     <View style={styles.emptyRow}>
@@ -353,7 +417,7 @@ const LocationScreen = ({ navigation }) => {
                 </View>
             )}
 
-            {/* MAP */}
+            {/* MAP CENTER PIN */}
             <View style={{
                 position: 'absolute',
                 top: '45%',
@@ -363,14 +427,16 @@ const LocationScreen = ({ navigation }) => {
             }}>
                 <Ionicons name='location-sharp' size={30} color='red' />
             </View>
+
+            {/* MAP */}
             <MapView
                 ref={mapRef}
                 style={{ flex: 1, marginHorizontal: 10 }}
                 onRegionChangeComplete={handleRegionChangeComplete}
                 provider={PROVIDER_GOOGLE}
                 initialRegion={{
-                    latitude: address.latitude,
-                    longitude: address.longitude,
+                    latitude: address.latitude || 12.9716, // fallback to sensible lat/lng if zero
+                    longitude: address.longitude || 77.5946,
                     latitudeDelta: 0.0022,
                     longitudeDelta: 0.0021,
                 }}
@@ -380,7 +446,6 @@ const LocationScreen = ({ navigation }) => {
                 pitchEnabled={false}
                 rotateEnabled={true}
             >
-                {/* <Marker coordinate={{ latitude: address.latitude, longitude: address.longitude }} /> */}
             </MapView>
 
             {/* FOOTER */}
@@ -434,12 +499,7 @@ const LocationScreen = ({ navigation }) => {
 
                 <AppButton
                     title={'Confirm Location'}
-                    onAction={() =>
-                        console.log("cliec", address)
-                        // navigation.navigate('DetailedAddressInputScreen', {
-                        //     pickedAddress: address,
-                        // })
-                    }
+                    onAction={onConfirmLocation}
                 />
             </View>
         </View>

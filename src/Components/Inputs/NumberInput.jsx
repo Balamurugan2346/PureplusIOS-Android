@@ -6,8 +6,8 @@ import { countries } from '../../Utils/CountriesPhoneRegex';
 
 
 
-const NumberInput = forwardRef(({ onValidateNumber, returnKeyType = 'done', onSubmitEditing ,onClick }, ref) => {
-    const [number, setNumber] = useState('');
+const NumberInput = forwardRef(({ onValidateNumber, returnKeyType = 'done', onSubmitEditing ,onClick,textStyle ,style,initialValue,editable=true }, ref) => {
+    const [number, setNumber] = useState(initialValue);
     const [error, setError] = useState('');
     const { theme } = useTheme();
     const [isFocused, setIsFocused] = useState(false);
@@ -57,7 +57,8 @@ const NumberInput = forwardRef(({ onValidateNumber, returnKeyType = 'done', onSu
                         borderColor: isFocused ? theme.primary : theme.inputContainerBorder,
                         borderWidth: 1,
                         backgroundColor: theme.inputContainer
-                    }
+                    },
+                    style
                 ]}
             >
                 {/* <TouchableOpacity
@@ -77,13 +78,14 @@ const NumberInput = forwardRef(({ onValidateNumber, returnKeyType = 'done', onSu
                 </TouchableOpacity> */}
 
                 <TextInput
-                    style={{
+                    style={[{
                         marginLeft: 10,
                         width: '100%',
                         color: theme.text,
                         fontSize: Fonts.size.sm,
                         fontFamily: Fonts.family.regular
-                    }}
+                    },textStyle]}
+                    editable={editable}
                     value={number}
                     onChangeText={validateNumber}
                     keyboardType="number-pad"

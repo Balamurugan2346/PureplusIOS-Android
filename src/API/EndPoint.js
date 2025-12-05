@@ -29,6 +29,9 @@ export default {
     GETOTP:'auth/send-otp',
     VERIFYOTP:'auth/verify-otp',
     CREATEPROFILE:'auth/create-user-profile',
-    UPDATEPROFILE:'auth/update-user-profile'
+
+    //profile
+    GETUSERPROFILE:'user/profile',
+    UPDATEUSERPROFILE:'auth/update-user-profile'
 
 };

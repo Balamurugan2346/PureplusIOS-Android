@@ -2,11 +2,11 @@ import LottieView from 'lottie-react-native';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
-export default function AppLoading({ isVisible }) {
+export default function AppLoading({ isVisible ,style }) {
     if (!isVisible) return null; // Don't render at all when not visible
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container,style]}>
             <LottieView
                 source={require('../../assets/animations/WaterAnimation.json')}
                 autoPlay

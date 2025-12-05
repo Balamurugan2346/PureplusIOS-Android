@@ -1,14 +1,14 @@
 import React, { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getData } from "../OfflineStore/OfflineStore";
 
 export default function AppEntry({ navigation }) {
 
   useEffect(() => {
     const checkStartDestination = async () => {
       try {
-        const isGetStartedViewed = await AsyncStorage.getItem("isGetStartedViewed"); 
-        const isLoggedIn = await AsyncStorage.getItem("isLoggedIn");
+        const isGetStartedViewed = await getData("isGetStartedViewed"); 
+        const isLoggedIn = await getData("isLoggedIn");
 
         console.log("GetStarted:", isGetStartedViewed);
         console.log("LoggedIn:", isLoggedIn);

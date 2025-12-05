@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { clearError, clearState, createProfile, saveTempUserDetails } from '../../../Redux/Slices/AuthSlice';
 import { useToast } from '../../../Components/Toast/ToastProvider';
 import { useSelector, useDispatch } from 'react-redux';
-import { storeData } from '../../../OfflineStore/OfflineStore';
+import { removeData, storeData } from '../../../OfflineStore/OfflineStore';
 import AppLoading from '../../../Components/AppLoading';
 const EmailScreen = ({ navigation }) => {
 
@@ -112,9 +112,11 @@ const EmailScreen = ({ navigation }) => {
                                         fullName: userName.data,
                                         email: email.data,
                                         onSuccess: (data) => {
-                                            console.log('dataaaaaaaa', data)
-                                            if (data.success) {
+                                            console.log('dataaaaaaaa', data.success)
+                                            if (data.success==true) {
+                                                removeData('preAuthToken')
                                                 storeData("accessToken", data.token)
+                                                storeData('userID',data.userId.toString())
                                                 storeData('isLoggedIn',"1") 
                                                 dispatch(clearState())
                                                 navigation.navigate("DashBoard")

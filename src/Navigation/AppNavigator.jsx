@@ -22,6 +22,7 @@ import MyOrdersScreen from '../Screens/Product/Order/MyOrdersScreen';
 import OrderDetailedScreen from '../Screens/Product/Order/OrderDetailedScreen';
 import ActivityEntry from '../Navigation/ActivityEntry'
 import AppEntry from '../Navigation/ActivityEntry';
+import EditProfileScreen from '../Screens/Profile/EditProfileScreen'
 
 const Stack = createNativeStackNavigator();
 
@@ -60,6 +61,7 @@ export default function AppNavigator() {
         <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicy} />
         <Stack.Screen name='LoginOrRegister' component={LoginOrRegister} />
         <Stack.Screen name='OtpVerification' component={OtpVerficationScreen} />
+        <Stack.Screen name='EditProfileScreen' component={EditProfileScreen} />
 
 
 

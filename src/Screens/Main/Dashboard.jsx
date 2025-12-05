@@ -3,7 +3,7 @@ import { useAppContext } from '../../Context/AppContext';
 import { useTabBarVisibility } from '../../Context/BottomBarContext';
 import { useTheme } from '../../Context/ThemeContext';
 import { clearBanners, loadBanners } from '../../Redux/Slices/BannerSlice';
-import { clearAddressState, getAddressList } from '../../Redux/Slices/AddressSlice'
+import { clearProfileState, getUserProfile } from '../../Redux/Slices/ProfileSlice'
 import { clearDecodedAddress, decodeAddress } from '../../Redux/Slices/LocationSlice';
 import { clearProducts, loadProducts } from '../../Redux/Slices/ProductsSlice';
 import Fonts from '../../../assets/fonts/Fonts';
@@ -42,6 +42,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { fetchCurrentLocation } from '../../Utils/LocationUtil';
 import AppLoading from '../../Components/AppLoading';
 import ShimmerPlaceholder from 'react-native-shimmer-placeholder';
+import { useToast } from '../../Components/Toast/ToastProvider';
+import { getData, removeData } from '../../OfflineStore/OfflineStore';
+import { clearAddressState, getAddressList } from '../../Redux/Slices/AddressSlice';
+
 // Placeholder Carousel Data
 const bannerData = [
   {
@@ -72,6 +76,7 @@ const Dashboard = ({ navigation }) => {
 
   //UI LOGIC
   const { theme, toggleTheme, isDark } = useTheme();
+  const { showToast } = useToast()
 
   const headerConfig = {
     color: theme.text,
@@ -116,7 +121,6 @@ const Dashboard = ({ navigation }) => {
 
 
   const insets = useSafeAreaInsets()
-  const { setIsTabBarVisible, isTabBarVisible } = useTabBarVisibility();
 
   const [refreshing, setRefreshing] = React.useState(false);
   const [refreshLocation, setRefreshLocation] = useState(false);
@@ -128,7 +132,7 @@ const Dashboard = ({ navigation }) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [showBottomSheet, setShowBottomSheet] = useState(false)
   const [bottomSheetProductDetailsData, setBottomSheetProductDetailsData] = useState(null)
-
+  const [userID, setUserID] = useState(-1)
 
   //REDUX
   const dispatch = useDispatch();
@@ -138,17 +142,17 @@ const Dashboard = ({ navigation }) => {
   const { productList, loading: productsLoading, error: productError, isFetched: isProductsFetched } = useSelector((state) => state.products)
   //LOCATIONS + GEOCODING API DATA  
   const { error: LocationError, display_name, address: DetailedAddress, isFetched: isLocationApiFetched, entireGEOData, loading: isGEOcodingApiLoading } = useSelector((state) => state.locations)
-
-  //ADDRESS 
-  const { addressList } = useSelector((state) => state.address)
-
+  //USER PROFILE
+  const { error: ProfileError, loading: profileLoading, isFetched: isProfileApiFetched, profileData } = useSelector((state) => state.profile)
 
 
-  useEffect(()=>{
-    console.log("currentLocation",currentLocation)
-  },[currentLocation])
+
+  useEffect(() => {
+    console.log("currentLocation", currentLocation)
+  }, [currentLocation])
 
 
+  //FETCHING LOCATION ALSO GET DECODED ADDRESS FROM PROVIDER(GEOAPIFY.COM)
   const refreshLocation1 = async () => {
     try {
       setIsLocationFetching(true)
@@ -176,12 +180,27 @@ const Dashboard = ({ navigation }) => {
     refreshLocation1()
   }, [refreshLocation]);
 
-  //INITIAL API CALLS WHEN THE DASHBOARD RENDERS 
+
   useEffect(() => {
-    if (!isProductsFetched) {
-      dispatch(loadProducts())
-    }
-  }, [isProductsFetched, dispatch])
+    const loadUserId = async () => {
+      const storedId = await getData('userID');
+      const parsed = Number(storedId);
+      setUserID(isNaN(parsed) ? -1 : parsed);
+    };
+    loadUserId();
+  }, []);
+
+  //INITIAL API CALLS WHEN THE DASHBOARD RENDERS 
+  const syncAddress = () => {
+    dispatch(clearAddressState())
+    dispatch(getAddressList(userID))
+  }
+
+  useEffect(() => {
+    if (userID === -1) return;
+    syncAddress();
+  }, [userID, refreshing]);
+
 
   useEffect(() => {
     if (!isBannerFetched) {
@@ -190,38 +209,42 @@ const Dashboard = ({ navigation }) => {
   }, [dispatch, isBannerFetched]); // 🔹 only run on mount
 
   useEffect(() => {
+    if (!isProfileApiFetched) {
+      dispatch(getUserProfile());
+    }
+  }, [dispatch, isProfileApiFetched]); // 🔹 only run on mount
+
+
+  useEffect(() => {
+    console.log("profileData", profileData)
+  }, [profileData])
+
+  //change this dialog later once
+  useEffect(() => {
     if (!isDialogVisibleAtOnce) {
       setIsDialogVisible(true)
       setIsDialogVisibleAtOnce(true)
     }
   }, [])
 
-  useEffect(() => {
-    if (showAddressBottomSheet) {
-      console.log("close this")
-      setIsTabBarVisible(false)
-    }
-  }, [showAddressBottomSheet])
-
-
   const handleRefresh = () => {
     console.log("reloading...")
     setRefreshing(true);
     dispatch(clearProducts())
     dispatch(clearBanners())
+    dispatch(clearProfileState())
     dispatch(clearDecodedAddress())
+
     dispatch(loadBanners())
     dispatch(loadProducts())
+    dispatch(getUserProfile())
+    syncAddress();
     //need to fetch also address 
     setRefreshLocation(prev => !prev)
     setTimeout(() => {
       setRefreshing(false);
     }, 2000);
   }
-
-  useEffect(() => {
-    console.log("from dashboard", addressList)
-  }, [addressList])
 
   //RENDER UI CONDITION
   const isAddressBarLoading = (isGEOcodingApiLoading || isLocationFetching)
@@ -236,7 +259,7 @@ const Dashboard = ({ navigation }) => {
             <AppLoading isVisible={isLocationFetching}/>
           )} */}
 
-          {/* //show dialog after demo or remodel the dialog */}
+      {/* //show dialog after demo or remodel the dialog */}
       {/* {isDialogVisible && <CustomDialog visible={isDialogVisible} setVisible={setIsDialogVisible} />} */}
 
       <StatusBar />
@@ -249,7 +272,19 @@ const Dashboard = ({ navigation }) => {
 
         <View style={[styles.header, { backgroundColor: theme.background, paddingTop: insets.top + 10 }, shadow]}>
           <View style={styles.topAppBar}>
-            <TouchableOpacity style={{}} onPress={() => navigation.navigate('ProfileScreen')}>
+            <TouchableOpacity style={{}} onPress={() => {
+              if (profileData != null) {
+                navigation.navigate('ProfileScreen')
+              } else {
+                if (profileLoading) return
+                showToast("Session expired Please login again to continue!", true)
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: "Login" }],
+                });
+                removeData('isLoggedIn')
+              }
+            }}>
               <Image source={require('../../../assets/images/person.png')} style={{ width: 30, height: 30, borderRadius: 30 }} />
             </TouchableOpacity>
 

@@ -10,12 +10,20 @@ import Animated, {
 import { useAppContext } from "../../Context/AppContext"; // your context
 import { useTheme } from "../../Context/ThemeContext"; // your theme
 
-export default function CartButton({ product ,navigation}) {
+export default function CartButton({ product, navigation, cartItems }) {
   const { addToCart, reduceQuantity, removeFromCart, cart } = useAppContext();
   const { theme } = useTheme();
 
   const cartItem = cart.find((item) => item.id === product.id);
   const quantity = cartItem ? cartItem.quantity : 0;
+
+
+  // const isInCart = cartItems?.some(item => item.productId === product.productId);
+
+  // const cartItem = cartItems?.find(item => item.productId === product.productId);
+
+  // const quantity = cartItem ? cartItem.quantity : 0;
+
   const added = quantity > 0;
 
   // Animated width value
@@ -77,7 +85,7 @@ export default function CartButton({ product ,navigation}) {
       {/* Cart Icon */}
 
       <Animated.View style={[styles.cartBtn, animatedCartButtonStyle]}>
-        <TouchableOpacity onPress={()=>navigation.navigate('CartScreen')} style={{ flexDirection: "row", alignItems: "center" }} activeOpacity={0.8}>
+        <TouchableOpacity onPress={() => navigation.navigate('CartScreen')} style={{ flexDirection: "row", alignItems: "center" }} activeOpacity={0.8}>
           <View>
             <Image
               source={require("../../../assets/images/cart.png")}
@@ -160,8 +168,8 @@ const styles = StyleSheet.create({
   },
   badge: {
     position: "absolute",
-    right:-8,
-    top:-9,
+    right: -8,
+    top: -9,
     justifyContent: "center",
     backgroundColor: "red",
     borderRadius: 10,

@@ -7,26 +7,29 @@ import { useDispatch, useSelector } from 'react-redux';
 import { clearAddressState, getAddressList, saveAddress } from '../../Redux/Slices/AddressSlice';
 import AppLoading from '../../Components/AppLoading';
 import { useToast } from '../../Components/Toast/ToastProvider';
-import { getData } from '../../OfflineStore/OfflineStore';
+import { getData, storeData } from '../../OfflineStore/OfflineStore';
+import { saveCurrentLocationFormattedAddress } from '../../Redux/Slices/LocationSlice';
 
-const AddressInputForm = ({ navigation, pickedAddress }) => {
+const AddressInputForm = ({ navigation, pickedAddress ,onNavigate }) => {
     const { theme } = useTheme();
     const [userID, setUserID] = useState(-1)
     const dispatch = useDispatch();
     const { loading, error } = useSelector((state) => state.address);
     const { loginData } = useSelector((s) => s.auth)
     const { showToast } = useToast()
+    //USER PROFILE
+    const { error: ProfileError, loading: profileLoading, isFetched: isProfileApiFetched, profileData } = useSelector((state) => state.profile)
     const [formData, setFormData] = useState({
         userId: userID,
         addressType: '',
-        addressLine1: pickedAddress.addressline1 ?? "",
-        addressLine2: pickedAddress.addressline2 ?? "",
+        addressLine1: pickedAddress.addressLine1 ?? "",
+        addressLine2: pickedAddress.addressLine2 ?? "",
         city: pickedAddress.city ?? "",
         state: pickedAddress.state ?? "",
         pinCode: pickedAddress.pinCode ?? "",
         landmark: '',
         tag: 'Home',
-        receiverName: '',
+        receiverName: profileData.fullName ?? "",
         receiverNumber: '',
         latitude: pickedAddress.latitude,
         longitude: pickedAddress.longitude,
@@ -41,6 +44,8 @@ const AddressInputForm = ({ navigation, pickedAddress }) => {
         'pinCode',
         'landmark',
     ];
+
+
 
     const handleChange = (field, value) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -149,31 +154,52 @@ const AddressInputForm = ({ navigation, pickedAddress }) => {
         }
 
         try {
+            //----------------------------------------
             // 1️⃣ Save Address
-            const res = await dispatch(saveAddress(formData));
+            //----------------------------------------
+            const res = await dispatch(
+                saveAddress({
+                    body: formData,
+                    onSuccess: async (data) => {
+                        console.log("data from api0addre0", data.addressId)
+                        await storeData("selectedAddressID", data.addressId.toString());
+                         //for live reflection in ui in dashboard purpose only  (((((need to work)))))
+                        // dispatch(saveCurrentLocationFormattedAddress(`${item.addressLine1} ${item.addressLine2}`))
+                    },
+                    onError: () => {
+                        showToast("Failed to save address", true);
+                    }
+                })
+            );
 
-            if (res.error) {
+            // ❌ Wrong: res.error → doesn't work
+            // ✔ Correct:
+            if (!saveAddress.fulfilled.match(res)) {
                 showToast("Failed to save address", true);
                 return;
             }
 
-            // 2️⃣ Fetch updated list
+            //----------------------------------------
+            // 2️⃣ Fetch updated address list
+            //----------------------------------------
             const listRes = await dispatch(getAddressList(formData.userId));
 
-            if (listRes.error) {
-                showToast("Address saved, but failed to refresh list", true);
-                navigation.goBack();
+            if (!getAddressList.fulfilled.match(listRes)) {
+                showToast("Address saved but failed to refresh list", true);
+                onNavigate()
                 return;
             }
 
-            // 3️⃣ Success
+            //----------------------------------------
+            // 3️⃣ All Good
+            //----------------------------------------
             showToast("Address added successfully");
-            navigation.goBack();
-
+             onNavigate()
         } catch (e) {
             showToast("Unexpected error occurred", true);
         }
     };
+
 
 
 

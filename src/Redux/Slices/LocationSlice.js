@@ -13,6 +13,18 @@ export const decodeAddress = createAsyncThunk(
   }
 );
 
+export const decodeCurrentLocationAddress = createAsyncThunk(
+  'locations/decodeCurrentLocationAddress',
+  async ({ lat, long }, { rejectWithValue }) => {
+    try {
+      const data = await LocationRepository.getAddress(lat, long);
+      return data;
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
+
 export const autoCompleteAddress = createAsyncThunk(
   'locations/autoCompleteAddress',
   async (query, { rejectWithValue }) => {
@@ -44,6 +56,11 @@ const locationSlice = createSlice({
     autoList: [],
     autoLoading: false,
     autoError: null,
+
+    //current location display address for dashboard only
+    currentLocationFormattedAddress:"",
+    currentLocationAddressLoading:false,
+    currentLocationAddressFetched:false
   },
   reducers: {
     clearDecodedAddress: (state) => {
@@ -58,6 +75,13 @@ const locationSlice = createSlice({
       state.pinCode = ''
       state.state = ''
       state.city = ''
+    },
+      
+    clearCurrentLocationFormattedAddres:(state,action)=>{
+      state.currentLocationFormattedAddress = ''
+    },
+    saveCurrentLocationFormattedAddress:(state,action)=>{
+      state.currentLocationFormattedAddress = action.payload
     },
     clearAutoComplete: (state) => {
       state.autoList = [];
@@ -95,6 +119,27 @@ const locationSlice = createSlice({
         state.isFetched = false;
       })
 
+
+      // DECODE ADDRESS
+      .addCase(decodeCurrentLocationAddress.pending, (state) => {
+        state.currentLocationAddressLoading = true;
+        state.currentLocationAddressFetched = false;
+      })
+      .addCase(decodeCurrentLocationAddress.fulfilled, (state, action) => {
+        state.currentLocationAddressLoading = false;
+
+        const feature = action.payload?.features?.[0];
+        const props = feature?.properties;
+
+        state.currentLocationFormattedAddress = props?.formatted || "";
+        state.currentLocationAddressFetched = true;
+      })
+      .addCase(decodeCurrentLocationAddress.rejected, (state, action) => {
+        state.currentLocationAddressLoading = false;
+        state.error = action.payload;
+        state.currentLocationAddressFetched = false;
+      })
+
       // AUTOCOMPLETE
       .addCase(autoCompleteAddress.pending, (state) => {
         state.autoLoading = true;
@@ -110,5 +155,5 @@ const locationSlice = createSlice({
   },
 });
 
-export const { clearDecodedAddress, clearAutoComplete } = locationSlice.actions;
+export const { clearDecodedAddress, clearAutoComplete ,saveCurrentLocationFormattedAddress , clearCurrentLocationFormattedAddres} = locationSlice.actions;
 export default locationSlice.reducer;

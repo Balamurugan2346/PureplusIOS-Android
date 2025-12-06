@@ -13,7 +13,7 @@ export default {
   USER_PROFILE: '/users/profile',
   PRODUCTS: '/products',
   POSTS:'/posts',
-  GETALLPRODUCTS:'/Product/GetAllProductDetails',
+  GETALLPRODUCTS:'/Product/get-active-products',
   GETPRODUCTBYID:'/Product/GetProductDetailsById',
 
   //currently working
@@ -32,6 +32,9 @@ export default {
 
     //profile
     GETUSERPROFILE:'user/profile',
-    UPDATEUSERPROFILE:'auth/update-user-profile'
+    UPDATEUSERPROFILE:'auth/update-user-profile',
+
+    //CART
+    GETCART:'/EndUser/get-cart',
 
 };

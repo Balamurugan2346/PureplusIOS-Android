@@ -31,6 +31,32 @@ const removeData = async (key) => {
   }
 };
 
+/**
+ * Clear all data except `isGetStartedViewed`
+ */
+const clearDataBeforeLogout = async () => {
+  try {
+    const KEYS_TO_KEEP = ['isGetStartedViewed'];
 
-export { getData, removeData, storeData };
+    // get all keys currently stored
+    const allKeys = await AsyncStorage.getAllKeys();
+
+    // filter out keys we want to keep
+    const keysToDelete = allKeys.filter(
+      (key) => !KEYS_TO_KEEP.includes(key)
+    );
+
+    // remove everything except the preserved keys
+    if (keysToDelete.length > 0) {
+      await AsyncStorage.multiRemove(keysToDelete);
+    }
+
+    console.log("Storage cleared except kept keys:", KEYS_TO_KEEP);
+  } catch (e) {
+    console.error("Clear error", e);
+  }
+};
+
+
+export { getData, removeData, storeData , clearDataBeforeLogout };
 

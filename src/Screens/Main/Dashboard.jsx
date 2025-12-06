@@ -4,7 +4,7 @@ import { useTabBarVisibility } from '../../Context/BottomBarContext';
 import { useTheme } from '../../Context/ThemeContext';
 import { clearBanners, loadBanners } from '../../Redux/Slices/BannerSlice';
 import { clearProfileState, getUserProfile } from '../../Redux/Slices/ProfileSlice'
-import { clearDecodedAddress, decodeAddress } from '../../Redux/Slices/LocationSlice';
+import { clearDecodedAddress, decodeAddress, decodeCurrentLocationAddress } from '../../Redux/Slices/LocationSlice';
 import { clearProducts, loadProducts } from '../../Redux/Slices/ProductsSlice';
 import Fonts from '../../../assets/fonts/Fonts';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -45,6 +45,8 @@ import ShimmerPlaceholder from 'react-native-shimmer-placeholder';
 import { useToast } from '../../Components/Toast/ToastProvider';
 import { getData, removeData } from '../../OfflineStore/OfflineStore';
 import { clearAddressState, getAddressList } from '../../Redux/Slices/AddressSlice';
+import { getSelectedAddressId } from '../../Utils/GetSelectedAddress';
+import { clearCart, loadCartItems } from '../../Redux/Slices/CartSlice';
 
 // Placeholder Carousel Data
 const bannerData = [
@@ -133,6 +135,7 @@ const Dashboard = ({ navigation }) => {
   const [showBottomSheet, setShowBottomSheet] = useState(false)
   const [bottomSheetProductDetailsData, setBottomSheetProductDetailsData] = useState(null)
   const [userID, setUserID] = useState(-1)
+  const [displayAddress, setDisplayAddress] = useState(null)
 
   //REDUX
   const dispatch = useDispatch();
@@ -141,10 +144,14 @@ const Dashboard = ({ navigation }) => {
   //PRODUCTS API DATA
   const { productList, loading: productsLoading, error: productError, isFetched: isProductsFetched } = useSelector((state) => state.products)
   //LOCATIONS + GEOCODING API DATA  
-  const { error: LocationError, display_name, address: DetailedAddress, isFetched: isLocationApiFetched, entireGEOData, loading: isGEOcodingApiLoading } = useSelector((state) => state.locations)
+  const { error: LocationError, display_name, address: DetailedAddress, isFetched: isLocationApiFetched, currentLocationAddressFetched, currentLocationFormattedAddress, entireGEOData, loading: isGEOcodingApiLoading } = useSelector((state) => state.locations)
   //USER PROFILE
   const { error: ProfileError, loading: profileLoading, isFetched: isProfileApiFetched, profileData } = useSelector((state) => state.profile)
 
+  //ADDRESS LIST
+  const { addressList } = useSelector((state) => state.address)
+
+  const { cartItems, loading: cartLoading, error: cartError, isFetched: cartIsFetched } = useSelector((state) => state.cart)
 
 
   useEffect(() => {
@@ -166,6 +173,9 @@ const Dashboard = ({ navigation }) => {
         if (!isLocationApiFetched) {
           dispatch(decodeAddress({ lat: pos.latitude, long: pos.longitude }));
           console.log("before sending to api", "lat", pos.latitude, "lonh", pos.longitude)
+        }
+        if(!currentLocationAddressFetched){
+          dispatch(decodeCurrentLocationAddress({lat:pos.latitude,long:pos.longitude}))
         }
       }
       console.log("position", pos)
@@ -196,11 +206,23 @@ const Dashboard = ({ navigation }) => {
     dispatch(getAddressList(userID))
   }
 
+  const synCCart = () => {
+    dispatch(clearCart())
+    dispatch(loadCartItems(userID))
+  }
+
   useEffect(() => {
     if (userID === -1) return;
     syncAddress();
+    synCCart()
   }, [userID, refreshing]);
 
+
+  useEffect(() => {
+    if (!isProductsFetched) {
+      dispatch(loadProducts());
+    }
+  }, [dispatch, isBannerFetched]);
 
   useEffect(() => {
     if (!isBannerFetched) {
@@ -227,6 +249,23 @@ const Dashboard = ({ navigation }) => {
     }
   }, [])
 
+  const getAddressFromStateList = async () => {
+    const id = await getSelectedAddressId();
+    if (addressList) {
+      console.log("list", addressList)
+      addressList.map((address, index) => {
+        if (address.id == id) {
+          setDisplayAddress(`${address.addressLine1}, ${address.addressLine2}`)
+        }
+      })
+    }
+  }
+  useEffect(() => {
+    getAddressFromStateList()
+  }, [])
+
+
+
   const handleRefresh = () => {
     console.log("reloading...")
     setRefreshing(true);
@@ -239,6 +278,7 @@ const Dashboard = ({ navigation }) => {
     dispatch(loadProducts())
     dispatch(getUserProfile())
     syncAddress();
+    synCCart()
     //need to fetch also address 
     setRefreshLocation(prev => !prev)
     setTimeout(() => {
@@ -301,7 +341,18 @@ const Dashboard = ({ navigation }) => {
 
           {/* <Text style={[headerConfig, { marginTop: 10 }]}>Delivery within <Text style={titleConfig}>5 mins</Text></Text> */}
 
-          <AddressBar onClick={() => setShowAddressBottomSheet(true)} address={isAddressBarLoading ? "Loading...." : display_name ? display_name : "Not fetched Please refresh"} />
+          <AddressBar
+            onClick={() => setShowAddressBottomSheet(true)}
+            address={
+              currentLocationFormattedAddress && currentLocationFormattedAddress.trim() !== ""
+                ? currentLocationFormattedAddress                      // ← saved display address ALWAYS wins
+                : isAddressBarLoading
+                  ? "Loading..."                      // ← use loading only when no saved address
+                  : display_name
+                    ? display_name                    // ← fallback: geocoder result
+                    : "Not fetched. Please refresh."  // ← last fallback
+            }
+          />
         </View>
 
         {/* === Carousel === */}
@@ -437,8 +488,7 @@ const Dashboard = ({ navigation }) => {
             horizontal
             style={styles.productGrid}
           >
-            {products.map((product, index) => (
-
+            {productList && productList.map((product, index) => (
               // <ProductCardRect
               //   key={index}
               //   category="Soft Drink"
@@ -451,7 +501,12 @@ const Dashboard = ({ navigation }) => {
                 key={index}
                 product={product}
                 onPress={() =>
-                  navigation.navigate("DetailedProductScreen", { product })
+                {
+                  if(userID !=-1){
+                    navigation.navigate("DetailedProductScreen", { product ,userID })
+                  }
+                }
+                  
                 }
                 onInfoClick={() => {
                   setShowBottomSheet((prev) => !prev);
@@ -472,7 +527,10 @@ const Dashboard = ({ navigation }) => {
 
       </ScrollView>
 
-      {cart.length > 0 && <ViewCartButton navigation={navigation} cart={cart} />}
+      {!loading && cartIsFetched && cartItems.length > 0 && (
+        <ViewCartButton navigation={navigation} cart={cartItems} />
+      )}
+
 
       <BottomSheet
         visible={showAddressBottomSheet}

@@ -11,10 +11,16 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // You'll n
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import TopAppBar from '../../Components/TopAppBar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { removeData } from '../../OfflineStore/OfflineStore';
-import { useSelector } from 'react-redux';
+import { clearDataBeforeLogout, removeData } from '../../OfflineStore/OfflineStore';
+import { useDispatch, useSelector } from 'react-redux';
 import { useToast } from '../../Components/Toast/ToastProvider';
-import {getSelectedAddressId} from '../../Utils/GetSelectedAddress'
+import { getSelectedAddressId } from '../../Utils/GetSelectedAddress'
+import { clearProfileState } from '../../Redux/Slices/ProfileSlice';
+import { clearBanners } from '../../Redux/Slices/BannerSlice';
+import { clearProducts } from '../../Redux/Slices/ProductsSlice';
+import { clearAddressState } from '../../Redux/Slices/AddressSlice';
+import { clearCurrentLocationFormattedAddres, clearDecodedAddress } from '../../Redux/Slices/LocationSlice';
+import { clearCart } from '../../Redux/Slices/CartSlice';
 
 // --- Data Structure for the main list items ---
 const SETTINGS_ITEMS = [
@@ -31,48 +37,58 @@ const SETTINGS_ITEMS = [
 const ProfileScreen = ({ navigation }) => {
   // State for the Notification Switch
   const [isNotificationEnabled, setIsNotificationEnabled] = useState(true);
-  const {showToast} = useToast()
-  const [displayAddress,setDisplayAddress] = useState('')
+  const { showToast } = useToast()
+  const [displayAddress, setDisplayAddress] = useState('')
 
-  
+
+  const dispatch = useDispatch()
 
   const { error: ProfileError, loading: profileLoading, isFetched: isProfileApiFetched, profileData } = useSelector((state) => state.profile)
-  const { addressList, error, loading, isFetched: isAddressApiListFetched ,selectedAddress } = useSelector((state) => state.address)
+  const { addressList, error, loading, isFetched: isAddressApiListFetched, selectedAddress } = useSelector((state) => state.address)
   // Example handlers for actions
 
 
 
-  const getAddressFromStateList=async()=>{
-     const id = await getSelectedAddressId();
-    if(addressList){
-      console.log("list",addressList)
-      addressList.map((address,index)=>{
-        if(address.id == id){
-          setDisplayAddress(address.addressLine1)
+  const getAddressFromStateList = async () => {
+    const id = await getSelectedAddressId();
+    if (addressList) {
+      console.log("list", addressList)
+      addressList.map((address, index) => {
+        if (address.id == id) {
+          setDisplayAddress(`${address.addressLine1} ${address.addressLine2}`)
         }
       })
     }
   }
 
-  useEffect(()=>{
+  useEffect(() => {
     getAddressFromStateList()
-  },[])
+  }, [])
 
   const handleAction = (key) => {
-    if(key=='language' || key == 'Terms')  {
+    if (key == 'language' || key == 'Terms') {
       showToast("Under development")
-      return 
+      return
     }
     navigation.navigate(key)
   };
 
   const handleLogout = () => {
+    clearDataBeforeLogout()
+    dispatch(clearProfileState())
+    dispatch(clearBanners())
+    dispatch(clearProducts())
+    dispatch(clearDecodedAddress())
+    dispatch(clearCart())
+    dispatch(clearCurrentLocationFormattedAddres())
     navigation.reset({
       index: 0,
       routes: [{ name: "Login" }],
     });
-    removeData('isLoggedIn')
-    removeData('selectedAddress')
+    // removeData('isLoggedIn')
+    // removeData('selectedAddress')
+
+
     // Implement your actual logout logic (clear tokens, navigate to login)
   };
 
@@ -137,7 +153,7 @@ const ProfileScreen = ({ navigation }) => {
             <Text style={styles.infoLabel}>Profile</Text>
             <TouchableOpacity >
             </TouchableOpacity>
-            <TouchableOpacity style={styles.manageButton} onPress={() =>{
+            <TouchableOpacity style={styles.manageButton} onPress={() => {
               navigation.navigate("EditProfileScreen")
             }}>
               <Text style={styles.manageButtonText}>MANAGE</Text>
@@ -159,12 +175,19 @@ const ProfileScreen = ({ navigation }) => {
             <Text style={styles.infoValue}>{profileData.email ?? '--'}</Text>
           </View>
 
-          <View style={styles.infoItem}>
-            <Ionicons name={'home'} color={'#3498db'} size={22} />
-            <Text style={styles.infoValue}>
-              {displayAddress ??  '--'}
-            </Text>
+          <View>
+
+            <View style={styles.infoItem}>
+
+              <Ionicons name={'home'} color={'#3498db'} size={22} />
+              <Text style={styles.infoValue}>
+                {displayAddress
+                  ? `Last saved\n${displayAddress}`
+                  : '--'}
+              </Text>
+            </View>
           </View>
+
         </View>
 
         {/* --- Settings List Section --- */}

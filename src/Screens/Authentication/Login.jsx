@@ -3,7 +3,6 @@ import { clearError, sendMobileNumber, clearIsFetched, saveMobileNumberLocally, 
 import useKeyboardVisible from '../../Utils/IsKeyboardVisible';
 import Fonts from '../../../assets/fonts/Fonts';
 import { useFocusEffect } from '@react-navigation/native';
-import Video from "react-native-video";
 import LinearGradient from 'react-native-linear-gradient';
 import React, { useEffect, useRef, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context'

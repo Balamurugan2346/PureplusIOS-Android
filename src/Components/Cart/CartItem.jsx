@@ -37,10 +37,10 @@ const CartItem = ({ product, onClickIncrease, onClickDecrease }) => {
             <View style={styles.container}>
                 <Image source={require('../../../assets/images/watercan2.png')} style={{ width: 40, height: 40, marginRight: 10 }} />
                 <View style={{ flex: 1 }}>
-                    <Text style={[headerConfig]}>{product.name}</Text>
+                    <Text style={[headerConfig]}>{`prodID:${product.productId}`}</Text>
                     <View style={{ flexDirection: "row" }}>
-                        <Text style={[paratextConfig, { textDecorationLine: "line-through", marginRight: 3 }]}>{product.oldPrice}</Text>
-                        <Text style={[paratextConfig, { color: "green" }]}>{product.price}</Text>
+                        <Text style={[paratextConfig, { textDecorationLine: "line-through", marginRight: 3 }]}>{product.unitPrice}</Text>
+                        <Text style={[paratextConfig, { color: "green" }]}>{product.unitPrice}</Text>
                     </View>
                 </View>
 

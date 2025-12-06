@@ -5,7 +5,7 @@ import { useAppContext } from '../../Context/AppContext';
 import { useTheme } from '../../Context/ThemeContext';
 import Fonts from '../../../assets/fonts/Fonts';
 import { useRoute } from '@react-navigation/native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Image, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import CartButton from '../../Components/Cart/CartButton';
@@ -13,9 +13,11 @@ import PerksUI from '../../Components/GlassyPerksContainer';
 import AddressScreen from '../../Screens/Address/AddressScreen';
 import ImageWithTitleDesc from '../../Components/Product/ImageWithTitleDesc'
 import IconWithFeatures from '../../Components/Product/IconWithTextFeatures'
-import {WaterFeatures} from '../../Data/waterFeaturesData'
-
-const DetailedProductScreen = ({ navigation }) => {
+import { WaterFeatures } from '../../Data/waterFeaturesData'
+import { getSelectedAddress, getSelectedAddressId } from '../../Utils/GetSelectedAddress'
+import { useDispatch, useSelector } from 'react-redux';
+import { loadCartItems } from '../../Redux/Slices/CartSlice';
+const DetailedProductScreen = ({ navigation, userID }) => {
 
 
   //UI LOGIC AND STATE HANDLING 
@@ -27,6 +29,7 @@ const DetailedProductScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets()
 
   const { addToCart, cart, reduceQuantity, removeFromCart, usersAddress, height } = useAppContext()
+  const { cartItems, loading: cartLoading, error: cartError, isFetched: cartIsFetched } = useSelector((state) => state.cart)
   const { theme } = useTheme()
 
   const isInCart = cart.some(item => item.id === product.id);
@@ -34,9 +37,19 @@ const DetailedProductScreen = ({ navigation }) => {
   const cartItem = cart.find(item => item.id === product.id);
   const quantity = cartItem ? cartItem.quantity : 0;
 
+  // const isInCart = cartItems?.some(item => item.productId === product.productId);
+
+  // const cartItem = cartItems?.find(item => item.productId === product.productId);
+
+  // const quantity = cartItem ? cartItem.quantity : 0;
+
+
+  const dispatch = useDispatch()
+
 
   const [showAddressBottomSheet, setShowAddressBottomSheet] = useState(false)
-
+  const { addressList } = useSelector((state) => state.address)
+  const { error: ProfileError, loading: profileLoading, isFetched: isProfileApiFetched, profileData } = useSelector((state) => state.profile)
   const [refreshing, setRefreshing] = useState(false);
   const headerConfig = {
     color: theme.background,
@@ -56,47 +69,54 @@ const DetailedProductScreen = ({ navigation }) => {
         : usersAddress;
       return address;
     } else {
-      return "Address Not found"
+      return "Please choose address"
     }
   };
 
 
-  //API CALLS PLUS REFRESH LOGIC
-  // const dispatch = useDispatch();
-
-  // const { selectedProduct } = useSelector(state=>state.products)
-
   const handleRefresh = () => {
-    // console.log("reloading...")
-    // setRefreshing(true);
-    // dispatch(getDetailedProducts(productID))
-    // setTimeout(() => {
-    //   setRefreshing(false);
-    // }, 2000);
+    dispatch(loadCartItems(userID))
   }
 
-  // useEffect(() => {
-  //   // dispatch(getDetailedProducts(productID))
-  // }, [productID, dispatch])
 
-  // useEffect(()=>{
-  //   console.log("selected product",selectedProduct)
-  // },[selectedProduct])
+
+  const [selectedAddress, setSelectedAddress] = useState(null);
+
+
+  const getAddressFromStateList = async () => {
+    const id = await getSelectedAddressId();
+    if (addressList) {
+      console.log("list", addressList)
+      addressList.map((address, index) => {
+        if (address.id == id) {
+          setSelectedAddress(`${address.addressLine1} ${address.addressLine2}`)
+        }
+      })
+    }
+  }
+
+  useEffect(() => {
+    getAddressFromStateList()
+  }, [])
+
+  useEffect(() => {
+    console.log("selectedAddress:", selectedAddress);
+  }, [selectedAddress])
 
   return (
-    <View style={[styles.container, { marginBottom: insets.bottom + 10}]}>
-      <ScrollView style={{marginBottom:10}} refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+    <View style={[styles.container, { marginBottom: insets.bottom + 10 }]}>
+      <ScrollView style={{ marginBottom: 10 }} refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={() => handleRefresh()} />
       }>
-        
+
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           style={{ zIndex: 1, position: "absolute", marginVertical: insets.top + 10, marginHorizontal: insets.left + 10 }}
         >
           <AppNavButton color={theme.secondary} />
         </TouchableOpacity>
-{/* backgroundColor: theme.inputContainerBorder,  color for below image*/}
-        <View style={{  borderBottomLeftRadius: 20, borderBottomRightRadius: 20, height: height * 0.4, width: "100%", alignItems: "center" }}>
+        {/* backgroundColor: theme.inputContainerBorder,  color for below image*/}
+        <View style={{ borderBottomLeftRadius: 20, borderBottomRightRadius: 20, height: height * 0.4, width: "100%", alignItems: "center" }}>
           <Image source={require('../../../assets/images/watercanNew.png')} style={{ width: 300, height: 300, top: "8%" }} />
         </View>
 
@@ -105,13 +125,14 @@ const DetailedProductScreen = ({ navigation }) => {
           <View style={[styles.cardContainer, { backgroundColor: theme.cardContainer }]}>
 
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-              <Text style={[headerConfig, { color: theme.greyText, fontSize: Fonts.size.base }]}>{product.name}</Text>
+              <Text style={[headerConfig, { color: theme.greyText, fontSize: Fonts.size.base }]}>{product.productName}</Text>
               <TouchableOpacity onPress={() => setShowAddressBottomSheet(true)}>
-                <Text style={[paratextConfig, { color: theme.card, textDecorationLine: "underline" }]}>Change Address</Text>
+                <Text style={[paratextConfig, { color: theme.card, textDecorationLine: "underline" }]}>{selectedAddress ? 'Change' : 'Add'} Address</Text>
               </TouchableOpacity>
+
             </View>
             <View style={{ flexDirection: "row" }}>
-              <Text style={[paratextConfig,{marginTop:5}]}>Note:You can purchase a can in unit not a single can,              1 Unit = 3 Water can</Text>
+              <Text style={[paratextConfig, { marginTop: 5 }]}>{`Note:You can purchase a can in unit not a single can,              1 Unit = ${product.unitCount} Water can`}</Text>
             </View>
 
             <Line style={{ marginTop: 10, marginBottom: 10 }} />
@@ -120,15 +141,22 @@ const DetailedProductScreen = ({ navigation }) => {
             <View style={styles.detailsContainer}>
               <View style={{ flexDirection: "column", paddingBottom: 5 }}>
                 <Text style={[paratextConfig, { color: theme.secondaryText }]}>{`MRP (incl. of all taxes)`}</Text>
-                <Text style={[headerConfig, { color: theme.greyText }]}>{product.price}</Text>
+                <Text style={[headerConfig, { color: theme.greyText }]}>₹{ quantity>0 ? product.originalPrice * quantity : product.originalPrice}</Text>
+              </View>
+              <View style={{ flexDirection: "column", paddingBottom: 5 }}>
+                <Text style={[paratextConfig, { color: theme.secondaryText }]}>{`Total Price`}</Text>
+                <Text style={[headerConfig, { color: theme.greyText }]}>Unit Price:₹{ quantity>0 ? product.unitPrice * quantity : product.unitPrice}</Text>
               </View>
               <View style={{ flexDirection: "column", marginVertical: 5 }}>
                 <Text style={[paratextConfig, { color: theme.secondaryText }]}>Receiver's Name</Text>
-                <Text style={[paratextConfig, { color: theme.greyText }]}>I.Balamurugan</Text>
+                <Text style={[paratextConfig, { color: theme.greyText }]}>{profileData ? profileData.fullName : ''}</Text>
               </View>
               <View style={{ flexDirection: "column" }}>
                 <Text style={[paratextConfig, { color: theme.secondaryText }]}>Receiver's Address</Text>
-                <Text style={[paratextConfig, { color: theme.greyText }]}>{displayTrimmedAddress(usersAddress)}</Text>
+                {selectedAddress && (
+                  <Text style={[paratextConfig, { color: theme.greyText }]}>{displayTrimmedAddress(selectedAddress)
+                  }</Text>
+                )}
               </View>
             </View>
             <View style={{ paddingVertical: 5, alignItems: "center" }}>
@@ -138,7 +166,7 @@ const DetailedProductScreen = ({ navigation }) => {
                 borderColor: "#FDD835"
               }]}>
                 <Image source={require('../../../assets/images/thunder.png')} style={{ width: 20, height: 20 }} tintColor={"#5D4037"} />
-                <Text style={[paratextConfig, { fontFamily: Fonts.family.bold, color: "#5D4037", marginRight: 8 }]}>Estimated Delivery Time : 6 Mins</Text>
+                <Text style={[paratextConfig, { fontFamily: Fonts.family.bold, color: "#5D4037", marginRight: 8 }]}>Estimated Delivery Time : 35 Mins</Text>
               </View>
             </View>
 
@@ -149,12 +177,12 @@ const DetailedProductScreen = ({ navigation }) => {
 
         </View>
 
-<ImageWithTitleDesc/>
-   {WaterFeatures.map((feature,index)=>(
-     <IconWithFeatures iconName={feature.iconName} title={feature.header} description={feature.body} key={index}/>
-   ))}
+        <ImageWithTitleDesc />
+        {WaterFeatures.map((feature, index) => (
+          <IconWithFeatures iconName={feature.iconName} title={feature.header} description={feature.body} key={index} />
+        ))}
       </ScrollView>
-      <CartButton navigation={navigation} product={product} />
+      <CartButton navigation={navigation} product={product} cartItems={cartItems} />
 
 
       <BottomSheet

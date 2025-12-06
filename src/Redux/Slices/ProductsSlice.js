@@ -53,7 +53,7 @@ const productsSlice = createSlice({
       })
       .addCase(loadProducts.fulfilled, (state, action) => {
         state.loading = false;
-        state.productList = action.payload;
+        state.productList = action.payload.jsonData;
         state.isFetched = true;
       })
       .addCase(loadProducts.rejected, (state, action) => {

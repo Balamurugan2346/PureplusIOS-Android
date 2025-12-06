@@ -5,6 +5,7 @@ import bannerReducer from './Slices/BannerSlice';
 import AddressReducer from './Slices/AddressSlice'
 import LocationReducer from './Slices/LocationSlice'
 import ProfileReducer from './Slices/ProfileSlice'
+import CartReducer from './Slices/CartSlice'
 
 export const store = configureStore({
   reducer: {
@@ -13,7 +14,8 @@ export const store = configureStore({
     auth : AuthReducer,
     address:AddressReducer,
     locations:LocationReducer,
-    profile:ProfileReducer
+    profile:ProfileReducer,
+    cart:CartReducer
   },
   devTools: process.env.NODE_ENV !== 'production',
 });

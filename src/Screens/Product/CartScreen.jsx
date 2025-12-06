@@ -1,7 +1,7 @@
 import BottomSheet from '../../Components/BottomSheet';
 import Fonts from '../../../assets/fonts/Fonts';
-import  Ionicons  from 'react-native-vector-icons/Ionicons';
-import  LinearGradient  from 'react-native-linear-gradient';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import LinearGradient from 'react-native-linear-gradient';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,14 +14,16 @@ import ViewCoupon from '../../Components/ViewCoupon';
 import { useAppContext } from '../../Context/AppContext';
 import { useTheme } from '../../Context/ThemeContext';
 import AddressScreen from '../Address/AddressScreen';
+import { useSelector } from 'react-redux';
 const CartScreen = ({ navigation }) => {
 
 
 
   const insets = useSafeAreaInsets();
-  const { addToCart, cart, reduceQuantity, removeFromCart, usersAddress ,isBottomBarVisible } = useAppContext()
+  const { isBottomBarVisible } = useAppContext()
+  const { cartItems, loading: cartLoading, error: cartError, isFetched: cartIsFetched } = useSelector((state) => state.cart)
   const { theme } = useTheme()
-    const [showAddressBottomSheet, setShowAddressBottomSheet] = useState(false)
+  const [showAddressBottomSheet, setShowAddressBottomSheet] = useState(false)
   const headerConfig = {
     color: theme.greyText,
     fontFamily: Fonts.family.regular,
@@ -34,28 +36,17 @@ const CartScreen = ({ navigation }) => {
     fontSize: Fonts.size.xs
   }
 
-  console.log("cartssssssssssss", cart)
   return (
     <View style={[styles.container, { backgroundColor: theme.secondaryBackground, paddingBottom: isBottomBarVisible ? 0 : insets.bottom }]}>
 
 
       {/* topbar */}
-      <TopAppBar title='My Cart' navigation={navigation}/>
-      {/* <View style={[styles.topBar, { backgroundColor: theme.background, paddingTop: insets.top + 20 }]}>
-        <View style={{ flexDirection: "row" }}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-          >
-            <AppNavButton color={theme.secondary} />
-          </TouchableOpacity>
-          <Text style={[headerConfig, { marginLeft: 20, color: "white" }]}>My Cart</Text>
-        </View>
+      <TopAppBar title='My Cart' navigation={navigation} />
 
-      </View> */}
 
 
       {/* content */}
-      {cart && cart.length > 0 ? (
+      {cartItems && cartItems.length > 0 ? (
         <ScrollView>
 
           {/* coupon ui */}
@@ -87,7 +78,7 @@ const CartScreen = ({ navigation }) => {
 
             {/* cart items */}
             <View>
-              {cart.map((item) => (
+              {cartItems.map((item) => (
                 <CartItem
                   key={item.id}
                   product={item}
@@ -99,27 +90,13 @@ const CartScreen = ({ navigation }) => {
             </View>
           </LinearGradient>
 
-
-
-          <PaymentWithAddressBar navigation={navigation} showBottomSheet={()=>setShowAddressBottomSheet(true)} />
+          <PaymentWithAddressBar navigation={navigation} showBottomSheet={() => setShowAddressBottomSheet(true)} />
 
           {/* bill summary */}
           <OrderSummary />
 
           {/* payment button */}
-          <PaymentSection navigation={navigation}/>
-          {/* <LinearGradient colors={[theme.background,theme.background]} style={[styles.paymentContainer,{backgroundColor:theme.background}]}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-              <View>
-                <Text style={[headerConfig, { fontSize: Fonts.size.base , color:"white" }]}>Payment Method</Text>
-                <Image source={require('../../../assets/images/gpayLogo.png')} style={{width:30,height:30}} />
-              </View>
-              <TouchableOpacity style={[styles.payButton,{backgroundColor:theme.primary}]}>
-                <Text style={[paratextConfig,{color:"white"}]}>Check out Rs.234.87</Text>
-              </TouchableOpacity>
-            </View>
-          </LinearGradient> */}
-
+          <PaymentSection navigation={navigation} />
         </ScrollView>
       ) : (
         <View style={{ flexDirection: 'column', alignItems: 'center', paddingVertical: 20 }}>
@@ -139,10 +116,10 @@ const CartScreen = ({ navigation }) => {
         </View>
       )}
 
-            {showAddressBottomSheet && <BottomSheet  visible={showAddressBottomSheet} onClose={() => setShowAddressBottomSheet(false)}>
-                <AddressScreen navigation={navigation} onClose={() => setShowAddressBottomSheet(false)} />
-            </BottomSheet>
-            }
+      {showAddressBottomSheet && <BottomSheet visible={showAddressBottomSheet} onClose={() => setShowAddressBottomSheet(false)}>
+        <AddressScreen navigation={navigation} onClose={() => setShowAddressBottomSheet(false)} />
+      </BottomSheet>
+      }
 
     </View>
 
@@ -153,7 +130,7 @@ export default CartScreen;
 
 const styles = StyleSheet.create({
 
-  
+
   topBar: {
     flexDirection: "row",
     paddingHorizontal: 20,
@@ -166,9 +143,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-    paymentContainer: {
+  paymentContainer: {
     borderRadius: 20,
-    justifyContent:"center",
+    justifyContent: "center",
     padding: 12,
     margin: 10,
     elevation: 3,
@@ -196,6 +173,6 @@ const styles = StyleSheet.create({
   payButton: {
     paddingVertical: 8,
     paddingHorizontal: 16,
-    borderRadius:6
+    borderRadius: 6
   },
 });

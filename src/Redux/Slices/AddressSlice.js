@@ -4,11 +4,12 @@ import { AddressRepository } from "../../Repository/AddressRepository";
 // SAVE ADDRESS
 export const saveAddress = createAsyncThunk(
   "address/saveAddress",
-  async (body, { rejectWithValue }) => {
+  async ({body,onSuccess,onError}, { rejectWithValue }) => {
     try {
       const response = await AddressRepository.saveAddress(body);
-
-      return response?.data ?? response;
+      const result = response?.data ?? response;
+         if (onSuccess) onSuccess(result);
+      return result 
     } catch (err) {
       return rejectWithValue(err.response?.data || err.message);
     }

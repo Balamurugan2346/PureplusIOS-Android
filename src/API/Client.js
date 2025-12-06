@@ -43,6 +43,7 @@ apiClient.interceptors.request.use(
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log("token",token)
     }
 
     console.log("Normal API → Added Authorization:", config.url);

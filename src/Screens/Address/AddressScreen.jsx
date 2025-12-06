@@ -11,7 +11,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { clearAddressState, getAddressList, deleteAddress, saveSelectedAddress } from '../../Redux/Slices/AddressSlice'
 import AppLoading from '../../Components/AppLoading';
 import { fetchCurrentLocation } from '../../Utils/LocationUtil';
-import { decodeAddress } from '../../Redux/Slices/LocationSlice';
+import { decodeAddress, saveCurrentLocationFormattedAddress } from '../../Redux/Slices/LocationSlice';
 import { getData, storeData } from '../../OfflineStore/OfflineStore';
 import { useToast } from '../../Components/Toast/ToastProvider';
 import { getSelectedAddressId } from '../../Utils/GetSelectedAddress'
@@ -100,25 +100,7 @@ const AddressScreen = ({ onClose, navigation }) => {
         refreshLocation1()
     }, [refresh])
 
-    const handleLongPress = (id) => {
-        Alert.alert(
-            'Delete Address',
-            'Do you want to delete this address?',
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Delete',
-                    style: 'destructive',
-                    onPress: async () => {
-                        await dispatch(deleteAddress(id))
-                        dispatch(clearAddressState())
-                        dispatch(getAddressList(userID))
-                    },
-                },
-            ],
-            { cancelable: true }
-        );
-    };
+
 
     const syncAddress = () => {
         dispatch(clearAddressState())
@@ -133,7 +115,7 @@ const AddressScreen = ({ onClose, navigation }) => {
 
 
 
-    const [selectedId, setSelectedId] = useState(-1);
+    const [selectedId, setSelectedId] = useState("-1");
 
     useEffect(() => {
         const loadSelected = async () => {
@@ -143,17 +125,51 @@ const AddressScreen = ({ onClose, navigation }) => {
         loadSelected();
     }, []);
 
+
+    useEffect(()=>{
+        console.log("selectedIDDD",selectedId)
+    },[selectedId])
+
     const sortedAddressList = useMemo(() => {
-        if (!selectedId) return addressList;
+     if (selectedId === null || selectedId === undefined || selectedId === "-1") {
+    return addressList;
+}
+
 
         // Bring selected item to top
-        const selectedItem = addressList.find(a => a.id === selectedId);
+        const selectedItem = addressList.find(a => a.id.toString() === selectedId);
         if (!selectedItem) return addressList;
 
-        const remaining = addressList.filter(a => a.id !== selectedId);
+        const remaining = addressList.filter(a => a.id.toString() !== selectedId);
 
         return [selectedItem, ...remaining];
     }, [addressList, selectedId]);
+
+    const handleLongPress = (id) => {
+        Alert.alert(
+            'Delete Address',
+            'Do you want to delete this address?',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: async () => {
+                        if (id == selectedId) {
+                            showToast("Cant't able to delete",true)
+                            return
+                        } else {
+                            await dispatch(deleteAddress(id))
+                            syncAddress()
+                            showToast("Address deleted")
+                        }
+
+                    },
+                },
+            ],
+            { cancelable: true }
+        );
+    };
 
 
     return (
@@ -179,6 +195,7 @@ const AddressScreen = ({ onClose, navigation }) => {
                     <Text style={headerConfig}>Saved Address</Text>
                     {/* {!isLocationFetching && ( */}
                     <TouchableOpacity onPress={() => {
+                        onClose()
                         navigation.navigate('UsersLocationScreen', {
                             fromEdit: false,
                             lat: currentLocation.lat,
@@ -201,12 +218,12 @@ const AddressScreen = ({ onClose, navigation }) => {
 
                 <ScrollView style={{ marginTop: 10, flex: 1 }} contentContainerStyle={{ paddingBottom: 50 }}>
                     {console.log("se", selectedAddress)}
-                    {sortedAddressList.map((item, index) => (
+                    { sortedAddressList  && sortedAddressList.map((item, index) => (
                         <TouchableOpacity
                             key={index}
                             style={[
                                 styles.card,
-                                selectedId === item.id && {
+                                selectedId == item.id && {
                                     borderColor: "#4CAF50",
                                     borderWidth: 2,
                                     backgroundColor: "rgba(76,175,80,0.08)",
@@ -216,6 +233,11 @@ const AddressScreen = ({ onClose, navigation }) => {
                                 setUsersAddress(item.address);
                                 // dispatch(saveSelectedAddress(item.id));
                                 storeData('selectedAddress', JSON.stringify(item))
+                                storeData('selectedAddressID',item.id.toString()) //now we only store id instead whole address
+                                
+                                //for live reflection in ui in dashboard purpose only
+                                dispatch(saveCurrentLocationFormattedAddress(`${item.addressLine1} ${item.addressLine2}`))
+
                                 onClose();
                                 showToast("Address Added");
                             }}
@@ -241,11 +263,13 @@ const AddressScreen = ({ onClose, navigation }) => {
                                 {/* RIGHT ICONS */}
                                 <View style={styles.iconContainer}>
                                     <TouchableOpacity
-                                        onPress={() =>
-                                            navigation.navigate('UsersLocationScreen', {
-                                                fromEdit: true,
-                                                data: item
-                                            })
+                                        onPress={() => {
+                                            showToast("Under development", true)
+                                        }
+                                            // navigation.navigate('UsersLocationScreen', {
+                                            //     fromEdit: true,
+                                            //     data: item
+                                            // })
                                         }>
                                         <Image source={require("../../../assets/images/edit.png")} style={styles.icon} />
                                     </TouchableOpacity>

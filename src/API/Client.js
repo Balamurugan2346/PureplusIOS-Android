@@ -4,7 +4,7 @@ import EndPoint from './EndPoint';
 import { getData } from '../OfflineStore/OfflineStore';
 
 
-const API_BASE_URL = "https://pureplus-backend.onrender.com/api"
+const API_BASE_URL = "https://pureplusapp.in/api"
 
 
 const apiClient = axios.create({

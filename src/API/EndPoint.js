@@ -36,5 +36,7 @@ export default {
 
     //CART
     GETCART:'/EndUser/get-cart',
+    ADDTOCART:'/EndUser/insert-multiple-cart-items',
+    UPDATECART:'/EndUser/update-cart-items'
 
 };

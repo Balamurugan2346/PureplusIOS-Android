@@ -15,6 +15,48 @@ export const loadCartItems = createAsyncThunk(
   }
 );
 
+// addTOCart
+export const addToCart = createAsyncThunk(
+  'cart/addToCart',
+  async ({cart,onSuccess,onError}, { rejectWithValue }) => {
+    try {
+      const response = await CartRepository.addToCart(cart);
+      console.log('cart added in slice', response);
+      // If API returns { data: {...} }
+      const result = response?.data ?? response;
+
+      if (onSuccess) onSuccess(result);
+
+      return result;
+    } catch (err) {
+      if (onError) onError(err)
+      return rejectWithValue(err.response?.data || err.message);
+    }
+  }
+);
+
+
+// updateCart
+export const updateCart = createAsyncThunk(
+  'cart/updateCart',
+  async ({cart,onSuccess,onError} ,{ rejectWithValue }) => {
+    try {
+      console.log("cart going to api",cart)
+      const response = await CartRepository.updateCart(cart);
+      console.log('cart updated in slice', response);
+      // If API returns { data: {...} }
+      const result = response?.data ?? response;
+
+      if (onSuccess) onSuccess(result);
+
+      return result;
+    } catch (err) {
+      if (onError) onError(err)
+      return rejectWithValue(err.response?.data || err.message);
+    }
+  }
+);
+
 // Optional: add item to cart, remove, etc., can add more thunks here
 
 const cartSlice = createSlice({
@@ -24,6 +66,10 @@ const cartSlice = createSlice({
     loading: false,     // loading state for async operations
     error: null,        // error if any
     isFetched: false,   // flag to check if fetched at least once
+
+    cartUpdateLoading: false,
+    cartUpdateError: null,
+    cartUpdateFetched: false
   },
   reducers: {
     clearCart: (state) => {
@@ -31,6 +77,9 @@ const cartSlice = createSlice({
       state.loading = false;
       state.error = null;
       state.isFetched = false;
+      state.cartUpdateLoading = false,
+        state.cartUpdateFetched = false,
+        state.cartUpdateError = null
     }
   },
   extraReducers: (builder) => {
@@ -50,6 +99,51 @@ const cartSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
         state.isFetched = false;
+      })
+
+
+
+      // update Cart Items
+      .addCase(updateCart.pending, (state) => {
+        state.cartUpdateLoading = true;
+        state.cartUpdateFetched = false;
+      })
+      .addCase(updateCart.fulfilled, (state, action) => {
+        state.cartUpdateLoading = false;
+        state.cartUpdateFetched = true;
+
+        //UI OPTIMIZED BUT NO NEED
+        // const updatedItem = action.payload;
+
+        // const index = state.cartItems.findIndex(
+        //   (item) => item.id === updatedItem.id
+        // );
+
+        // if (index !== -1) {
+        //   state.cartItems[index].quantity = updatedItem.quantity;
+        // }
+      })
+      .addCase(updateCart.rejected, (state, action) => {
+        state.cartUpdateLoading = false;
+        state.cartUpdateError = action.payload;
+        state.cartUpdateFetched = false;
+      })
+
+
+
+      // add Cart Items
+      .addCase(addToCart.pending, (state) => {
+        state.cartUpdateLoading = true;
+        state.cartUpdateFetched = false;
+      })
+      .addCase(addToCart.fulfilled, (state, action) => {
+        state.cartUpdateLoading = false;
+        state.cartUpdateFetched = true;
+      })
+      .addCase(addToCart.rejected, (state, action) => {
+        state.cartUpdateLoading = false;
+        state.cartUpdateError = action.payload;
+        state.cartUpdateFetched = false;
       });
   },
 });
@@ -59,6 +153,10 @@ function resetCartState(state) {
   state.loading = false;
   state.error = null;
   state.isFetched = false;
+
+  state.cartUpdateLoading = false,
+    state.cartUpdateFetched = false,
+    state.cartUpdateError = null
 }
 
 export const { clearCart } = cartSlice.actions;

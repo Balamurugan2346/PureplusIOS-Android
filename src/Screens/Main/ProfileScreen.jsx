@@ -21,6 +21,7 @@ import { clearProducts } from '../../Redux/Slices/ProductsSlice';
 import { clearAddressState } from '../../Redux/Slices/AddressSlice';
 import { clearCurrentLocationFormattedAddres, clearDecodedAddress } from '../../Redux/Slices/LocationSlice';
 import { clearCart } from '../../Redux/Slices/CartSlice';
+import { logout } from '../../Redux/LogoutActions';
 
 // --- Data Structure for the main list items ---
 const SETTINGS_ITEMS = [
@@ -73,14 +74,15 @@ const ProfileScreen = ({ navigation }) => {
     navigation.navigate(key)
   };
 
-  const handleLogout = () => {
-    clearDataBeforeLogout()
-    dispatch(clearProfileState())
-    dispatch(clearBanners())
-    dispatch(clearProducts())
-    dispatch(clearDecodedAddress())
-    dispatch(clearCart())
-    dispatch(clearCurrentLocationFormattedAddres())
+  const handleLogout = async () => {
+    await clearDataBeforeLogout()
+    dispatch(logout());  
+    // dispatch(clearProfileState())
+    // dispatch(clearBanners())
+    // dispatch(clearProducts())
+    // dispatch(clearDecodedAddress())
+    // dispatch(clearCart())
+    // dispatch(clearCurrentLocationFormattedAddres())
     navigation.reset({
       index: 0,
       routes: [{ name: "Login" }],
@@ -156,7 +158,7 @@ const ProfileScreen = ({ navigation }) => {
             <TouchableOpacity style={styles.manageButton} onPress={() => {
               navigation.navigate("EditProfileScreen")
             }}>
-              <Text style={styles.manageButtonText}>MANAGE</Text>
+              <Text style={styles.manageButtonText}>Edit profile</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.infoItem}>

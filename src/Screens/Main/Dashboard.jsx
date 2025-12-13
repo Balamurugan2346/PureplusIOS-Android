@@ -289,15 +289,16 @@ const Dashboard = ({ navigation }) => {
   //RENDER UI CONDITION
   const isAddressBarLoading = (isGEOcodingApiLoading || isLocationFetching)
 
+  const dasboardLoading =  loading || productsLoading || profileLoading || cartLoading
 
   return (
     <View
       style={[styles.container, { backgroundColor: theme.secondaryBackground }]}
     >
 
-      {/* {isLocationFetching && (
-            <AppLoading isVisible={isLocationFetching}/>
-          )} */}
+      {dasboardLoading && (
+            <AppLoading isVisible={dasboardLoading}/>
+          )}
 
       {/* //show dialog after demo or remodel the dialog */}
       {/* {isDialogVisible && <CustomDialog visible={isDialogVisible} setVisible={setIsDialogVisible} />} */}

@@ -13,6 +13,7 @@ import {
     View,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import AppButton from '../AppButton';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android') {
@@ -20,11 +21,10 @@ if (Platform.OS === 'android') {
         UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-const PayButtonWithAddressBar = ({ navigation ,showBottomSheet}) => {
+const PayButtonWithAddressBar = ({ displayName, receiversDetails, navigation, showBottomSheet, address, isOrderForSelf }) => {
 
     const { theme } = useTheme()
 
-    const { addToCart, cart, reduceQuantity, removeFromCart, usersAddress } = useAppContext()
 
     const headerConfig = {
         color: '#333',
@@ -73,10 +73,10 @@ const PayButtonWithAddressBar = ({ navigation ,showBottomSheet}) => {
                         fontSize: Fonts.size.base,
                         color: theme.greyText,
                     }]}>
-                        Delivering To Other
+                        {` Delivering To ${displayName}`}
                     </Text>
                     <Text style={[paratextConfig, { color: '#666' }]}>
-                        {/* {displayTrimmedAddress(usersAddress)} */}
+                        {displayTrimmedAddress(address)}
                     </Text>
                 </View>
 
@@ -88,19 +88,18 @@ const PayButtonWithAddressBar = ({ navigation ,showBottomSheet}) => {
                 />
             </TouchableOpacity>
 
-            {/* Optional extra info below (animated by height change) */}
-            {expanded && (
-                <View style={styles.expandedSection}>
+            <AppButton title={"Change the address"} borderOnly={true} onAction={() => {
+                showBottomSheet()
+            }} />
+            {/* <View style={styles.expandedSection}>
                     <View style={{ justifyContent: "center" }}>
-                        <TouchableOpacity style={{ flexDirection: "row" }} onPress={() => showBottomSheet()}  >
-                            <Text style={{ color: theme.primary, textDecorationLine: "underline" }}>Change the address?
-                            </Text>
-                        </TouchableOpacity>
+                      
+                        // <TouchableOpacity style={{ flexDirection: "row" }} onPress={() => showBottomSheet()}  >
+                        //     <Text style={{ color: theme.primary, textDecorationLine: "underline" }}>Change the address?
+                        //     </Text>
+                        // </TouchableOpacity>
                     </View>
-
-                    <Image source={require('../../../assets/images/StaticMapView.jpeg')} style={{ height: 300, width: "100%", marginTop: 10 }} />
-                </View>
-            )}
+                </View> */}
         </View>
     );
 };
@@ -120,7 +119,6 @@ const styles = StyleSheet.create({
     },
     row: {
         flexDirection: "row",
-        alignItems: "center",
         justifyContent: "space-around"
     },
     iconOuter: {

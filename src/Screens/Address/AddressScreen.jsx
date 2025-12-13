@@ -263,8 +263,9 @@ const AddressScreen = ({ onClose, navigation }) => {
                                 {/* RIGHT ICONS */}
                                 <View style={styles.iconContainer}>
                                     <TouchableOpacity
+                                    style={{opacity:0}}
                                         onPress={() => {
-                                            showToast("Under development", true)
+                                            // showToast("Under development", true)
                                         }
                                             // navigation.navigate('UsersLocationScreen', {
                                             //     fromEdit: true,
@@ -343,7 +344,7 @@ const styles = StyleSheet.create({
     },
     card: {
         padding: 12,
-        backgroundColor: "#fff",
+        backgroundColor: "#f2f2f2",
         borderRadius: 10,
         marginVertical: 8,
         // elevation: 2,

@@ -49,6 +49,7 @@ const DetailedProductScreen = ({ navigation, userID }) => {
 
   const [showAddressBottomSheet, setShowAddressBottomSheet] = useState(false)
   const { addressList } = useSelector((state) => state.address)
+  const { display_name, currentLocationFormattedAddress } = useSelector((state) => state.locations)
   const { error: ProfileError, loading: profileLoading, isFetched: isProfileApiFetched, profileData } = useSelector((state) => state.profile)
   const [refreshing, setRefreshing] = useState(false);
   const headerConfig = {
@@ -80,24 +81,70 @@ const DetailedProductScreen = ({ navigation, userID }) => {
 
 
 
-  const [selectedAddress, setSelectedAddress] = useState(null);
 
+
+  const [selectedAddress, setSelectedAddress] = useState(null);
+  const [receiversDetails, setReceiversDetails] = useState(null)
+  //  useState({
+  //   receiverName:'',
+  //   receiverNumber:'',
+  //   receiversAddress:''
+  // })
 
   const getAddressFromStateList = async () => {
     const id = await getSelectedAddressId();
-    if (addressList) {
-      console.log("list", addressList)
-      addressList.map((address, index) => {
-        if (address.id == id) {
-          setSelectedAddress(`${address.addressLine1} ${address.addressLine2}`)
-        }
-      })
+
+    if (!addressList?.length) return;
+
+    const matched = addressList.find(addr => addr.id == id);
+
+    if (matched) {
+      setSelectedAddress(
+        `${matched.addressLine1 ?? ''} ${matched.addressLine2 ?? ''}`.trim()
+      );
+
+      setReceiversDetails({
+        receiverName: matched.receiverName ?? '',
+        receiverNumber: matched.receiverNumber ?? '',
+      });
+    } else {
+      setSelectedAddress(currentLocationFormattedAddress ?? null);
+      setReceiversDetails(null);
     }
-  }
+  };
+
+  const isOrderForSelf = (() => {
+    if (!receiversDetails) return true;
+
+    const receiverName = receiversDetails.receiverName
+      ?.trim()
+      .normalize("NFC")
+      .toLowerCase();
+
+    const profileName = profileData?.fullName
+      ?.trim()
+      .normalize("NFC")
+      .toLowerCase();
+
+    if (receiversDetails.receiverNumber?.trim()) return false;
+
+    console.log("receiverName:", `"${receiverName}"`);
+    console.log("profileName:", `"${profileName}"`);
+    console.log("name match", receiverName === profileName);
+
+    return receiverName === profileName;
+  })();
+
+
+
+  const displayReceiverName = isOrderForSelf
+    ? profileData?.fullName
+    : receiversDetails?.receiverName || profileData?.fullName;
+
 
   useEffect(() => {
     getAddressFromStateList()
-  }, [])
+  }, [currentLocationFormattedAddress])
 
   useEffect(() => {
     console.log("selectedAddress:", selectedAddress);
@@ -141,23 +188,34 @@ const DetailedProductScreen = ({ navigation, userID }) => {
             <View style={styles.detailsContainer}>
               <View style={{ flexDirection: "column", paddingBottom: 5 }}>
                 <Text style={[paratextConfig, { color: theme.secondaryText }]}>{`MRP (incl. of all taxes)`}</Text>
-                <Text style={[headerConfig, { color: theme.greyText }]}>₹{ quantity>0 ? product.originalPrice * quantity : product.originalPrice}</Text>
+                <Text style={[headerConfig, { color: theme.greyText }]}>₹{quantity > 0 ? product.originalPrice * quantity : product.originalPrice}</Text>
               </View>
               <View style={{ flexDirection: "column", paddingBottom: 5 }}>
                 <Text style={[paratextConfig, { color: theme.secondaryText }]}>{`Total Price`}</Text>
-                <Text style={[headerConfig, { color: theme.greyText }]}>Unit Price:₹{ quantity>0 ? product.unitPrice * quantity : product.unitPrice}</Text>
+                <Text style={[headerConfig, { color: theme.greyText }]}>Unit Price:₹{quantity > 0 ? product.unitPrice * quantity : product.unitPrice}</Text>
               </View>
               <View style={{ flexDirection: "column", marginVertical: 5 }}>
-                <Text style={[paratextConfig, { color: theme.secondaryText }]}>Receiver's Name</Text>
-                <Text style={[paratextConfig, { color: theme.greyText }]}>{profileData ? profileData.fullName : ''}</Text>
+                <View style={{ flexDirection: "row", alignItems: "center", marginVertical: 5 }}>
+                  <Text style={[paratextConfig, { color: theme.secondaryText }]}>
+                    Receiver's Name
+                  </Text>
+                  {!isOrderForSelf && (
+                    <Text style={[paratextConfig, { color: "#F44336", marginLeft: 5 }]}>
+                      (Someone else)
+                    </Text>
+                  )}
+                </View>
+
+                <Text style={[paratextConfig, { color: theme.greyText }]}>{displayReceiverName}</Text>
               </View>
-              <View style={{ flexDirection: "column" }}>
-                <Text style={[paratextConfig, { color: theme.secondaryText }]}>Receiver's Address</Text>
-                {selectedAddress && (
+              {selectedAddress && (
+                <View style={{ flexDirection: "column" }}>
+                  <Text style={[paratextConfig, { color: theme.secondaryText }]}>Receiver's Address</Text>
                   <Text style={[paratextConfig, { color: theme.greyText }]}>{displayTrimmedAddress(selectedAddress)
                   }</Text>
-                )}
-              </View>
+                </View>
+              )}
+
             </View>
             <View style={{ paddingVertical: 5, alignItems: "center" }}>
               <View style={[styles.deliveryTag, {

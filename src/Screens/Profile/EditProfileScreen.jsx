@@ -74,7 +74,9 @@ const EditProfileScreen = ({ navigation }) => {
           dispatch(clearProfileState())
           dispatch(saveProfileData(data))
           showToast(`SUCCESS: ProfileUpdated Successfully`)
+          setTimeout(()=>{
           navigation.goBack();
+          },1000)
         },
         onError: (err) => {
           showToast(`ERROR: ${err} while updating`, true)

@@ -10,7 +10,7 @@ import { useToast } from '../../Components/Toast/ToastProvider';
 import { getData, storeData } from '../../OfflineStore/OfflineStore';
 import { saveCurrentLocationFormattedAddress } from '../../Redux/Slices/LocationSlice';
 
-const AddressInputForm = ({ navigation, pickedAddress ,onNavigate }) => {
+const AddressInputForm = ({ navigation, pickedAddress, onNavigate }) => {
     const { theme } = useTheme();
     const [userID, setUserID] = useState(-1)
     const dispatch = useDispatch();
@@ -48,6 +48,11 @@ const AddressInputForm = ({ navigation, pickedAddress ,onNavigate }) => {
 
 
     const handleChange = (field, value) => {
+        if (field === 'receiverNumber') {
+            value = value.replace(/\D/g, ''); // remove non-numeric
+            if (value.length > 10) value = value.slice(0, 10);
+        }
+
         setFormData(prev => ({ ...prev, [field]: value }));
 
         if (requiredFields.includes(field) && !value.trim()) {
@@ -131,6 +136,8 @@ const AddressInputForm = ({ navigation, pickedAddress ,onNavigate }) => {
             }
             if (!formData.receiverNumber?.trim()) {
                 errors.receiverNumber = "Receiver phone number is required";
+            } else if (formData.receiverNumber.length !== 10) {
+                errors.receiverNumber = "Receiver phone number must be 10 digits";
             }
         }
 
@@ -163,8 +170,8 @@ const AddressInputForm = ({ navigation, pickedAddress ,onNavigate }) => {
                     onSuccess: async (data) => {
                         console.log("data from api0addre0", data.addressId)
                         await storeData("selectedAddressID", data.addressId.toString());
-                         //for live reflection in ui in dashboard purpose only  (((((need to work)))))
-                        // dispatch(saveCurrentLocationFormattedAddress(`${item.addressLine1} ${item.addressLine2}`))
+                        //for live reflection in ui in dashboard purpose only  (((((need to work)))))
+                        dispatch(saveCurrentLocationFormattedAddress(`${formData.addressLine1} ${formData.addressLine2}`))
                     },
                     onError: () => {
                         showToast("Failed to save address", true);
@@ -194,7 +201,7 @@ const AddressInputForm = ({ navigation, pickedAddress ,onNavigate }) => {
             // 3️⃣ All Good
             //----------------------------------------
             showToast("Address added successfully");
-             onNavigate()
+            onNavigate()
         } catch (e) {
             showToast("Unexpected error occurred", true);
         }

@@ -28,20 +28,16 @@ const DetailedProductScreen = ({ navigation, userID }) => {
 
   const insets = useSafeAreaInsets()
 
-  const { addToCart, cart, reduceQuantity, removeFromCart, usersAddress, height } = useAppContext()
-  const { cartItems, loading: cartLoading, error: cartError, isFetched: cartIsFetched } = useSelector((state) => state.cart)
+  const { height } = useAppContext()
+  const { cartItems, loading: cartLoading, error: cartError, isFetched: cartIsFetched,cartUpdateLoading } = useSelector((state) => state.cart)
   const { theme } = useTheme()
 
-  const isInCart = cart.some(item => item.id === product.id);
 
-  const cartItem = cart.find(item => item.id === product.id);
+  const isInCart = cartItems?.some(item => item.productId === product.productId);
+
+  const cartItem = cartItems?.find(item => item.productId === product.productId);
+
   const quantity = cartItem ? cartItem.quantity : 0;
-
-  // const isInCart = cartItems?.some(item => item.productId === product.productId);
-
-  // const cartItem = cartItems?.find(item => item.productId === product.productId);
-
-  // const quantity = cartItem ? cartItem.quantity : 0;
 
 
   const dispatch = useDispatch()
@@ -52,6 +48,8 @@ const DetailedProductScreen = ({ navigation, userID }) => {
   const { display_name, currentLocationFormattedAddress } = useSelector((state) => state.locations)
   const { error: ProfileError, loading: profileLoading, isFetched: isProfileApiFetched, profileData } = useSelector((state) => state.profile)
   const [refreshing, setRefreshing] = useState(false);
+
+  
   const headerConfig = {
     color: theme.background,
     fontFamily: Fonts.family.semiBold,
@@ -179,7 +177,10 @@ const DetailedProductScreen = ({ navigation, userID }) => {
 
             </View>
             <View style={{ flexDirection: "row" }}>
-              <Text style={[paratextConfig, { marginTop: 5 }]}>{`Note:You can purchase a can in unit not a single can,              1 Unit = ${product.unitCount} Water can`}</Text>
+              <View>
+              <Text style={[paratextConfig, { marginTop: 5 }]}>{`Note:You can purchase a can in unit not a single can, `}</Text>
+              <Text style={paratextConfig}>{`1 Unit = ${product.unitCount} Water can`}</Text>
+              </View>
             </View>
 
             <Line style={{ marginTop: 10, marginBottom: 10 }} />
@@ -240,7 +241,7 @@ const DetailedProductScreen = ({ navigation, userID }) => {
           <IconWithFeatures iconName={feature.iconName} title={feature.header} description={feature.body} key={index} />
         ))}
       </ScrollView>
-      <CartButton navigation={navigation} product={product} cartItems={cartItems} />
+      <CartButton navigation={navigation} product={product} />
 
 
       <BottomSheet

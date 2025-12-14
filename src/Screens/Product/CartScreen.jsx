@@ -111,7 +111,7 @@ const CartScreen = ({ navigation }) => {
 
 
   const synCCart = () => {
-    dispatch(clearCart())
+    // dispatch(clearCart()) no need its weird when seeing white screen when syncing even there is data 
     dispatch(loadCartItems(userId))
   }
 

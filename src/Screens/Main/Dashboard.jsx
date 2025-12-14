@@ -43,10 +43,11 @@ import { fetchCurrentLocation } from '../../Utils/LocationUtil';
 import AppLoading from '../../Components/AppLoading';
 import ShimmerPlaceholder from 'react-native-shimmer-placeholder';
 import { useToast } from '../../Components/Toast/ToastProvider';
-import { getData, removeData } from '../../OfflineStore/OfflineStore';
+import { clearDataBeforeLogout, getData, removeData } from '../../OfflineStore/OfflineStore';
 import { clearAddressState, getAddressList } from '../../Redux/Slices/AddressSlice';
 import { getSelectedAddressId } from '../../Utils/GetSelectedAddress';
 import { clearCart, loadCartItems } from '../../Redux/Slices/CartSlice';
+import { logout } from '../../Redux/LogoutActions';
 
 // Placeholder Carousel Data
 const bannerData = [
@@ -151,7 +152,7 @@ const Dashboard = ({ navigation }) => {
   //ADDRESS LIST
   const { addressList } = useSelector((state) => state.address)
 
-  const { cartItems, loading: cartLoading, error: cartError, isFetched: cartIsFetched } = useSelector((state) => state.cart)
+  const { cartItems, loading: cartLoading, error: cartError, isFetched: cartIsFetched, cartUpdateLoading } = useSelector((state) => state.cart)
 
 
   useEffect(() => {
@@ -174,8 +175,8 @@ const Dashboard = ({ navigation }) => {
           dispatch(decodeAddress({ lat: pos.latitude, long: pos.longitude }));
           console.log("before sending to api", "lat", pos.latitude, "lonh", pos.longitude)
         }
-        if(!currentLocationAddressFetched){
-          dispatch(decodeCurrentLocationAddress({lat:pos.latitude,long:pos.longitude}))
+        if (!currentLocationAddressFetched) {
+          dispatch(decodeCurrentLocationAddress({ lat: pos.latitude, long: pos.longitude }))
         }
       }
       console.log("position", pos)
@@ -289,7 +290,7 @@ const Dashboard = ({ navigation }) => {
   //RENDER UI CONDITION
   const isAddressBarLoading = (isGEOcodingApiLoading || isLocationFetching)
 
-  const dasboardLoading =  loading || productsLoading || profileLoading || cartLoading
+  const dasboardLoading = loading || productsLoading || profileLoading || cartLoading || cartUpdateLoading
 
   return (
     <View
@@ -297,8 +298,8 @@ const Dashboard = ({ navigation }) => {
     >
 
       {dasboardLoading && (
-            <AppLoading isVisible={dasboardLoading}/>
-          )}
+        <AppLoading isVisible={dasboardLoading} />
+      )}
 
       {/* //show dialog after demo or remodel the dialog */}
       {/* {isDialogVisible && <CustomDialog visible={isDialogVisible} setVisible={setIsDialogVisible} />} */}
@@ -319,11 +320,12 @@ const Dashboard = ({ navigation }) => {
               } else {
                 if (profileLoading) return
                 showToast("Session expired Please login again to continue!", true)
+                clearDataBeforeLogout()
+                dispatch(logout());
                 navigation.reset({
                   index: 0,
                   routes: [{ name: "Login" }],
                 });
-                removeData('isLoggedIn')
               }
             }}>
               <Image source={require('../../../assets/images/person.png')} style={{ width: 30, height: 30, borderRadius: 30 }} />
@@ -501,13 +503,12 @@ const Dashboard = ({ navigation }) => {
               <ProductCard1
                 key={index}
                 product={product}
-                onPress={() =>
-                {
-                  if(userID !=-1){
-                    navigation.navigate("DetailedProductScreen", { product ,userID })
+                onPress={() => {
+                  if (userID != -1) {
+                    navigation.navigate("DetailedProductScreen", { product, userID })
                   }
                 }
-                  
+
                 }
                 onInfoClick={() => {
                   setShowBottomSheet((prev) => !prev);

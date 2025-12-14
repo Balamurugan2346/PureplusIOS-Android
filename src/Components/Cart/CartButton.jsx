@@ -1,5 +1,5 @@
 import Fonts from '../../../assets/fonts/Fonts';
-import React, { useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Animated, {
   Easing,
@@ -7,31 +7,43 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { useAppContext } from "../../Context/AppContext"; // your context
 import { useTheme } from "../../Context/ThemeContext"; // your theme
+import { useDispatch, useSelector } from 'react-redux';
+import { addToCart, loadCartItems, updateCart } from '../../Redux/Slices/CartSlice';
+import { useUserId } from '../../customHooks/useUserID';
+import { useToast } from '../Toast/ToastProvider';
 
-export default function CartButton({ product, navigation, cartItems }) {
-  const { addToCart, reduceQuantity, removeFromCart, cart } = useAppContext();
+export default function CartButton({ product, navigation }) {
   const { theme } = useTheme();
 
-  const cartItem = cart.find((item) => item.id === product.id);
+  const { cartItems, loading: cartLoading, error: cartError, isFetched: cartIsFetched } = useSelector((state) => state.cart)
+
+
+
+
+  const {showToast} = useToast()
+
+  const isInCart = cartItems?.some(item => item.productId === product.productId);
+
+  const cartItem = cartItems?.find(item => item.productId === product.productId);
+
   const quantity = cartItem ? cartItem.quantity : 0;
-
-
-  // const isInCart = cartItems?.some(item => item.productId === product.productId);
-
-  // const cartItem = cartItems?.find(item => item.productId === product.productId);
-
-  // const quantity = cartItem ? cartItem.quantity : 0;
 
   const added = quantity > 0;
 
+  const dispatch = useDispatch()
+
   // Animated width value
+
+
+  const { userId, loading: userIDLoading } = useUserId()
 
 
   const width = useSharedValue(added ? "47%" : "82%");
 
   const viewCartWidth = useSharedValue(added ? '50%' : '15%')
+
+
 
 
   const headerConfig = {
@@ -64,21 +76,83 @@ export default function CartButton({ product, navigation, cartItems }) {
   const animatedCartButtonStyle = useAnimatedStyle(() => ({
     width: viewCartWidth.value,
   }));
-  const handleAdd = () => {
-    addToCart(product);
-  };
 
-  const handleIncrement = () => {
-    addToCart(product);
-  };
+
+
+  const handleAdd = () => {
+    if (!added && !userIDLoading && userId) {
+      dispatch(
+        addToCart({
+          cart: {
+            userId: userId,
+            items: [
+              {
+                productId: product.productId,
+                quantity: 1
+              }
+            ]
+          },
+          onSuccess: () => {
+            dispatch(loadCartItems(userId))
+          },
+          onError: () => {
+            showToast("Unable to add product !!", true,{alignTop:true})
+          }
+        })
+      )
+    } else {
+      if (cartItem) {
+        dispatch(
+          updateCart({
+            cart: {
+              id: cartItem.id,
+              userId: cartItem.userId,
+              productId: cartItem.productId,
+              quantity: cartItem.quantity + 1,
+            },
+            onSuccess: () => {
+              dispatch(loadCartItems(cartItem.userId));
+            },
+            onError: () => {
+              showToast("Unable to add quantity !!", true,{alignTop:true})
+            }
+          })
+        )
+      }
+    }
+  }
+
+
 
   const handleDecrement = () => {
-    if (quantity > 1) {
-      reduceQuantity(product);
+    if (quantity >= 1) {
+      dispatch(
+        updateCart({
+          cart: {
+            id: cartItem.id,
+            userId: cartItem.userId,
+            productId: cartItem.productId,
+            quantity: cartItem.quantity - 1,
+          },
+          onSuccess: () => {
+            // 👇 YOU control this
+            dispatch(loadCartItems(cartItem.userId));
+          },
+          onError: () => {
+            console.log("called")
+            showToast("Unable to remove quantity !!", true,{alignTop:true})
+          }
+        })
+      )
     } else {
-      removeFromCart(product.id);
+
     }
   };
+
+
+  useEffect(() => {
+    console.log("cart item", cartItem)
+  }, [])
 
   return (
     <View style={[styles.container, { backgroundColor: theme.card }]}>
@@ -92,9 +166,9 @@ export default function CartButton({ product, navigation, cartItems }) {
               style={styles.cartIcon}
               tintColor={"white"}
             />
-            {cart.length > 0 && (
+            {cartItems.length > 0 && (
               <View style={styles.badge}>
-                <Text style={styles.badgeText}>{cart.length}</Text>
+                <Text style={styles.badgeText}>{cartItems.length}</Text>
               </View>
             )}
           </View>
@@ -129,7 +203,7 @@ export default function CartButton({ product, navigation, cartItems }) {
             </TouchableOpacity>
             <Text style={styles.qtyNumber}>{quantity}</Text>
             <TouchableOpacity
-              onPress={handleIncrement}
+              onPress={handleAdd}
               style={styles.qtyBtn}
               activeOpacity={0.7}
             >

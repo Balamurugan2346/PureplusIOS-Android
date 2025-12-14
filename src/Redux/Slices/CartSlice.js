@@ -86,7 +86,7 @@ const cartSlice = createSlice({
     builder
       // Load Cart Items
       .addCase(loadCartItems.pending, (state) => {
-        resetCartState(state);
+        // resetCartState(state);
         state.loading = true;
         state.isFetched = false;
       })

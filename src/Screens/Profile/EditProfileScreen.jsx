@@ -19,9 +19,11 @@ import EmailInput from '../../Components/Inputs/EmailInput';
 import NumberInput from '../../Components/Inputs/NumberInput';
 import { useToast } from '../../Components/Toast/ToastProvider';
 import { useTheme } from '../../Context/ThemeContext';
-import { clearProfileState, saveProfileData, updateUserProfile } from '../../Redux/Slices/ProfileSlice';
+import { clearProfileState, getUserProfile, saveProfileData, updateUserProfile } from '../../Redux/Slices/ProfileSlice';
 import AppLoading from '../../Components/AppLoading';
 import { opacity } from 'react-native-reanimated/lib/typescript/Colors';
+import App from '../../../App';
+import Fonts from '../../../assets/fonts/Fonts';
 
 
 const EditProfileScreen = ({ navigation }) => {
@@ -42,6 +44,12 @@ const EditProfileScreen = ({ navigation }) => {
     error: ""
   });
 
+  
+  const paratextConfig = {
+    color: theme.secondaryText,
+    fontFamily: Fonts.family.medium,
+    fontSize: Fonts.size.sm
+  }
 
   // -------- INPUT REFS ----------
   const nameRef = useRef();
@@ -71,12 +79,11 @@ const EditProfileScreen = ({ navigation }) => {
         profileData: body,
         onSuccess: (data) => {
           console.log("received data", data)
-          dispatch(clearProfileState())
-          dispatch(saveProfileData(data))
-          showToast(`SUCCESS: ProfileUpdated Successfully`)
-          setTimeout(()=>{
-          navigation.goBack();
-          },1000)
+          // dispatch(clearProfileState())
+          dispatch(getUserProfile()).unwrap().then(() => {
+            showToast(`SUCCESS: ProfileUpdated Successfully`)
+              navigation.goBack();
+          })
         },
         onError: (err) => {
           showToast(`ERROR: ${err} while updating`, true)
@@ -92,6 +99,10 @@ const EditProfileScreen = ({ navigation }) => {
 
       <View
       >
+
+        {loading && (
+          <AppLoading isVisible={loading} />
+        )}
         <View style={{ paddingHorizontal: 10, paddingVertical: 10 }}>
 
           {/* <Text style={styles.headerText}>Update Your D?etails</Text> */}
@@ -173,6 +184,7 @@ const EditProfileScreen = ({ navigation }) => {
               }
             }}
           />
+          <Text style={[paratextConfig,{marginLeft:10,textAlign:"center"}]}>Note:Number can't be change</Text>
 
         </View>
 

@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
   // --- Profile Info Section Styles ---
   infoSection: {
     backgroundColor: 'white',
-    paddingHorizontal: 20,
+    paddingHorizontal: 10,
     paddingVertical: 10,
     marginBottom: 10,
     borderBottomWidth: 1,
@@ -278,14 +278,11 @@ const styles = StyleSheet.create({
   },
   manageButton: {
     backgroundColor: 'white',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    padding:10,
     borderRadius: 15,
     borderWidth: 1,
     borderColor: '#3498db',
-    marginLeft: 10,
-    justifyContent: 'center',
-    height: 30, // Fixed height to align
+   
   },
   manageButtonText: {
     color: '#3498db',

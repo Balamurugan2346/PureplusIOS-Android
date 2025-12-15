@@ -55,7 +55,7 @@ export default function Login({ navigation }) {
 
   return (
     <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()} accessible={false}>
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+      <View style={[styles.safeArea, { backgroundColor: theme.background }]}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={styles.container}
@@ -66,7 +66,6 @@ export default function Login({ navigation }) {
           <Image
             resizeMode='contain'
             style={[StyleSheet.absoluteFill]}
-
             source={require('../../../assets/images/loginBg.png')} />
 
           {/* Gradient overlay */}
@@ -124,7 +123,7 @@ export default function Login({ navigation }) {
 
           </View>
         </KeyboardAvoidingView>
-      </SafeAreaView>
+      </View>
     </TouchableWithoutFeedback>
   );
 }

@@ -75,7 +75,8 @@ const CartScreen = ({ navigation }) => {
         receiverNumber: matched.receiverNumber ?? '',
       });
     } else {
-      setSelectedAddress(currentLocationFormattedAddress ?? null);
+      // setSelectedAddress(currentLocationFormattedAddress ?? null); no need to store location part in address
+      setSelectedAddress(null)
       setReceiversDetails(null);
     }
   };
@@ -189,9 +190,9 @@ const CartScreen = ({ navigation }) => {
 
             </View>
           </LinearGradient>
-          {selectedAddress && (
+          {/* {selectedAddress && ( */}
             <PaymentWithAddressBar displayName={displayReceiverName} receiversDetails={receiversDetails} isOrderForSelf={isOrderForSelf} address={selectedAddress} navigation={navigation} showBottomSheet={() => setShowAddressBottomSheet(true)} />
-          )}
+          {/* )} */}
 
           {/* bill summary */}
           <OrderSummary />

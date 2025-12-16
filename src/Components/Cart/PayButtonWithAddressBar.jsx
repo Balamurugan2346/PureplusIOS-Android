@@ -53,11 +53,12 @@ const PayButtonWithAddressBar = ({ displayName, receiversDetails, navigation, sh
             : usersAddress;
     };
 
+    const displayButtonText = address ? 'Change the address' : 'Add the address'
     return (
-        <View style={[styles.cardContainer, { backgroundColor: theme.cardContainer }]}>
+        <View style={[styles.cardContainer, { backgroundColor: theme.cardContainer,borderColor:address ? 'white' : theme.error , borderWidth:2 }]}>
             <TouchableOpacity
                 onPress={handleToggle}
-                style={styles.row}
+                style={[styles.row,{justifyContent:'space-around'}]}
                 activeOpacity={0.8}
             >
                 {/* Location Icon */}
@@ -68,17 +69,32 @@ const PayButtonWithAddressBar = ({ displayName, receiversDetails, navigation, sh
                 </View>
 
                 {/* Address Text */}
-                <View style={styles.addressBlock}>
-                    <Text style={[headerConfig, {
-                        fontSize: Fonts.size.base,
-                        color: theme.greyText,
-                    }]}>
-                        {` Delivering To ${displayName}`}
-                    </Text>
-                    <Text style={[paratextConfig, { color: '#666' }]}>
-                        {displayTrimmedAddress(address)}
-                    </Text>
-                </View>
+                {address ? (
+                    <View style={styles.addressBlock}>
+                        <Text style={[headerConfig, {
+                            fontSize: Fonts.size.base,
+                            color: theme.greyText,
+                        }]}>
+                            {` Delivering To ${displayName}`}
+                        </Text>
+                        <Text style={[paratextConfig, { color: '#666' }]}>
+                            {displayTrimmedAddress(address)}
+                        </Text>
+                    </View>
+                ) : (
+                    <View style={styles.addressBlock}>
+                        <Text style={[headerConfig, {
+                            fontSize: Fonts.size.base,
+                            color: theme.greyText,
+                        }]}>
+                            {`Address Required`}
+                        </Text>
+                        <Text style={[paratextConfig, { color: '#666' }]}>
+                            Please add address to proceed checkout
+                        </Text>
+                    </View>
+                )}
+
 
                 {/* Chevron Icon */}
                 <Ionicons
@@ -88,7 +104,7 @@ const PayButtonWithAddressBar = ({ displayName, receiversDetails, navigation, sh
                 />
             </TouchableOpacity>
 
-            <AppButton title={"Change the address"} borderOnly={true} onAction={() => {
+            <AppButton title={displayButtonText} borderOnly={true} onAction={() => {
                 showBottomSheet()
             }} />
             {/* <View style={styles.expandedSection}>
@@ -119,7 +135,6 @@ const styles = StyleSheet.create({
     },
     row: {
         flexDirection: "row",
-        justifyContent: "space-around"
     },
     iconOuter: {
         backgroundColor: "#0000005a",

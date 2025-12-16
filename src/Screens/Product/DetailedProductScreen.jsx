@@ -106,7 +106,8 @@ const DetailedProductScreen = ({ navigation, userID }) => {
         receiverNumber: matched.receiverNumber ?? '',
       });
     } else {
-      setSelectedAddress(currentLocationFormattedAddress ?? null);
+      // setSelectedAddress(currentLocationFormattedAddress ?? null); no need to set current location to address 
+      setSelectedAddress(null)
       setReceiversDetails(null);
     }
   };
@@ -171,8 +172,8 @@ const DetailedProductScreen = ({ navigation, userID }) => {
 
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
               <Text style={[headerConfig, { color: theme.greyText, fontSize: Fonts.size.base }]}>{product.productName}</Text>
-              <TouchableOpacity onPress={() => setShowAddressBottomSheet(true)}>
-                <Text style={[paratextConfig, { color: theme.card, textDecorationLine: "underline" }]}>{selectedAddress ? 'Change' : 'Add'} Address</Text>
+              <TouchableOpacity style={{ flexDirection: "row", alignItems: "center", backgroundColor: "rgba(37, 119, 132, 0.1)", padding: 5, borderRadius: 30, paddingHorizontal: 10 }} onPress={() => setShowAddressBottomSheet(true)}>
+                <Text style={[paratextConfig, { color: theme.primary }]}>{selectedAddress ? 'Change' : 'Add'} Address</Text>
               </TouchableOpacity>
 
             </View>

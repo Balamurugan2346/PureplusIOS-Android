@@ -156,7 +156,7 @@ const Dashboard = ({ navigation }) => {
 
 
   useEffect(() => {
-    console.log("currentLocation", currentLocation)
+    // console.log("currentLocation", currentLocation)
   }, [currentLocation])
 
 
@@ -165,6 +165,7 @@ const Dashboard = ({ navigation }) => {
     try {
       setIsLocationFetching(true)
       const pos = await fetchCurrentLocation();
+      console.log("pos",pos)
       if (pos) {
         setCurrentLocation({
           lat: pos.latitude,
@@ -179,7 +180,7 @@ const Dashboard = ({ navigation }) => {
           dispatch(decodeCurrentLocationAddress({ lat: pos.latitude, long: pos.longitude }))
         }
       }
-      console.log("position", pos)
+      // console.log("position", pos)
       setCoords(pos);
     } finally {
       setIsLocationFetching(false)
@@ -187,7 +188,7 @@ const Dashboard = ({ navigation }) => {
   };
 
   useEffect(() => {
-    console.log("running....")
+    // console.log("running....")
     refreshLocation1()
   }, [refreshLocation]);
 
@@ -239,7 +240,7 @@ const Dashboard = ({ navigation }) => {
 
 
   useEffect(() => {
-    console.log("profileData", profileData)
+    // console.log("profileData", profileData)
   }, [profileData])
 
   //change this dialog later once
@@ -253,7 +254,7 @@ const Dashboard = ({ navigation }) => {
   const getAddressFromStateList = async () => {
     const id = await getSelectedAddressId();
     if (addressList) {
-      console.log("list", addressList)
+      // console.log("list", addressList)
       addressList.map((address, index) => {
         if (address.id == id) {
           setDisplayAddress(`${address.addressLine1}, ${address.addressLine2}`)
@@ -268,7 +269,7 @@ const Dashboard = ({ navigation }) => {
 
 
   const handleRefresh = () => {
-    console.log("reloading...")
+    // console.log("reloading...")
     setRefreshing(true);
     dispatch(clearProducts())
     dispatch(clearBanners())

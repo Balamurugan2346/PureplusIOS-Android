@@ -18,7 +18,7 @@ export const loadCartItems = createAsyncThunk(
 // addTOCart
 export const addToCart = createAsyncThunk(
   'cart/addToCart',
-  async ({cart,onSuccess,onError}, { rejectWithValue }) => {
+  async ({ cart, onSuccess, onError }, { rejectWithValue }) => {
     try {
       const response = await CartRepository.addToCart(cart);
       console.log('cart added in slice', response);
@@ -39,9 +39,9 @@ export const addToCart = createAsyncThunk(
 // updateCart
 export const updateCart = createAsyncThunk(
   'cart/updateCart',
-  async ({cart,onSuccess,onError} ,{ rejectWithValue }) => {
+  async ({ cart, onSuccess, onError }, { rejectWithValue }) => {
     try {
-      console.log("cart going to api",cart)
+      console.log("cart going to api", cart)
       const response = await CartRepository.updateCart(cart);
       console.log('cart updated in slice', response);
       // If API returns { data: {...} }
@@ -80,7 +80,34 @@ const cartSlice = createSlice({
       state.cartUpdateLoading = false,
         state.cartUpdateFetched = false,
         state.cartUpdateError = null
-    }
+    },
+
+    // ✅ UI ONLY: Add item to cart (no API)
+    addItemLocal: (state, action) => {
+      const newItem = action.payload;
+
+      const existingItem = state.cartItems.find(
+        (item) => item.productId === newItem.productId
+      );
+
+      if (existingItem) {
+        existingItem.quantity += newItem.quantity ?? 1;
+      } else {
+        state.cartItems.push({
+          ...newItem,
+          quantity: newItem.quantity ?? 1,
+        });
+      }
+    },
+
+    // ✅ UI ONLY: Remove item from cart (no API)
+    removeItemLocal: (state, action) => {
+      const productId = action.payload;
+
+      state.cartItems = state.cartItems.filter(
+        (item) => item.productId !== productId
+      );
+    },
   },
   extraReducers: (builder) => {
     builder

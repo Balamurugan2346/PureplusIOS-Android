@@ -23,12 +23,13 @@ import OrderDetailedScreen from '../Screens/Product/Order/OrderDetailedScreen';
 import ActivityEntry from '../Navigation/ActivityEntry'
 import AppEntry from '../Navigation/ActivityEntry';
 import EditProfileScreen from '../Screens/Profile/EditProfileScreen'
+import SheduleOrderScreen from '../Screens/Delivery/SheduleDeliveryScreen'
 
 const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
   const { theme, toggleTheme, isDark } = useTheme();
-  const {isBottomBarVisible,setIsBottomBarVisible} = useAppContext()
+  const { isBottomBarVisible, setIsBottomBarVisible } = useAppContext()
   const colorScheme = isDark ? "light" : "dark"
 
 
@@ -43,11 +44,11 @@ export default function AppNavigator() {
           headerShown: false, // No header by default
         }}
       >
-        
-          <Stack.Screen name="AppEntry" component={AppEntry} />
 
-         {/* {devloping purpose } */}
-        <Stack.Screen name='MainBottomNav' component={MainBottomNav}/>
+        <Stack.Screen name="AppEntry" component={AppEntry} />
+
+        {/* {devloping purpose } */}
+        <Stack.Screen name='MainBottomNav' component={MainBottomNav} />
 
         {/* Authentication and  onbaord */}
         <Stack.Screen name="GetStarted" component={GetStarted} />
@@ -72,19 +73,22 @@ export default function AppNavigator() {
         {/* <Stack.Screen name='Main' component={DrawerNavigator} />  //no need drawer for this app */}
 
 
-          {/* product and checkout product related screens  */}
+        {/* product and checkout product related screens  */}
         <Stack.Screen name='DetailedProductScreen' component={DetailedProductScreen} />
         <Stack.Screen name='UsersLocationScreen' component={UsersLocationScreen} />
         <Stack.Screen name='CartScreen' component={CartScreen} />
-        <Stack.Screen name='DetailedAddressInputScreen' component={DetailedAddressInputScreen}/>
+        <Stack.Screen name='DetailedAddressInputScreen' component={DetailedAddressInputScreen} />
 
         {/* Order Details */}
-       <Stack.Screen name='MyOrdersScreen' component={MyOrdersScreen}/>
-          <Stack.Screen name='OrderDetailedScreen' component={OrderDetailedScreen}/>
+        <Stack.Screen name='MyOrdersScreen' component={MyOrdersScreen} />
+        <Stack.Screen name='OrderDetailedScreen' component={OrderDetailedScreen} />
 
 
-          {/* user screens  */}
-          <Stack.Screen name='ProfileScreen' component={ProfileScreen} />
+        {/* user screens  */}
+        <Stack.Screen name='ProfileScreen' component={ProfileScreen} />
+
+        {/* shedule order screens*/}
+        <Stack.Screen name='SheduleOrderScreen' component={SheduleOrderScreen} />
 
       </Stack.Navigator>
     </>

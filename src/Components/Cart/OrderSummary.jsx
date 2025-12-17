@@ -66,7 +66,7 @@ export default function OrderSummary({ isOrderDetails = false }) {
                     </View>
                     {!isOrderDetails ? (
                         <View style={{ borderRadius: 10, backgroundColor: "lightgreen", padding: 5, marginTop: 5 }}>
-                            <Text style={[styles.detailText, { color: "green", fontWeight: "bold" }]}>Saving 50%</Text>
+                            <Text style={[styles.detailText, { color: "green", fontWeight: "bold" }]}>Saving50%</Text>
                         </View>
                     ) : (
                       <View style={{ flexDirection:"row", alignItems:"center", borderRadius: 10, backgroundColor: "lightgreen", padding: 5, marginTop: 5,paddingHorizontal:10 }}>

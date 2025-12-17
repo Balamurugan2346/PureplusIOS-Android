@@ -3,7 +3,7 @@ import Fonts from '../../../assets/fonts/Fonts';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import { useEffect, useState } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import CartItem from '../../Components/Cart/CartItem';
 import OrderSummary from '../../Components/Cart/OrderSummary';
@@ -16,7 +16,7 @@ import { useTheme } from '../../Context/ThemeContext';
 import AddressScreen from '../Address/AddressScreen';
 import { useDispatch, useSelector } from 'react-redux';
 import { useUserId } from '../../customHooks/useUserID'
-import { clearCart, loadCartItems ,addToCart,updateCart} from '../../Redux/Slices/CartSlice';
+import { clearCart, loadCartItems, addToCart, updateCart } from '../../Redux/Slices/CartSlice';
 import { getSelectedAddressId } from '../../Utils/GetSelectedAddress';
 const CartScreen = ({ navigation }) => {
 
@@ -153,7 +153,7 @@ const CartScreen = ({ navigation }) => {
         }>
 
           {/* coupon ui */}
-          <ViewCoupon />
+          <ViewCoupon navigation={navigation} />
 
           {/* cart items */}
           <LinearGradient
@@ -165,16 +165,35 @@ const CartScreen = ({ navigation }) => {
             }}
           >
             {/* delivery time ui */}
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
 
-              <View style={{ backgroundColor: "lightgreen", borderRadius: 10, width: 40, height: 40, alignItems: "center", justifyContent: "center" }}>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <View style={{ backgroundColor: "lightgreen", borderRadius: 10, width: 40, height: 40, alignItems: "center", justifyContent: "center" }}>
 
-                <View style={{ backgroundColor: "white", width: 25, height: 25, borderRadius: 30, justifyContent: "center", alignItems: "center" }}>
-                  <Ionicons name='time' color={"lightgreen"} size={20} />
+                  <View style={{ backgroundColor: "white", width: 25, height: 25, borderRadius: 30, justifyContent: "center", alignItems: "center" }}>
+                    <Ionicons name='time' color={"lightgreen"} size={20} />
+                  </View>
                 </View>
+
+                <View>
+                  <Text style={[headerConfig, { fontFamily: Fonts.family.bold, fontSize: Fonts.size.base, marginLeft: 10, marginBottom: 7 }]}>You can shedule for later</Text>
+                 
+                </View>
+
               </View>
 
-              <Text style={[headerConfig, { fontSize: Fonts.size.base, marginLeft: 10, marginBottom: 7 }]}>Delivery within 15 mins</Text>
+
+              <Pressable onPress={() => {
+                navigation.navigate('SheduleOrderScreen')
+              }} style={{ backgroundColor: "#FFF59D", borderRadius: 20, alignItems: "center", justifyContent: "center" }}>
+
+                <View style={{ flexDirection: "row", paddingHorizontal: 10, paddingVertical: 5, justifyContent: "center" }}>
+                  <Ionicons name='time' color={"#FDD835"} size={20} />
+                  <Text style={[{ marginLeft: 3, color: "#5D4037", fontFamily: Fonts.family.regular }]}>Shedule</Text>
+                </View>
+
+              </Pressable>
+
 
             </View>
 
@@ -191,7 +210,7 @@ const CartScreen = ({ navigation }) => {
             </View>
           </LinearGradient>
           {/* {selectedAddress && ( */}
-            <PaymentWithAddressBar displayName={displayReceiverName} receiversDetails={receiversDetails} isOrderForSelf={isOrderForSelf} address={selectedAddress} navigation={navigation} showBottomSheet={() => setShowAddressBottomSheet(true)} />
+          <PaymentWithAddressBar displayName={displayReceiverName} receiversDetails={receiversDetails} isOrderForSelf={isOrderForSelf} address={selectedAddress} navigation={navigation} showBottomSheet={() => setShowAddressBottomSheet(true)} />
           {/* )} */}
 
           {/* bill summary */}

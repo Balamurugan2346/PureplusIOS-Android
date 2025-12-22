@@ -29,7 +29,7 @@ const DetailedProductScreen = ({ navigation, userID }) => {
   const insets = useSafeAreaInsets()
 
   const { height } = useAppContext()
-  const { cartItems, loading: cartLoading, error: cartError, isFetched: cartIsFetched,cartUpdateLoading } = useSelector((state) => state.cart)
+  const { cartItems, loading: cartLoading, error: cartError, isFetched: cartIsFetched, cartUpdateLoading } = useSelector((state) => state.cart)
   const { theme } = useTheme()
 
 
@@ -49,7 +49,7 @@ const DetailedProductScreen = ({ navigation, userID }) => {
   const { error: ProfileError, loading: profileLoading, isFetched: isProfileApiFetched, profileData } = useSelector((state) => state.profile)
   const [refreshing, setRefreshing] = useState(false);
 
-  
+
   const headerConfig = {
     color: theme.background,
     fontFamily: Fonts.family.semiBold,
@@ -179,8 +179,8 @@ const DetailedProductScreen = ({ navigation, userID }) => {
             </View>
             <View style={{ flexDirection: "row" }}>
               <View>
-              <Text style={[paratextConfig, { marginTop: 5 }]}>{`Note:You can purchase a can in unit not a single can, `}</Text>
-              <Text style={paratextConfig}>{`1 Unit = ${product.unitCount} Water can`}</Text>
+                <Text style={[paratextConfig, { marginTop: 5 }]}>{`Note:You can purchase a can in unit not a single can, `}</Text>
+                <Text style={paratextConfig}>{`1 Unit = ${product.unitCount} Water can`}</Text>
               </View>
             </View>
 
@@ -190,32 +190,32 @@ const DetailedProductScreen = ({ navigation, userID }) => {
             <View style={styles.detailsContainer}>
               <View style={{ flexDirection: "column", paddingBottom: 5 }}>
                 <Text style={[paratextConfig, { color: theme.secondaryText }]}>{`MRP (incl. of all taxes)`}</Text>
-                <Text style={[headerConfig, { color: theme.greyText }]}>₹{quantity > 0 ? product.originalPrice * quantity : product.originalPrice}</Text>
+                <Text style={[headerConfig, { color: theme.greyText }]}>₹{product.originalPrice}</Text>
+                {/* <Text style={[headerConfig, { color: theme.greyText }]}>₹{quantity > 0 ? product.originalPrice * quantity : product.originalPrice}</Text> */}
               </View>
               <View style={{ flexDirection: "column", paddingBottom: 5 }}>
                 <Text style={[paratextConfig, { color: theme.secondaryText }]}>{`Total Price`}</Text>
-                <Text style={[headerConfig, { color: theme.greyText }]}>Unit Price:₹{quantity > 0 ? product.unitPrice * quantity : product.unitPrice}</Text>
+                                <Text style={[headerConfig, { color: theme.greyText }]}>Unit Price:₹{product.unitPrice}</Text>
+                {/* <Text style={[headerConfig, { color: theme.greyText }]}>Unit Price:₹{quantity > 0 ? product.unitPrice * quantity : product.unitPrice}</Text> */}
               </View>
-              <View style={{ flexDirection: "column", marginVertical: 5 }}>
-                <View style={{ flexDirection: "row", alignItems: "center", marginVertical: 5 }}>
-                  <Text style={[paratextConfig, { color: theme.secondaryText }]}>
-                    Receiver's Name
-                  </Text>
-                  {!isOrderForSelf && (
-                    <Text style={[paratextConfig, { color: "#F44336", marginLeft: 5 }]}>
-                      (Someone else)
-                    </Text>
-                  )}
+
+              {selectedAddress && (
+                <View>
+                  <View style={{ flexDirection: "column", marginVertical: 5 }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", marginVertical: 5 }}>
+                      <Text style={[paratextConfig, { color: theme.secondaryText }]}>
+                        Receiver's Name
+                      </Text>
+                    </View>
+                    <Text style={[paratextConfig, { color: theme.greyText }]}>{displayReceiverName}</Text>
+                  </View>
+                  <View style={{ flexDirection: "column" }}>
+                    <Text style={[paratextConfig, { color: theme.secondaryText }]}>Receiver's Address</Text>
+                    <Text style={[paratextConfig, { color: theme.greyText }]}>{displayTrimmedAddress(selectedAddress)
+                    }</Text>
+                  </View>
                 </View>
 
-                <Text style={[paratextConfig, { color: theme.greyText }]}>{displayReceiverName}</Text>
-              </View>
-              {selectedAddress && (
-                <View style={{ flexDirection: "column" }}>
-                  <Text style={[paratextConfig, { color: theme.secondaryText }]}>Receiver's Address</Text>
-                  <Text style={[paratextConfig, { color: theme.greyText }]}>{displayTrimmedAddress(selectedAddress)
-                  }</Text>
-                </View>
               )}
 
             </View>

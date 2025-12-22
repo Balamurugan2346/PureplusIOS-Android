@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
     View,
     Text,
@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 import TopAppBar from '../../Components/TopAppBar';
@@ -18,6 +18,8 @@ import { useToast } from '../../Components/Toast/ToastProvider';
 import { useTheme } from '../../Context/ThemeContext';
 import Fonts from '../../../assets/fonts/Fonts';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { loadSheduleSlots } from '../../Redux/Slices/SheduleOrderSlice'
+import AppLoading from '../../Components/AppLoading';
 
 /* ======================================================
    MAIN SCREEN
@@ -26,24 +28,45 @@ const ScheduleDeliveryScreen = ({ navigation }) => {
     const insets = useSafeAreaInsets();
     const { showToast } = useToast();
     const { theme } = useTheme()
+    const dispatch = useDispatch()
 
     const { cartItems } = useSelector(state => state.cart);
+    const { slots: slotsState, loading: GetSlotLoading, error: GetSlotError } = useSelector(state => state.sheduleOrder);
 
     const [deliveryType, setDeliveryType] = useState('instant');
     const [selectedDate, setSelectedDate] = useState(null);
     const [selectedSlot, setSelectedSlot] = useState(null);
     const [showCalendar, setShowCalendar] = useState(false);
 
+
+    useEffect(() => {
+        console.log("calleed")
+        dispatch(loadSheduleSlots())
+    }, [dispatch])
+
+    useEffect(() => {
+        if (GetSlotError) {
+            showToast('Failed to load delivery slots', true);
+        }
+    }, [GetSlotError]);
+
+
     /* ======================================================
        BACKEND DRIVEN SLOT DATA (MOCK)
     ====================================================== */
-    const slots = useMemo(() => ([
-        { id: 1, label: '09:00 - 10:00', enabled: true },
-        { id: 2, label: '10:00 - 11:00', enabled: true },
-        { id: 3, label: '11:00 - 12:00', enabled: false }, // hidden
-        { id: 4, label: '12:00 - 13:00', enabled: true },
-        { id: 5, label: '13:00 - 14:00', enabled: true },
-    ]), []);
+    // const slots = useMemo(() => ([
+    //     { id: 1, label: '09:00 - 10:00', enabled: true },
+    //     { id: 2, label: '10:00 - 11:00', enabled: true },
+    //     { id: 3, label: '11:00 - 12:00', enabled: false }, // hidden
+    //     { id: 4, label: '12:00 - 13:00', enabled: true },
+    //     { id: 5, label: '13:00 - 14:00', enabled: true },
+    // ]), []);
+
+    const slots = useMemo(() => {
+        if (!slotsState || !Array.isArray(slotsState)) return [];
+        return slotsState;
+    }, [slotsState]);
+
 
     /* ======================================================
        DATE HANDLING
@@ -84,6 +107,10 @@ const ScheduleDeliveryScreen = ({ navigation }) => {
     };
 
 
+    useEffect(() => {
+        setSelectedSlot(null);
+    }, [selectedDate]);
+
 
     /* ======================================================
        CONFIRM BUTTON LOGIC
@@ -110,7 +137,7 @@ const ScheduleDeliveryScreen = ({ navigation }) => {
         const payload = {
             orderType: 'schedule',
             delivery_date: selectedDate,
-            delivery_time_slot: selectedSlot.label,
+            delivery_time_slot: selectedSlot.slots,
             delivery_time_slot_id: selectedSlot.id,
         };
 
@@ -149,6 +176,9 @@ const ScheduleDeliveryScreen = ({ navigation }) => {
             {/* Schedule Section */}
             {deliveryType === 'schedule' && (
                 <>
+                    {GetSlotLoading && (
+                        <AppLoading isVisible={GetSlotLoading} />
+                    )}
                     {/* Date Picker Button */}
                     <TouchableOpacity
                         onPress={() => setShowCalendar(true)}
@@ -161,7 +191,7 @@ const ScheduleDeliveryScreen = ({ navigation }) => {
 
                     {/* Time Slots */}
                     <FlatList
-                        data={slots.filter(slot => slot.enabled)}
+                        data={slots}
                         numColumns={2}
                         keyExtractor={item => item.id.toString()}
                         contentContainerStyle={{ paddingHorizontal: 8 }}
@@ -231,7 +261,7 @@ const SlotItem = ({ slot, selected, onPress }) => (
             selected && styles.slotSelected
         ]}
     >
-        <Text style={styles.slotText}>{slot.label}</Text>
+        <Text style={styles.slotText}>{slot.slots}</Text>
     </TouchableOpacity>
 );
 

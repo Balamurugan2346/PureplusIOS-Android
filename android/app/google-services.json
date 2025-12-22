@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "841298902508",
+    "project_id": "pureplus-2eacf",
+    "storage_bucket": "pureplus-2eacf.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:841298902508:android:d0d92a1cc2a19c384b94c9",
+        "android_client_info": {
+          "package_name": "com.pureplusapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAAILjJ3PqRalDCWAHNV8As6IwZZa2y_Ho"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

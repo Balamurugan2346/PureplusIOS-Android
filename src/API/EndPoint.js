@@ -44,6 +44,10 @@ export default {
   //CART
   GETCART: '/EndUser/get-cart',
   ADDTOCART: '/EndUser/insert-multiple-cart-items',
-  UPDATECART: '/EndUser/update-cart-items'
+  UPDATECART: '/EndUser/update-cart-items',
+
+  //Shedule-order
+  GETALLSLOTS:'/EndUser/get-all-slots'
+  
 
 };

@@ -179,7 +179,7 @@ const ProfileScreen = ({ navigation }) => {
 
           <View>
 
-            <View style={styles.infoItem}>
+            {/* <View style={styles.infoItem}>
 
               <Ionicons name={'home'} color={'#3498db'} size={22} />
               <Text style={styles.infoValue}>
@@ -187,7 +187,7 @@ const ProfileScreen = ({ navigation }) => {
                   ? `Last saved\n${displayAddress}`
                   : '--'}
               </Text>
-            </View>
+            </View> */}
           </View>
 
         </View>

@@ -6,6 +6,7 @@ import AddressReducer from './Slices/AddressSlice'
 import LocationReducer from './Slices/LocationSlice'
 import ProfileReducer from './Slices/ProfileSlice'
 import CartReducer from './Slices/CartSlice'
+import SheduleOrder from './Slices/SheduleOrderSlice'
 import { LOGOUT } from './LogoutActions';
 
 
@@ -17,6 +18,7 @@ const appReducer = combineReducers({
   locations: LocationReducer,
   profile: ProfileReducer,
   cart: CartReducer,
+  sheduleOrder:SheduleOrder
 });
 
 

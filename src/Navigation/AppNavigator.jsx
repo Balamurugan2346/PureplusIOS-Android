@@ -24,6 +24,7 @@ import ActivityEntry from '../Navigation/ActivityEntry'
 import AppEntry from '../Navigation/ActivityEntry';
 import EditProfileScreen from '../Screens/Profile/EditProfileScreen'
 import SheduleOrderScreen from '../Screens/Delivery/SheduleDeliveryScreen'
+import CustomerSupportScreen from '../Screens/CustomerSupport/CustomerSupportScreen'
 
 const Stack = createNativeStackNavigator();
 
@@ -86,6 +87,9 @@ export default function AppNavigator() {
 
         {/* user screens  */}
         <Stack.Screen name='ProfileScreen' component={ProfileScreen} />
+
+         {/* Customer support screens  */}
+        <Stack.Screen name='CustomerSupportScreen' component={CustomerSupportScreen} />
 
         {/* shedule order screens*/}
         <Stack.Screen name='SheduleOrderScreen' component={SheduleOrderScreen} />

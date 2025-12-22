@@ -165,8 +165,8 @@ const CartScreen = ({ navigation }) => {
             }}
           >
             {/* delivery time ui */}
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
 
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <View style={{ backgroundColor: "lightgreen", borderRadius: 10, width: 40, height: 40, alignItems: "center", justifyContent: "center" }}>
 
@@ -175,11 +175,7 @@ const CartScreen = ({ navigation }) => {
                   </View>
                 </View>
 
-                <View>
-                  <Text style={[headerConfig, { fontFamily: Fonts.family.bold, fontSize: Fonts.size.base, marginLeft: 10, marginBottom: 7 }]}>You can shedule for later</Text>
-                 
-                </View>
-
+                <Text style={[headerConfig, { fontFamily: Fonts.family.bold, fontSize: Fonts.size.xs, marginLeft: 10, marginBottom: 7 }]}>You can shedule for later</Text>
               </View>
 
 
@@ -194,8 +190,11 @@ const CartScreen = ({ navigation }) => {
 
               </Pressable>
 
-
             </View>
+
+
+
+
 
 
             {/* cart items */}

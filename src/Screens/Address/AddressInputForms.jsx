@@ -29,7 +29,7 @@ const AddressInputForm = ({ navigation, pickedAddress, onNavigate }) => {
         pinCode: pickedAddress.pinCode ?? "",
         landmark: '',
         tag: 'Home',
-        receiverName: profileData.fullName ?? "",
+        receiverName:"",
         receiverNumber: '',
         latitude: pickedAddress.latitude,
         longitude: pickedAddress.longitude,

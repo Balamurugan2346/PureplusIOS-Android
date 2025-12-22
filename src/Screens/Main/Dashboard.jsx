@@ -48,6 +48,8 @@ import { clearAddressState, getAddressList } from '../../Redux/Slices/AddressSli
 import { getSelectedAddressId } from '../../Utils/GetSelectedAddress';
 import { clearCart, loadCartItems } from '../../Redux/Slices/CartSlice';
 import { logout } from '../../Redux/LogoutActions';
+import { requestNotificationPermission } from '../../Utils/NotificationUtils';
+import { getFcmToken } from '../../Utils/FirebaseUtils';
 
 // Placeholder Carousel Data
 const bannerData = [
@@ -165,7 +167,7 @@ const Dashboard = ({ navigation }) => {
     try {
       setIsLocationFetching(true)
       const pos = await fetchCurrentLocation();
-      console.log("pos",pos)
+      console.log("pos", pos)
       if (pos) {
         setCurrentLocation({
           lat: pos.latitude,
@@ -186,6 +188,11 @@ const Dashboard = ({ navigation }) => {
       setIsLocationFetching(false)
     }
   };
+
+  useEffect(() => {
+    getFcmToken()
+    requestNotificationPermission()
+  }, [])
 
   useEffect(() => {
     // console.log("running....")
@@ -281,6 +288,7 @@ const Dashboard = ({ navigation }) => {
     dispatch(getUserProfile())
     syncAddress();
     synCCart()
+    requestNotificationPermission()
     //need to fetch also address 
     setRefreshLocation(prev => !prev)
     setTimeout(() => {
@@ -399,7 +407,7 @@ const Dashboard = ({ navigation }) => {
 
           {TagData.map((item, index) => (
             <Tag key={item.id} icon={item.icon} title={item.title} badgeNeed={item.badgeNeed} onPress={() => {
-              if (item.id == 1) {
+              if (item.routeName) {
                 navigation.navigate(item.routeName)
               }
             }} />

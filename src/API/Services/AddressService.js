@@ -9,7 +9,7 @@ export const saveAddress = (address) => {
 
 
 export const getAllAddress = (userId)=>{
-    return apiClient.get(`${endpoints.GETALLUSERADDRESS}/${userId}`)
+    return apiClient.get(`${endpoints.GETALLUSERADDRESS}/${userId}/delivery-address`)
     //`${endpoints.GETALLUSERADDRESS}/${userId}`
 }
 

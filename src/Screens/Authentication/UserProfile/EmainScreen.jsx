@@ -114,9 +114,10 @@ const EmailScreen = ({ navigation }) => {
                                         onSuccess: (data) => {
                                             console.log('dataaaaaaaa', data.success)
                                             if (data.success==true) {
-                                                removeData('preAuthToken')
-                                                storeData("accessToken", data.token)
-                                                storeData('userID',data.userId.toString())
+                                                // removeData('preAuthToken') //no use of preauth token
+                                                // storeData("accessToken", data.token)
+                                                var userId = data.data.userId
+                                                storeData('userID',userId.toString())
                                                 storeData('isLoggedIn',"1") 
                                                 dispatch(clearState())
                                                 navigation.navigate("DashBoard")

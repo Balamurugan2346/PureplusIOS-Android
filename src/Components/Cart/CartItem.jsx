@@ -77,7 +77,7 @@ const CartItem = ({ cartItem }) => {
             <View style={styles.container}>
                 <Image source={require('../../../assets/images/watercan2.png')} style={{ width: 40, height: 40, marginRight: 10 }} />
                 <View style={{ flex: 1 }}>
-                    <Text style={[headerConfig]}>{`prodID:${cartItem.productId}`}</Text>
+                    <Text style={[headerConfig]}>{`${cartItem.productName}`}</Text>
                     <View style={{ flexDirection: "row" }}>
                         <Text style={[paratextConfig, { textDecorationLine: "line-through", marginRight: 3 }]}>{cartItem.unitPrice}</Text>
                         <Text style={[paratextConfig, { color: "green" }]}>{cartItem.unitPrice}</Text>

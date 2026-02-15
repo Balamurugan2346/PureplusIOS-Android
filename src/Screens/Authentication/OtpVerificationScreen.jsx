@@ -69,6 +69,7 @@ const OtpVerificationScreen = ({ navigation }) => {
     const login = (mobileNumber, otp) => {
         if (mobileNumber != null && otp != null) {
             console.log("before sending to login api,", mobileNumber, otp)
+            console.log('savedOtp',savedOtp)
             dispatch(
                 Login({
                     mobileNumber: `${mobileNumber}`,
@@ -79,7 +80,8 @@ const OtpVerificationScreen = ({ navigation }) => {
                             if (savedOtp == otp) {
                                 if (data.success && data.isNewUser) {
                                     showToast(`Successfully completed`)
-                                    storeData('preAuthToken', data.preAuthToken)
+                                    // storeData('preAuthToken', data.preAuthToken) // no use of preauth token
+                                     storeData('accessToken', data.token)// no use of preauth token
                                     navigation.replace('Username')
                                 } else if (data.success) {
                                     showToast(`Successfully completed11`)

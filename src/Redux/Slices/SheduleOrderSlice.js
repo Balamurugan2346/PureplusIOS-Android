@@ -41,7 +41,7 @@ const sheduleOrderSlice = createSlice({
       })
       .addCase(loadSheduleSlots.fulfilled, (state, action) => {
         state.loading = false;
-        state.slots = action.payload.cartItems; // response.data already returned
+        state.slots = action.payload?.data; // response.data already returned
         state.isFetched = true;
       })
       .addCase(loadSheduleSlots.rejected, (state, action) => {

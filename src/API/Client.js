@@ -4,7 +4,7 @@ import EndPoint from './EndPoint';
 import { getData } from '../OfflineStore/OfflineStore';
 
 
-const API_BASE_URL = "https://pureplusapp.in/api"
+const API_BASE_URL = "https://pureplusapp.in"
 
 
 const apiClient = axios.create({
@@ -14,23 +14,23 @@ const apiClient = axios.create({
 });
 
 const AUTH_WHITELIST = [
-  EndPoint.SENDOTP,
+  EndPoint.GETOTP,
   EndPoint.VERIFYOTP,
-  EndPoint.CREATEPROFILE
+  // EndPoint.CREATEPROFILE //after new changes create user profile also need bearer token , not old method like preauth token
 ];
 
 apiClient.interceptors.request.use(
   async (config) => {
 
-    const isCreateProfile = config.url.includes(EndPoint.CREATEPROFILE);
+    // const isCreateProfile = config.url.includes(EndPoint.CREATEPROFILE);
 
     // 1️⃣ CREATEPROFILE → use preAuth header only
-    if (isCreateProfile) {
-      const preAuthToken = await getData('preAuthToken')
-      config.headers['preAuth'] = preAuthToken;
-      // console.log("Using preAuth header for CREATEPROFILE",preAuthToken);
-      return config;
-    }
+    // if (isCreateProfile) {
+    //   const preAuthToken = await getData('preAuthToken')
+    //   config.headers['preAuth'] = preAuthToken;
+    //   // console.log("Using preAuth header for CREATEPROFILE",preAuthToken);
+    //   return config;
+    // }
 
     // 2️⃣ Other whitelist APIs → skip token
     if (AUTH_WHITELIST.some((path) => config.url.includes(path))) {
@@ -55,27 +55,27 @@ apiClient.interceptors.request.use(
 
 
 
-// apiClient.interceptors.request.use(req => {
-//   console.log("AXIOS REQUEST:", JSON.stringify({
-//     url: req.url,
-//     baseURL: req.baseURL,
-//     method: req.method,
-//     headers: req.headers,
-//     data: req.data
-//   }, null, 2));
-//   return req;
-// });
+apiClient.interceptors.request.use(req => {
+  console.log("AXIOS REQUEST:", JSON.stringify({
+    url: req.url,
+    baseURL: req.baseURL,
+    method: req.method,
+    headers: req.headers,
+    data: req.data
+  }, null, 2));
+  return req;
+});
 
-// apiClient.interceptors.response.use(
-//   res => {
-//     console.log("AXIOS RESPONSE:", res.data);
-//     return res;
-//   },
-//   err => {
-//     console.log("AXIOS ERROR:", err.response?.data || err.message);
-//     return Promise.reject(err);
-//   }
-// );
+apiClient.interceptors.response.use(
+  res => {
+    console.log("AXIOS RESPONSE:", res.data);
+    return res;
+  },
+  err => {
+    console.log("AXIOS ERROR:", err.response?.data || err.message);
+    return Promise.reject(err);
+  }
+);
 
 
 

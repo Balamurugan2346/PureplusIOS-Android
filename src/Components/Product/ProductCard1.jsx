@@ -156,7 +156,7 @@ export default function ProductCard1({ product, onPress }) {
       addItemLocal({
         productId: product.productId,
         productName: product.productName,
-        price: product.originalPrice,
+        price: product.basePrice,
       })
     );
   };
@@ -190,7 +190,7 @@ export default function ProductCard1({ product, onPress }) {
             </Text>
 
             <Text style={[styles.uom, { fontFamily: Fonts.family.regular }]}>
-              {product.uom}
+              {product.unit}
             </Text>
 
             <View style={styles.row}>
@@ -200,7 +200,7 @@ export default function ProductCard1({ product, onPress }) {
                   { fontFamily: Fonts.family.medium },
                 ]}
               >
-                ₹{product.perCanPrice}
+                ₹{product.unitPrice}
               </Text>
             </View>
 
@@ -210,7 +210,7 @@ export default function ProductCard1({ product, onPress }) {
                 { fontFamily: Fonts.family.semiBold },
               ]}
             >
-              ₹{product.originalPrice} / Can
+              ₹{product.basePrice} / Can
             </Text>
           </View>
         </View>

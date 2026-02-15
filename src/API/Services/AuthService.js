@@ -10,10 +10,10 @@ export const sendMobileNumber = (mobileNumber) => {
 
 
 
-export const verifyOTP = (mobileNumber, otpCode) => {
+export const verifyOTP = (mobileNumber, otp) => {
   return apiClient.post(endpoints.VERIFYOTP, {
     mobileNumber,
-    otpCode
+    otp
   });
 };
 

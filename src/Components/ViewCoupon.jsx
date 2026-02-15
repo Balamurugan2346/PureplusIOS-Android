@@ -16,7 +16,7 @@ const ViewCoupon = ({ navigation }) => {
 
   return (
     <TouchableOpacity onPress={() => {
-      navigation.navigate('SheduleOrderScreen')
+      // navigation.navigate('SheduleOrderScreen')
     }} style={{
       flexDirection: "row",
       justifyContent: "space-between",

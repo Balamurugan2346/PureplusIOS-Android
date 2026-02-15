@@ -41,6 +41,7 @@ const ScheduleDeliveryScreen = ({ navigation }) => {
 
     useEffect(() => {
         console.log("calleed")
+        console.log("slots",slots)
         dispatch(loadSheduleSlots())
     }, [dispatch])
 
@@ -193,12 +194,12 @@ const ScheduleDeliveryScreen = ({ navigation }) => {
                     <FlatList
                         data={slots}
                         numColumns={2}
-                        keyExtractor={item => item.id.toString()}
+                        // keyExtractor={item => item.slotId.toString()} // need unique id
                         contentContainerStyle={{ paddingHorizontal: 8 }}
                         renderItem={({ item }) => (
                             <SlotItem
                                 slot={item}
-                                selected={selectedSlot?.id === item.id}
+                                selected={selectedSlot?.slotId === item.slotId}
                                 onPress={() => setSelectedSlot(item)}
                             />
                         )}
@@ -261,7 +262,7 @@ const SlotItem = ({ slot, selected, onPress }) => (
             selected && styles.slotSelected
         ]}
     >
-        <Text style={styles.slotText}>{slot.slots}</Text>
+        <Text style={styles.slotText}>{slot.slotName}</Text>
     </TouchableOpacity>
 );
 

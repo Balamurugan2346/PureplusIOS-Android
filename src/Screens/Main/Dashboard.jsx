@@ -158,8 +158,8 @@ const Dashboard = ({ navigation }) => {
 
 
   useEffect(() => {
-    // console.log("currentLocation", currentLocation)
-  }, [currentLocation])
+    console.log("productList", productList)
+  }, [productList])
 
 
   //FETCHING LOCATION ALSO GET DECODED ADDRESS FROM PROVIDER(GEOAPIFY.COM)
@@ -500,7 +500,7 @@ const Dashboard = ({ navigation }) => {
             horizontal
             style={styles.productGrid}
           >
-            {productList && productList.map((product, index) => (
+            {productList.data && productList.data.map((product, index) => (
               // <ProductCardRect
               //   key={index}
               //   category="Soft Drink"
@@ -537,7 +537,7 @@ const Dashboard = ({ navigation }) => {
 
 
       </ScrollView>
-
+      {console.log("cart",cartItems)}
       {!loading && cartIsFetched && cartItems.length > 0 && (
         <ViewCartButton navigation={navigation} cart={cartItems} />
       )}

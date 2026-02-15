@@ -190,7 +190,7 @@ const DetailedProductScreen = ({ navigation, userID }) => {
             <View style={styles.detailsContainer}>
               <View style={{ flexDirection: "column", paddingBottom: 5 }}>
                 <Text style={[paratextConfig, { color: theme.secondaryText }]}>{`MRP (incl. of all taxes)`}</Text>
-                <Text style={[headerConfig, { color: theme.greyText }]}>₹{product.originalPrice}</Text>
+                <Text style={[headerConfig, { color: theme.greyText }]}>₹{product.basePrice}</Text>
                 {/* <Text style={[headerConfig, { color: theme.greyText }]}>₹{quantity > 0 ? product.originalPrice * quantity : product.originalPrice}</Text> */}
               </View>
               <View style={{ flexDirection: "column", paddingBottom: 5 }}>

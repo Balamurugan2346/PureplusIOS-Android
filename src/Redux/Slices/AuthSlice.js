@@ -50,8 +50,7 @@ export const createProfile = createAsyncThunk(
             const response = await AuthRepository.createProfile(fullName, email);
             console.log('create profile', response);
             // If API returns { data: {...} }
-            const result = response?.data ?? response;
-
+            const result =  response;
             if (onSuccess) onSuccess(result);
 
             return result;

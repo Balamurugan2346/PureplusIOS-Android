@@ -7,47 +7,40 @@ export default {
 
 
   //OLD API'S NEED TO DELETE
-  SENDMOBILENUMBER: '/Auth/UserLog',
-  LOGIN: '/Auth/OTP',
-  REGISTER: '/auth/register',
-  USER_PROFILE: '/users/profile',
-  PRODUCTS: '/products',
-  POSTS: '/posts',
   GETPRODUCTBYID: '/Product/GetProductDetailsById',
 
 
 
   //currently working
-  GETALLBANNERS: '/Banner/GetAllBannerDetails',
+  GETALLBANNERS: 'api/Banner/GetAllBannerDetails',
 
 
   //product
-  GETALLPRODUCTS: '/Product/get-active-products',
+  GETALLPRODUCTS: 'api/customer/products',
 
 
   //address
-  CREATEORDERADDRESS: '/EndUser/create-order-delivery-address',
-  CREATEADDRESS: '/EndUser/create-customer-delivery-address',
-  GETALLUSERADDRESS: '/EndUser/customer-delviery-addressess',
-  DELETEADDRESS: "/EndUser/soft-delete-customer-address",
+  CREATEADDRESS: 'api/user/address',
+  GETALLUSERADDRESS: 'api/user',
+  DELETEADDRESS: "api/user/address",
 
 
   //currently working auths
-  GETOTP: 'auth/send-otp',
-  VERIFYOTP: 'auth/verify-otp',
-  CREATEPROFILE: 'auth/create-user-profile',
+  GETOTP: 'api/customer/auth/send-otp',
+  VERIFYOTP: 'api/customer/auth/verify-otp',
+  CREATEPROFILE: 'api/customer/profile',
 
   //profile
-  GETUSERPROFILE: 'user/profile',
-  UPDATEUSERPROFILE: 'auth/update-user-profile',
+  GETUSERPROFILE: 'api/customer/profile',
+  UPDATEUSERPROFILE: 'api/customer/profile',
 
   //CART
-  GETCART: '/EndUser/get-cart',
-  ADDTOCART: '/EndUser/insert-multiple-cart-items',
-  UPDATECART: '/EndUser/update-cart-items',
+  GETCART: 'api/customer/cart',
+  ADDTOCART: 'api/customer/cart',  // no need
+  UPDATECART: 'api/customer/cart/add',
 
   //Shedule-order
-  GETALLSLOTS:'/EndUser/get-all-slots'
+  GETALLSLOTS:'api/customer/delivery/slots'
   
 
 };

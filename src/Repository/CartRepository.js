@@ -2,9 +2,9 @@ import { getCartItems,updateCart,addToCart } from '../API/Services/CartService';
 
 export const CartRepository = {
 
-     getCartItems: async (id) => {
+     getCartItems: async () => {
         try {
-            const response = await getCartItems(id)
+            const response = await getCartItems()
             return response.data
         } catch (e) {
             console.log("error while fetch cart items", e)

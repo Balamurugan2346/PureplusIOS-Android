@@ -98,7 +98,7 @@ const profileSlice = createSlice({
       // ─────────── FULFILLED ───────────
       .addCase(updateUserProfile.fulfilled, (state, action) => {
         state.loading = false;
-        state.profileData = action.payload?.user;
+        state.profileData = action.payload;
         state.isFetched = true;
       })
 

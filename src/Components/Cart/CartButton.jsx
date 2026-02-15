@@ -82,31 +82,43 @@ export default function CartButton({ product, navigation }) {
   const handleAdd = () => {
     if (!added && !userIDLoading && userId) {
       dispatch(
-        addToCart({
-          cart: {
-            userId: userId,
-            items: [
-              {
-                productId: product.productId,
-                quantity: 1
-              }
-            ]
-          },
-          onSuccess: () => {
-            dispatch(loadCartItems(userId))
-          },
-          onError: () => {
-            showToast("Unable to add product !!", true,{alignTop:true})
-          }
-        })
+        //even though not added update the cart using this api
+        updateCart({
+            cart: {
+              productId: cartItem.productId,
+              quantity: cartItem.quantity + 1,
+            },
+            onSuccess: () => {
+              dispatch(loadCartItems(cartItem.userId));
+            },
+            onError: () => {
+              showToast("Unable to add quantity !!", true,{alignTop:true})
+            }
+          })
+
+        // addToCart({
+        //   cart: {
+        //     userId: userId,
+        //     items: [
+        //       {
+        //         productId: product.productId,
+        //         quantity: 1
+        //       }
+        //     ]
+        //   },
+        //   onSuccess: () => {
+        //     dispatch(loadCartItems(userId))
+        //   },
+        //   onError: () => {
+        //     showToast("Unable to add product !!", true,{alignTop:true})
+        //   }
+        // })
       )
     } else {
       if (cartItem) {
         dispatch(
           updateCart({
             cart: {
-              id: cartItem.id,
-              userId: cartItem.userId,
               productId: cartItem.productId,
               quantity: cartItem.quantity + 1,
             },
@@ -129,8 +141,6 @@ export default function CartButton({ product, navigation }) {
       dispatch(
         updateCart({
           cart: {
-            id: cartItem.id,
-            userId: cartItem.userId,
             productId: cartItem.productId,
             quantity: cartItem.quantity - 1,
           },

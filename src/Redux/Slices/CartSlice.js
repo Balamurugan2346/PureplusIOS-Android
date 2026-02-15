@@ -6,7 +6,7 @@ export const loadCartItems = createAsyncThunk(
   'cart/loadCartItems',
   async (userId, { rejectWithValue }) => {
     try {
-      const data = await CartRepository.getCartItems(userId);
+      const data = await CartRepository.getCartItems();
       return data;
     } catch (err) {
       console.log('Error fetching cart items:', err);
@@ -119,7 +119,7 @@ const cartSlice = createSlice({
       })
       .addCase(loadCartItems.fulfilled, (state, action) => {
         state.loading = false;
-        state.cartItems = action.payload.cartItems || []; // depends on API response structure
+        state.cartItems = action.payload.data.items || []; // depends on API response structure
         state.isFetched = true;
       })
       .addCase(loadCartItems.rejected, (state, action) => {

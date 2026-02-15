@@ -40,7 +40,7 @@ export default function Login({ navigation }) {
         onSuccess: (data) => {
           console.log("received data", data)
           dispatch(saveMobileNumberLocally(ml))
-          dispatch(clearIsFetched())
+          dispatch(clearIsFetched())  
           showToast(`SUCCESS: OTP sent to ${ml} and OTP is ${data.otp}`)
           navigation.navigate("OtpVerification")
         },

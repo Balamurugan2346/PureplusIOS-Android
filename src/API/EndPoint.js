@@ -52,4 +52,12 @@ export default {
   ORDER_PLACE:'api/customer/orders/place',
   CANCEL_ORDER:'api/customer/orders/cancel',  
 
+
+  //refill
+  REFILL_BALANCE: 'api/customer/refill/balance',
+  refill_validate:'api/customer/refill/validate',
+
+  //subscription
+  GETSUBSCRIPTIONPLANS:'api/customer/subscription',
+  PLACESUBSCRIPTIONORDER:'api/customer/subscription',
 };

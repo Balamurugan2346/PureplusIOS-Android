@@ -16,18 +16,19 @@ export default {
 
 
   //product
-  GETALLPRODUCTS: 'api/customer/products',
+  GETALLPRODUCTS: 'api/customer/products/getallproduct',
 
 
   //address
-  CREATEADDRESS: 'api/user/address',
-  GETALLUSERADDRESS: 'api/user',
-  DELETEADDRESS: "api/user/address",
+  CREATEADDRESS: 'api/customer/address',
+  GETALLUSERADDRESS: 'api/customer/address',
+  DELETEADDRESS: "api/customer/address",
 
 
   //currently working auths
   GETOTP: 'api/customer/auth/send-otp',
   VERIFYOTP: 'api/customer/auth/verify-otp',
+  REFRESHTOKEN:'api/customer/auth/refresh-token',
   CREATEPROFILE: 'api/customer/profile',
 
   //profile
@@ -40,7 +41,15 @@ export default {
   UPDATECART: 'api/customer/cart/add',
 
   //Shedule-order
-  GETALLSLOTS:'api/customer/delivery/slots'
+  GETALLSLOTS:'api/customer/delivery/slots',
   
+
+  //Deposit
+  CALCULATE_DEPOSIT:'api/customer/deposit/calculate',
+
+
+  //Order
+  ORDER_PLACE:'api/customer/orders/place',
+  CANCEL_ORDER:'api/customer/orders/cancel',  
 
 };

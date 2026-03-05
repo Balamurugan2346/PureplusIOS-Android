@@ -20,9 +20,9 @@ export const saveAddress = createAsyncThunk(
 // GET ADDRESS LIST 
 export const getAddressList = createAsyncThunk(
   "address/getAddressList",
-  async (userId, { rejectWithValue }) => {
+  async (_, { rejectWithValue }) => {
     try {
-      const data = await AddressRepository.getAllAddress(userId);
+      const data = await AddressRepository.getAllAddress();
       return data;
     } catch (err) {
       console.log("getAddressList thunk error:", err);
@@ -98,7 +98,7 @@ const addressSlice = createSlice({
       })
       .addCase(getAddressList.fulfilled, (state, action) => {
         state.loading = false;
-        state.addressList = action.payload.addressId;
+        state.addressList = action.payload.data ?? [];
         state.isFetched = true;
       })
       .addCase(getAddressList.rejected, (state, action) => {

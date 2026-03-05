@@ -12,9 +12,9 @@ export const AddressRepository = {
         }
     },
 
-    getAllAddress : async (userId)=> {
+    getAllAddress : async ()=> {
         try{
-            const response = await getAllAddress(userId)
+            const response = await getAllAddress()
             return response.data
         }catch(e){
             console.log("error while getting all address")

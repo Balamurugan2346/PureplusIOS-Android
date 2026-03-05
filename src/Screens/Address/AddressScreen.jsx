@@ -104,7 +104,7 @@ const AddressScreen = ({ onClose, navigation }) => {
 
     const syncAddress = () => {
         dispatch(clearAddressState())
-        dispatch(getAddressList(userID))
+        dispatch(getAddressList())
     }
 
     useEffect(() => {

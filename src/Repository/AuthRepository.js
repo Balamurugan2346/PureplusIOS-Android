@@ -1,4 +1,4 @@
-import { createProfile, sendMobileNumber , verifyOTP } from '../API/Services/AuthService';
+import { createProfile, sendMobileNumber , verifyOTP , refreshToken} from '../API/Services/AuthService';
 
 export const AuthRepository = {
     sendMobileNumber: async (mobileNumber) => {
@@ -17,6 +17,16 @@ export const AuthRepository = {
             return response.data
         } catch (e) {
             console.log("error while verify otp", e)
+            throw e
+        }
+    },
+
+     refreshToken: async (token) => {
+        try {
+            const response = await refreshToken(token)
+            return response.data
+        } catch (e) {
+            console.log("error while refreshToken", e)
             throw e
         }
     },

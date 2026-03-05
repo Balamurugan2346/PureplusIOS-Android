@@ -189,7 +189,7 @@ const AddressInputForm = ({ navigation, pickedAddress, onNavigate }) => {
             //----------------------------------------
             // 2️⃣ Fetch updated address list
             //----------------------------------------
-            const listRes = await dispatch(getAddressList(formData.userId));
+            const listRes = await dispatch(getAddressList());
 
             if (!getAddressList.fulfilled.match(listRes)) {
                 showToast("Address saved but failed to refresh list", true);
@@ -261,17 +261,18 @@ const AddressInputForm = ({ navigation, pickedAddress, onNavigate }) => {
             {renderInput('Address Line 1', 'addressLine1')}
             {renderInput('Address Line 2', 'addressLine2', 'default', true)}
             {renderInput('City', 'city')}
+            {renderInput('FloorNo', 'FloorNo','numeric', true)}
             {renderInput('State', 'state')}
             {renderInput('Pincode', 'pinCode', 'numeric')}
             {renderInput('Landmark', 'landmark')}
 
-            {/* <View style={styles.switchRow}>
+            <View style={styles.switchRow}>
                 <Text style={[styles.label, { color: theme.buttonText, marginRight: 10 }]}>Has Lift?</Text>
                 <Switch
                     value={formData.hasLift}
                     onValueChange={(value) => handleChange('hasLift', value)}
                 />
-            </View> */}
+            </View>
 
             {loading && (
                 <AppLoading isVisible={loading} />

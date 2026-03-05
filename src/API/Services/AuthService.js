@@ -23,3 +23,10 @@ export const createProfile =(fullName,email) => {
     email
   })
 }
+
+
+export const refreshToken =(token) => {
+  return apiClient.post(endpoints.REFRESHTOKEN,{
+    token
+  })
+}

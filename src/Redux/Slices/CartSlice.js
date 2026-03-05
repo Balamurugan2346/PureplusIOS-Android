@@ -46,7 +46,7 @@ export const updateCart = createAsyncThunk(
       console.log('cart updated in slice', response);
       // If API returns { data: {...} }
       const result = response?.data ?? response;
-
+      console.log("result from api", result)
       if (onSuccess) onSuccess(result);
 
       return result;

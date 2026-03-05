@@ -212,7 +212,7 @@ const Dashboard = ({ navigation }) => {
   //INITIAL API CALLS WHEN THE DASHBOARD RENDERS 
   const syncAddress = () => {
     dispatch(clearAddressState())
-    dispatch(getAddressList(userID))
+    dispatch(getAddressList())
   }
 
   const synCCart = () => {

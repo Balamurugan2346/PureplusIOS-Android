@@ -85,14 +85,15 @@ export default function CartButton({ product, navigation }) {
         //even though not added update the cart using this api
         updateCart({
             cart: {
-              productId: cartItem.productId,
-              quantity: cartItem.quantity + 1,
+              productId: product.productId,
+              quantity: 1,
             },
             onSuccess: () => {
-              dispatch(loadCartItems(cartItem.userId));
+              console.log("azdvdfxhgtrh")
+              dispatch(loadCartItems());
             },
             onError: () => {
-              showToast("Unable to add quantity !!", true,{alignTop:true})
+              showToast("Unable to update quantityyy !!", true,{alignTop:true})
             }
           })
 
@@ -123,7 +124,7 @@ export default function CartButton({ product, navigation }) {
               quantity: cartItem.quantity + 1,
             },
             onSuccess: () => {
-              dispatch(loadCartItems(cartItem.userId));
+              dispatch(loadCartItems());
             },
             onError: () => {
               showToast("Unable to add quantity !!", true,{alignTop:true})
@@ -146,7 +147,7 @@ export default function CartButton({ product, navigation }) {
           },
           onSuccess: () => {
             // 👇 YOU control this
-            dispatch(loadCartItems(cartItem.userId));
+            dispatch(loadCartItems());
           },
           onError: () => {
             console.log("called")

@@ -20,6 +20,10 @@ const sheduleOrderSlice = createSlice({
   name: 'sheduleOrder',
   initialState: {
     slots: [],
+    selectedSlot:{
+      id:0,
+      type:'instant'
+    },
     loading: false,
     error: null,
     isFetched: false,
@@ -27,10 +31,14 @@ const sheduleOrderSlice = createSlice({
   reducers: {
     clearSheduleSlots: (state) => {
       state.slots = [];
+      state.selectedSlot = {};
       state.loading = false;
       state.error = null;
       state.isFetched = false;
     },
+    saveSelectedSlot: (state, action) => {
+      state.selectedSlot = action.payload;
+    }
   },
   extraReducers: (builder) => {
     builder
@@ -52,5 +60,5 @@ const sheduleOrderSlice = createSlice({
   },
 });
 
-export const { clearSheduleSlots } = sheduleOrderSlice.actions;
+export const { clearSheduleSlots , saveSelectedSlot } = sheduleOrderSlice.actions;
 export default sheduleOrderSlice.reducer;

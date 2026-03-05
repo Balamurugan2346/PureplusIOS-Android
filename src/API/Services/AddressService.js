@@ -8,11 +8,11 @@ export const saveAddress = (address) => {
 };
 
 
-export const getAllAddress = (userId)=>{
-    return apiClient.get(`${endpoints.GETALLUSERADDRESS}/${userId}/delivery-address`)
+export const getAllAddress = ()=>{
+    return apiClient.get(`${endpoints.GETALLUSERADDRESS}`)
     //`${endpoints.GETALLUSERADDRESS}/${userId}`
 }
 
 export const deleteAddress = (id) => {
-  return apiClient.post(`${endpoints.DELETEADDRESS}/${id}`)
+  return apiClient.delete(`${endpoints.DELETEADDRESS}/${id}`)
 }

@@ -18,7 +18,7 @@ import { useToast } from '../../Components/Toast/ToastProvider';
 import { useTheme } from '../../Context/ThemeContext';
 import Fonts from '../../../assets/fonts/Fonts';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { loadSheduleSlots } from '../../Redux/Slices/SheduleOrderSlice'
+import { loadSheduleSlots, saveSelectedSlot } from '../../Redux/Slices/SheduleOrderSlice'
 import AppLoading from '../../Components/AppLoading';
 
 /* ======================================================
@@ -41,7 +41,7 @@ const ScheduleDeliveryScreen = ({ navigation }) => {
 
     useEffect(() => {
         console.log("calleed")
-        console.log("slots",slots)
+        console.log("slots", slots)
         dispatch(loadSheduleSlots())
     }, [dispatch])
 
@@ -126,6 +126,10 @@ const ScheduleDeliveryScreen = ({ navigation }) => {
             };
 
             console.log('INSTANT ORDER PAYLOAD:', payload);
+            dispatch(saveSelectedSlot({
+                id: 0,
+                type: 'instant',
+            }))
             return;
         }
 
@@ -139,10 +143,15 @@ const ScheduleDeliveryScreen = ({ navigation }) => {
             orderType: 'schedule',
             delivery_date: selectedDate,
             delivery_time_slot: selectedSlot.slots,
-            delivery_time_slot_id: selectedSlot.id,
+            delivery_time_slot_id: selectedSlot.slotId,
         };
-
+        console.log("payload slot", payload)
+        dispatch(saveSelectedSlot({
+            id: selectedSlot.slotId,
+            type: 'schedule',
+        }))
         console.log('SCHEDULE ORDER PAYLOAD:', payload);
+        navigation.goBack();
     };
 
     /* ======================================================

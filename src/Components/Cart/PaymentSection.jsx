@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Toast from 'react-native-toast-message';
 
-const PaymentSection = ({ navigation }) => {
+const PaymentSection = ({ navigation , onPayClick }) => {
   const { theme } = useTheme();
 
   const [selectedMethod, setSelectedMethod] = useState('UPI');
@@ -59,12 +59,8 @@ const PaymentSection = ({ navigation }) => {
         </View>
 
         <TouchableOpacity onPress={() => {
-          Toast.show({
-            type: 'success',
-            text1: 'Product Checked out',
-            text2: `Note : For more details please check the order history`,
-            position: 'bottom',
-          });
+          onPayClick(selectedMethod)
+         
         }} style={[styles.payButton, { backgroundColor: theme.primary }]}>
           <Text style={{ color: theme.buttonText, fontFamily: Fonts.family.medium }}>
             Check out ₹234.87

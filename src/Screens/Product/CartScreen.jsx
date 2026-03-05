@@ -18,15 +18,20 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useUserId } from '../../customHooks/useUserID'
 import { clearCart, loadCartItems, addToCart, updateCart } from '../../Redux/Slices/CartSlice';
 import { getSelectedAddressId } from '../../Utils/GetSelectedAddress';
+import { placeOrder } from '../../Redux/Slices/OrderSlice'
+import { useToast } from '../../Components/Toast/ToastProvider';
 const CartScreen = ({ navigation }) => {
-
-
-
   const insets = useSafeAreaInsets();
   const { isBottomBarVisible } = useAppContext()
   const { cartItems, loading: cartLoading, error: cartError, isFetched: cartIsFetched } = useSelector((state) => state.cart)
   //ADDRESS LIST
-  const { addressList } = useSelector((state) => state.address)
+  const { addressList , selectedAddress : selectedAddressGlobalState } = useSelector((state) => state.address)
+
+
+  const { showToast } = useToast()
+  //selected slots or instant
+  const { selectedSlot } = useSelector((state) => state.sheduleOrder)
+
   //LOCATIONS + GEOCODING API DATA  
   const { error: LocationError, display_name, address: DetailedAddress, isFetched: isLocationApiFetched, currentLocationAddressFetched, currentLocationFormattedAddress, entireGEOData, loading: isGEOcodingApiLoading } = useSelector((state) => state.locations)
   const { theme } = useTheme()
@@ -216,7 +221,28 @@ const CartScreen = ({ navigation }) => {
           <OrderSummary />
 
           {/* payment button */}
-          <PaymentSection navigation={navigation} />
+          <PaymentSection navigation={navigation} onPayClick={async (paymentMethod) => {
+            const id = await getSelectedAddressId();
+            console.log(selectedSlot.id, "selected slot id from cart screen")
+            var data = {
+              addressId: id,
+              deliveryType: selectedSlot.type,
+              slotId: selectedSlot.id,
+              deliveryDate: new Date().toISOString(),
+              depositAmount: 0,
+              paymentMode: paymentMethod
+            }
+            dispatch(placeOrder({
+              body: data,
+              onSuccess: (response) => {
+                console.log("order placed successfully from con", response)
+                 showToast("Order placed successfully",false)
+                //  navigation.goBack()
+              },onError:(err) => {
+                showToast("Failed to place order",true)
+              }
+            }))
+          }} />
         </ScrollView>
       ) : (
         cartIsFetched && (

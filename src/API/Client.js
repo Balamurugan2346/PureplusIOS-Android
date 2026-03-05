@@ -1,7 +1,7 @@
 import axios from 'axios';
 import EndPoint from './EndPoint';
 // import { API_BASE_URL } from '../constants/config';
-import { getData } from '../OfflineStore/OfflineStore';
+import { getData , storeData } from '../OfflineStore/OfflineStore';
 
 
 const API_BASE_URL = "https://pureplusapp.in"
@@ -16,37 +16,36 @@ const apiClient = axios.create({
 const AUTH_WHITELIST = [
   EndPoint.GETOTP,
   EndPoint.VERIFYOTP,
-  // EndPoint.CREATEPROFILE //after new changes create user profile also need bearer token , not old method like preauth token
+  EndPoint.REFRESHTOKEN
 ];
+
+
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+
+  failedQueue = [];
+};
 
 apiClient.interceptors.request.use(
   async (config) => {
 
-    // const isCreateProfile = config.url.includes(EndPoint.CREATEPROFILE);
-
-    // 1️⃣ CREATEPROFILE → use preAuth header only
-    // if (isCreateProfile) {
-    //   const preAuthToken = await getData('preAuthToken')
-    //   config.headers['preAuth'] = preAuthToken;
-    //   // console.log("Using preAuth header for CREATEPROFILE",preAuthToken);
-    //   return config;
-    // }
-
-    // 2️⃣ Other whitelist APIs → skip token
     if (AUTH_WHITELIST.some((path) => config.url.includes(path))) {
-      // console.log("Whitelist API, skipping Authorization:", config.url);
       return config;
     }
-
-    // 3️⃣ All other APIs → attach Authorization
-    const token =  await getData('accessToken') // your token
+    const token =  await getData('accessToken')
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      // console.log("token",token)
     }
-
-    // console.log("Normal API → Added Authorization:", config.url);
     return config;
   },
 
@@ -54,7 +53,49 @@ apiClient.interceptors.request.use(
 );
 
 
+apiClient.interceptors.response.use(
+  response => response,
 
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        const refreshToken = await getData('accessToken');
+
+        const refreshResponse = await refreshClient.post(
+          EndPoint.REFRESHTOKEN,
+          { refreshToken }
+        );
+
+        const newAccessToken = refreshResponse.data.token;
+
+        // 1️⃣ Store new token
+        await storeData('accessToken', newAccessToken);
+
+        // 2️⃣ Update header for this retry
+        originalRequest.headers.Authorization =
+          `Bearer ${newAccessToken}`;
+
+
+            console.log("REFRESH AXIOS REQUEST:", originalRequest);
+
+        // 3️⃣ Retry original request automatically
+        return apiClient(originalRequest);
+
+      } catch (refreshError) {
+        // logout user here
+        return Promise.reject(refreshError);
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
+
+//for log purpose only 
 apiClient.interceptors.request.use(req => {
   console.log("AXIOS REQUEST:", JSON.stringify({
     url: req.url,

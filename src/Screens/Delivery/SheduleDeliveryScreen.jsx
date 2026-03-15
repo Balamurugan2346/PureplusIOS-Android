@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
     View,
     Text,
@@ -38,10 +38,13 @@ const ScheduleDeliveryScreen = ({ navigation }) => {
     const [selectedSlot, setSelectedSlot] = useState(null);
     const [showCalendar, setShowCalendar] = useState(false);
 
+    const hasLoaded = useRef(false);
 
     useEffect(() => {
         console.log("calleed")
         console.log("slots", slots)
+        if (hasLoaded.current) return;
+        hasLoaded.current = true;
         dispatch(loadSheduleSlots())
     }, [dispatch])
 
@@ -164,7 +167,7 @@ const ScheduleDeliveryScreen = ({ navigation }) => {
 
             {/* Shipment Info */}
             <Text style={[styles.shipmentText, { fontFamily: Fonts.family.semiBold }]}>
-                Items (Units) : {cartItems.length}
+                Items  : {cartItems.length}
             </Text>
 
             {/* Delivery Type Buttons */}

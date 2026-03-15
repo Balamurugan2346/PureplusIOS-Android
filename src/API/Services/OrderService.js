@@ -11,6 +11,20 @@ export const placeOrder = (orderDetails) => {
   return apiClient.post(endpoints.ORDER_PLACE, orderDetails);
 };
 
+
+export const getOrderedDetailed = (id) => {
+  return apiClient.get(`${endpoints.ORDER_DETAILED}/${id}`)
+}
+
+
+export const getAllOrders  = () => {
+  return apiClient.get(endpoints.GET_ALL_ORDERS)
+}
+
+export const getCurrentOrder = () => {
+  return apiClient.get(endpoints.GET_CURRENT_ORDER)
+}
+
 export const refillBalance  = ()=>{
   return apiClient.get(endpoints.REFILL_BALANCE);
 }

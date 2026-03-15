@@ -24,7 +24,7 @@ const ViewCartButton = ({cart,navigation}) => {
   }
 
   return (
-    <TouchableOpacity onPress={()=>navigation.navigate('CartScreen')} style={[styles.container, { backgroundColor: theme.primary ,marginBottom:insets.bottom }]}>
+    <TouchableOpacity onPress={()=>navigation.navigate('CartScreen')} style={[styles.container, { backgroundColor: theme.primary ,marginBottom:insets.bottom + 70 }]}>
       <Image source={require('../../../assets/images/cart.png')} tintColor={theme.buttonText} style={styles.icon} />
 
       <View style={styles.items}>

@@ -1,15 +1,18 @@
 import { Image, StyleSheet, View } from 'react-native';
 import { useTheme } from '../Context/ThemeContext';
-
-const AppNavButton = ({isback=true,color,style}) => {
-    const { theme, toggleTheme } = useTheme();
+import Ionicons from 'react-native-vector-icons/Ionicons';
+const AppNavButton = ({ isback = true, color, style }) => {
+  const { theme, toggleTheme } = useTheme();
   return (
-    <View style={[{
-        backgroundColor:color ? color : theme.background,
-        borderRadius:12,
-        padding:10
-    },style]}>
-      <Image source={require("../../assets/images/back_arrow.png")}  width={50} height={50}/>
+    <View
+      style={[styles.backButton, {
+        backgroundColor: "#8fa6bf",
+        padding: 10,
+        borderRadius: 12,
+        marginRight: 12
+      }]}
+    >
+      <Ionicons name="arrow-back" size={20} color="#fff" />
     </View>
   )
 }

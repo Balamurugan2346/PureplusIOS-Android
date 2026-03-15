@@ -36,11 +36,11 @@ const styles = StyleSheet.create({
 
     container: {
         alignSelf: "flex-start",
-        alignItems: "center"
+        alignItems: "center",
     },
 
     cardContainer: {
-        alignSelf: "flex-start",
+        alignSelf: "center",
         overflow: 'hidden',
         padding: 16,
         alignItems: "center",

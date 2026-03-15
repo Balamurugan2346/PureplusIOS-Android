@@ -2,7 +2,7 @@ import BottomSheet from '../../Components/BottomSheet';
 import { useAppContext } from '../../Context/AppContext';
 import { useTabBarVisibility } from '../../Context/BottomBarContext';
 import { useTheme } from '../../Context/ThemeContext';
-import { clearBanners, loadBanners } from '../../Redux/Slices/BannerSlice';
+import { clearBanners, clearCustomerSupportDetails, loadBanners, loadCustomerSupportDetails } from '../../Redux/Slices/BannerSlice';
 import { clearProfileState, getUserProfile } from '../../Redux/Slices/ProfileSlice'
 import { clearDecodedAddress, decodeAddress, decodeCurrentLocationAddress } from '../../Redux/Slices/LocationSlice';
 import { clearProducts, loadProducts } from '../../Redux/Slices/ProductsSlice';
@@ -50,6 +50,8 @@ import { clearCart, loadCartItems } from '../../Redux/Slices/CartSlice';
 import { logout } from '../../Redux/LogoutActions';
 import { requestNotificationPermission } from '../../Utils/NotificationUtils';
 import { getFcmToken } from '../../Utils/FirebaseUtils';
+import { getCurrentOrder } from '../../Redux/Slices/OrderSlice';
+import FirstLetterAvatar from '../../Components/Profile/FirstLetterAvatar';
 
 // Placeholder Carousel Data
 const bannerData = [
@@ -143,7 +145,7 @@ const Dashboard = ({ navigation }) => {
   //REDUX
   const dispatch = useDispatch();
   //BANNERS API DATA
-  const { list, loading, error, isFetched: isBannerFetched } = useSelector((state) => state.banners);
+  const { list, loading, error, isFetched: isBannerFetched, isCustomerSupportFetched, iscustomerSupportLoading } = useSelector((state) => state.banners);
   //PRODUCTS API DATA
   const { productList, loading: productsLoading, error: productError, isFetched: isProductsFetched } = useSelector((state) => state.products)
   //LOCATIONS + GEOCODING API DATA  
@@ -156,6 +158,8 @@ const Dashboard = ({ navigation }) => {
 
   const { cartItems, loading: cartLoading, error: cartError, isFetched: cartIsFetched, cartUpdateLoading } = useSelector((state) => state.cart)
 
+
+  const { currentOrder } = useSelector((state) => state.order)
 
   useEffect(() => {
     console.log("productList", productList)
@@ -239,11 +243,30 @@ const Dashboard = ({ navigation }) => {
     }
   }, [dispatch, isBannerFetched]); // 🔹 only run on mount
 
+
+  useEffect(() => {
+    //call any time 
+    dispatch(getCurrentOrder({
+      onSuccess: () => {
+
+      },
+      onError: () => {
+
+      }
+    }))
+  }, [dispatch])
+
   useEffect(() => {
     if (!isProfileApiFetched) {
       dispatch(getUserProfile());
     }
   }, [dispatch, isProfileApiFetched]); // 🔹 only run on mount
+
+  // useEffect(() => {
+  //   if (!isCustomerSupportFetched) {
+  //     dispatch(loadCustomerSupportDetails());
+  //   }
+  // }, [dispatch, isCustomerSupportFetched]); // 🔹 only run on mount
 
 
   useEffect(() => {
@@ -282,10 +305,20 @@ const Dashboard = ({ navigation }) => {
     dispatch(clearBanners())
     dispatch(clearProfileState())
     dispatch(clearDecodedAddress())
+    dispatch(clearCustomerSupportDetails())
 
     dispatch(loadBanners())
     dispatch(loadProducts())
+    dispatch(loadCustomerSupportDetails())
     dispatch(getUserProfile())
+    dispatch(getCurrentOrder({
+      onSuccess: () => {
+
+      },
+      onError: () => {
+
+      }
+    }))
     syncAddress();
     synCCart()
     requestNotificationPermission()
@@ -299,7 +332,7 @@ const Dashboard = ({ navigation }) => {
   //RENDER UI CONDITION
   const isAddressBarLoading = (isGEOcodingApiLoading || isLocationFetching)
 
-  const dasboardLoading = loading || productsLoading || profileLoading || cartLoading || cartUpdateLoading
+  const dasboardLoading = loading || productsLoading || profileLoading || cartLoading || cartUpdateLoading || iscustomerSupportLoading
 
   return (
     <View
@@ -337,7 +370,15 @@ const Dashboard = ({ navigation }) => {
                 });
               }
             }}>
-              <Image source={require('../../../assets/images/person.png')} style={{ width: 30, height: 30, borderRadius: 30 }} />
+              {profileData && (
+                <FirstLetterAvatar
+                  width={30}
+                  fontSize={12}
+                  height={30}
+                  input={profileData?.fullName}
+                />
+              )}
+
             </TouchableOpacity>
 
             <Text style={titleConfig}>Pure Plus</Text>
@@ -414,7 +455,7 @@ const Dashboard = ({ navigation }) => {
           ))}
         </View>
 
-        <OrderTracking title={"Track Your current Order"} description={"Arriving in 4 mins"} img={require('../../../assets/images/person.png')} />
+
 
 
 
@@ -537,7 +578,12 @@ const Dashboard = ({ navigation }) => {
 
 
       </ScrollView>
-      {console.log("cart",cartItems)}
+
+      {currentOrder && (
+        <OrderTracking currentOrder={currentOrder} style={{ marginBottom: insets.bottom }} title={"Track Your current Order"} description={`Arriving in ${currentOrder?.data?.eta}`} img={require('../../../assets/images/person.png')} navigation={navigation} />
+      )}
+
+      {console.log("cart", cartItems)}
       {!loading && cartIsFetched && cartItems.length > 0 && (
         <ViewCartButton navigation={navigation} cart={cartItems} />
       )}

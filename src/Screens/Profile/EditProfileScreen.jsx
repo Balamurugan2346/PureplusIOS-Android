@@ -1,213 +1,198 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
+  TextInput,
   TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
+  Image,
+  ScrollView
 } from 'react-native';
+
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import TopAppBar from '../../Components/TopAppBar';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDispatch, useSelector } from 'react-redux';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-// Your Inputs
-import CustomInput from '../../Components/Inputs/CustomInput';
-import EmailInput from '../../Components/Inputs/EmailInput';
-import NumberInput from '../../Components/Inputs/NumberInput';
 import { useToast } from '../../Components/Toast/ToastProvider';
-import { useTheme } from '../../Context/ThemeContext';
-import { clearProfileState, getUserProfile, saveProfileData, updateUserProfile } from '../../Redux/Slices/ProfileSlice';
-import AppLoading from '../../Components/AppLoading';
-import { opacity } from 'react-native-reanimated/lib/typescript/Colors';
-import App from '../../../App';
-import Fonts from '../../../assets/fonts/Fonts';
-
+import { updateUserProfile, getUserProfile } from '../../Redux/Slices/ProfileSlice';
+import FirstLetterAvatar from '../../Components/Profile/FirstLetterAvatar'
 
 const EditProfileScreen = ({ navigation }) => {
 
   const insets = useSafeAreaInsets();
-  const { showToast } = useToast()
-  const { theme } = useTheme()
-  const dispatch = useDispatch()
+  const dispatch = useDispatch();
+  const { showToast } = useToast();
 
-  // -------- GET EXISTING DATA FROM STORE ----------
-  const { profileData, loading, error, isFetched } = useSelector((state) => state.profile);
+  const { profileData, loading } = useSelector((state) => state.profile);
 
-  // -------- LOCAL STATES FOR EDITING ----------
-  const [fullName, setFullName] = useState({ data: profileData.fullName, error: "" });
-  const [email, setEmail] = useState({ data: profileData.email, error: "" });
-  const [mobile, setMobile] = useState({
-    data: profileData.mobileNumber || "",
-    error: ""
-  });
+  /* STATES */
 
-  
-  const paratextConfig = {
-    color: theme.secondaryText,
-    fontFamily: Fonts.family.medium,
-    fontSize: Fonts.size.sm
-  }
+  const [name, setName] = useState(profileData?.fullName || "");
+  const [email, setEmail] = useState(profileData?.email || "");
+  const [phone] = useState(profileData?.mobileNumber || "");
 
-  // -------- INPUT REFS ----------
-  const nameRef = useRef();
-  const emailRef = useRef();
-  const numRef = useRef()
+  const [nameError, setNameError] = useState("");
+  const [emailError, setEmailError] = useState("");
 
-  // -------- Save Handler ----------
+  /* VALIDATION */
+
+  const validateName = (text) => {
+    setName(text);
+
+    if (text.length < 3) {
+      setNameError("Name must be at least 3 characters");
+    } else {
+      setNameError("");
+    }
+  };
+
+  const validateEmail = (text) => {
+    setEmail(text);
+
+    const emailRegex =
+      /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+
+    if (!emailRegex.test(text)) {
+      setEmailError("Invalid email address");
+    } else {
+      setEmailError("");
+    }
+  };
+
+  /* SAVE */
+
   const handleSave = () => {
 
-    if (fullName.error || email.error || mobile.error) {
-      alert("Please fix errors before saving.");
+    if (nameError || emailError) {
+      showToast("Please fix errors", true);
       return;
     }
 
     const body = {
-      fullName: fullName.data,
-      email: email.data,
-      mobileNumber: mobile.data
+      fullName: name,
+      email: email,
+      mobileNumber: phone
     };
 
-    console.log("SAVE BODY:", body);
+    dispatch(updateUserProfile({
+      profileData: body,
+      onSuccess: () => {
+        dispatch(getUserProfile()).unwrap().then(() => {
+          showToast("Profile Updated Successfully");
+          navigation.goBack();
+        });
+      },
+      onError: (err) => {
+        showToast(err, true);
+      }
+    }));
 
-    // You will call redux or api here:
-    // dispatch(updateProfile(body))
-    dispatch(
-      updateUserProfile({
-        profileData: body,
-        onSuccess: (data) => {
-          console.log("received data", data)
-          // dispatch(clearProfileState())
-          dispatch(getUserProfile()).unwrap().then(() => {
-            showToast(`SUCCESS: ProfileUpdated Successfully`)
-              navigation.goBack();
-          })
-        },
-        onError: (err) => {
-          showToast(`ERROR: ${err} while updating`, true)
-          dispatch(clearError())
-        }
-      })
-    );
   };
 
   return (
+
     <View style={[styles.container, { paddingBottom: insets.bottom }]}>
-      <TopAppBar title="Edit Profile" navigation={navigation} />
 
-      <View
-      >
+      {/* HEADER */}
 
-        {loading && (
-          <AppLoading isVisible={loading} />
-        )}
-        <View style={{ paddingHorizontal: 10, paddingVertical: 10 }}>
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={[styles.backButton, {
+            backgroundColor: "#8fa6bf",
+            padding: 10,
+            borderRadius: 12,
+            marginRight: 12
+          }]}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={20} color="#fff" />
+        </TouchableOpacity>
 
-          {/* <Text style={styles.headerText}>Update Your D?etails</Text> */}
-
-          {/* USERNAME */}
-          <CustomInput
-            tintColor={theme.background}
-            inputRef={nameRef}
-            textStyle={{ color: theme.background }}
-            style={{ backgroundColor: theme.secondaryBackground }}
-            icon={require('../../../assets/images/user.png')}
-            label={"Full Name"}
-            placeholder={"Enter your name"}
-            type={"Username"}
-            initialValue={fullName.data}
-            onValidateInput={(data) => setFullName({ data: data.input, error: data.error })}
-            returnKeyType='next'
-            onSubmitEditing={() => emailRef.current?.focus()}
-          />
-
-          {/* {loading && (
-            <AppLoading isVisible={loading} />
-          )} */}
-          {/* EMAIL */}
-          <EmailInput
-            tintColor={theme.background}
-            styleText={{ color: theme.background }}
-            style={{ backgroundColor: theme.secondaryBackground, marginTop: 15 }}
-            ref={emailRef}
-            initialValue={email.data}
-            onValidEmail={(data) => {
-              setEmail({ data: data.email, error: data.error });
-            }}
-            returnKeyType="done"
-          />
-
-          {/* MOBILE NUMBER - NON EDITABLE */}
-          {/* <NumberInput
-          initialValue ={profileData.mobileNumber}
-          textStyle={{color:theme.background}}
-           style={{marginTop:10,backgroundColor:theme.secondaryBackground}}
-            ref={numRef}
-            onClick={() => setMobile(null)}
-            onValidateNumber={(val) =>
-            // console.log(val)
-            { val.number ? setMobile(val.number) : setMobile(null) }
-            }
-            onSubmitEditing={() => {
-              console.log(mobile)
-              mobile ? showToast('validate') : setMobile(null)
-            }}
-          /> */}
-          <NumberInput
-            editable={false}
-            initialValue={profileData.mobileNumber}
-            textStyle={{ color: theme.background }}
-            style={{ marginTop: 10, backgroundColor: theme.secondaryBackground }}
-            ref={numRef}
-
-            // to clear error when user clicks
-            onClick={() =>
-              setMobile(prev => ({ ...prev, error: "" }))
-            }
-
-            // validate (NumberInput gives something like {number:true/false})
-            onValidateNumber={(val) => {
-              if (val.number) {
-                setMobile({ data: val.number, error: "" });
-              } else {
-                setMobile({ data: "", error: "Invalid mobile number" });
-              }
-            }}
-
-            onSubmitEditing={() => {
-              if (mobile.error || !mobile.data) {
-                showToast("Enter valid mobile number", true);
-              } else {
-                showToast("Valid");
-              }
-            }}
-          />
-          <Text style={[paratextConfig,{marginLeft:10,textAlign:"center"}]}>Note:Number can't be change</Text>
-
-        </View>
-
-        {/* SAVE BUTTON */}
-        <View style={styles.footer}>
-          <TouchableOpacity
-            style={[
-              styles.saveButton,
-              {
-                opacity: loading ? 0.4 : 1,
-                backgroundColor: loading ? "#999" : styles.saveButton.backgroundColor,
-              },
-            ]}
-            disabled={loading}
-            onPress={handleSave}
-          >
-            <Text style={styles.saveBtnText}>
-              {loading ? "Saving..." : "Save Changes"}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
+        <Text style={styles.headerTitle}>Edit Profile</Text>
       </View>
+
+      <ScrollView contentContainerStyle={styles.content}>
+
+        {/* AVATAR */}
+
+        <View style={styles.avatarContainer}>
+
+          <FirstLetterAvatar
+            input={profileData.fullName}
+          />
+
+          {/* <View style={styles.editIcon}>
+            <Ionicons name="pencil" size={14} color="#fff" />
+          </View> */}
+
+          <Text style={styles.changePhoto}>Profile</Text>
+
+        </View>
+
+
+        {/* NAME */}
+
+        <Text style={styles.label}>Name</Text>
+
+        <View style={styles.inputCard}>
+          <Ionicons name="person-outline" size={18} color="#888" />
+          <TextInput
+            style={styles.input}
+            value={name}
+            onChangeText={validateName}
+          />
+        </View>
+
+        {nameError ? <Text style={styles.error}>{nameError}</Text> : null}
+
+
+        {/* EMAIL */}
+
+        <Text style={styles.label}>Email</Text>
+
+        <View style={styles.inputCard}>
+          <Ionicons name="mail-outline" size={18} color="#888" />
+          <TextInput
+            style={styles.input}
+            value={email}
+            onChangeText={validateEmail}
+          />
+        </View>
+
+        {emailError ? <Text style={styles.error}>{emailError}</Text> : null}
+
+
+        {/* PHONE */}
+
+        <Text style={styles.label}>Phone Number</Text>
+
+        <View style={[styles.inputCard, { backgroundColor: "#f1f4f7" }]}>
+          <Ionicons name="call-outline" size={18} color="#888" />
+          <TextInput
+            style={styles.input}
+            value={phone}
+            editable={false}
+          />
+        </View>
+
+        <Text style={styles.note}>
+          Note: Number can't be changed
+        </Text>
+
+
+        {/* SAVE */}
+
+        <TouchableOpacity
+          style={styles.saveButton}
+          onPress={handleSave}
+        >
+          <Text style={styles.saveText}>
+            {loading ? "Saving..." : "Save Changes"}
+          </Text>
+        </TouchableOpacity>
+
+      </ScrollView>
+
     </View>
   );
 };
@@ -215,43 +200,112 @@ const EditProfileScreen = ({ navigation }) => {
 export default EditProfileScreen;
 
 const styles = StyleSheet.create({
+
   container: {
     flex: 1,
-    backgroundColor: '#f4f4f4',
-  },
-  headerText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#34495e',
-    marginBottom: 20,
-  },
-  readonlyLabel: {
-    marginTop: 5,
-    fontSize: 13,
-    color: '#7f8c8d',
-  },
-  readonlyValue: {
-    marginTop: 3,
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2c3e50',
+    backgroundColor: "#f5f7fa"
   },
 
-  footer: {
-    // backgroundColor: 'white',
-    padding: 15,
-    // borderTopWidth: 1,
-    // borderTopColor: '#ecf0f1',
+  header: {
+    backgroundColor: "#0c1c2c",
+    paddingTop: 40,
+    paddingBottom: 18,
+    paddingHorizontal: 20,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    flexDirection: "row",
+    alignItems: "center"
   },
+
+  backButton: {
+
+  },
+
+  headerTitle: {
+    fontSize: 18,
+    color: "#fff",
+    fontWeight: "600"
+  },
+
+  content: {
+    padding: 20
+  },
+
+  avatarContainer: {
+    alignItems: "center",
+    marginBottom: 20
+  },
+
+  avatar: {
+    width: 110,
+    height: 110,
+    borderRadius: 60
+  },
+
+  editIcon: {
+    position: "absolute",
+    right: 110,
+    bottom: 30,
+    backgroundColor: "#ff6b00",
+    padding: 6,
+    borderRadius: 20
+  },
+
+  changePhoto: {
+    color: "black",
+    fontWeight: 500,
+    marginTop: 8,
+    fontSize: 13
+  },
+
+  label: {
+    fontSize: 13,
+    color: "#666",
+    marginBottom: 6,
+    marginTop: 10
+  },
+
+  inputCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#d9e0e6",
+    paddingHorizontal: 12,
+    backgroundColor: "#fff"
+  },
+
+  input: {
+    flex: 1,
+    paddingVertical: 12,
+    marginLeft: 8
+  },
+
+  note: {
+    textAlign: "center",
+    fontSize: 12,
+    color: "#8a9ba8",
+    marginTop: 8
+  },
+
   saveButton: {
-    backgroundColor: '#3498db',
-    borderRadius: 8,
-    paddingVertical: 14,
-    alignItems: 'center',
+    backgroundColor: "#1f95c9",
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: "center",
+    marginTop: 25
   },
-  saveBtnText: {
-    color: 'white',
-    fontSize: 17,
-    fontWeight: '600',
+
+  saveText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600"
   },
+
+  error: {
+    color: "red",
+    fontSize: 12,
+    marginTop: 3
+  }
+
 });

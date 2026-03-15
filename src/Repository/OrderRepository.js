@@ -1,4 +1,4 @@
-import { calculateDeposit, placeOrder, cancelOrder, refillBalance, getSubscriptionPlans } from '../API/Services/OrderService';
+import { calculateDeposit, placeOrder, cancelOrder, refillBalance,getCurrentOrder, getSubscriptionPlans, placeOrderSubscription, getOrderedDetailed, getAllOrders } from '../API/Services/OrderService';
 
 export const OrderRepository = {
     calculateDeposit: async (totalUnits) => {
@@ -22,6 +22,36 @@ export const OrderRepository = {
             throw e
         }
     },
+
+
+    getOrderDetailed: async (id) => {
+        try {
+            const response = await getOrderedDetailed(id)
+            return response.data
+        } catch (e) {
+            console.log("error while getting order detailed", e)
+            throw e
+        }
+    },
+
+    getAllOrders: async () => {
+        try {
+            const response = await getAllOrders()
+            return response.data
+        } catch (e) {
+            throw e
+        }
+    },
+
+      getCurrentOrder: async () => {
+        try {
+            const response = await getCurrentOrder()
+            return response.data
+        } catch (e) {
+            throw e
+        }
+    },
+    
     cancelOrder: async (id) => {
         console.log("called from redux")
         try {
@@ -53,7 +83,7 @@ export const OrderRepository = {
             const response = await getSubscriptionPlans()
             return response.data
         } catch (e) {
-            console.log("error while fetching refill balance", e)
+            console.log("error while fetching subscription plans", e)
             throw e
         }
     },

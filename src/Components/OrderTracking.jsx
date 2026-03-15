@@ -7,7 +7,7 @@ import Fonts from '../../assets/fonts/Fonts';
 import VectorBg from './VectorBg';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import OrderTimeline from '../Components/OrderTracking/OrderTimeLIne'
-const OrdetTracking = ({ title, description, img }) => {
+const OrdetTracking = ({ title, description, img, style, currentOrder, navigation }) => {
 
 
     const callNumber = (phone) => {
@@ -25,8 +25,12 @@ const OrdetTracking = ({ title, description, img }) => {
 
 
     const toggleExpand = () => {
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-        setExpanded(!expanded);
+        // LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        // setExpanded(!expanded);
+        console.log("currentOrder",currentOrder)
+        if (currentOrder && currentOrder?.data?.orderId) {
+            navigation.navigate('OrderTrackingScreen', { id: currentOrder?.data?.orderId })
+        }
     };
 
     const headerConfig = {
@@ -49,17 +53,18 @@ const OrdetTracking = ({ title, description, img }) => {
     }
 
     return (
-        <LinearGradient
-            colors={[
-                theme.inputContainerBorder,
-                theme.card,
-            ]}
-            start={{ x: 0, y: 0 }}          // Left side
-            end={{ x: 1, y: 0 }}            // Right side
-            style={styles.cardContainer}>
+        <View style={style}>
+            <LinearGradient
+                colors={[
+                    theme.inputContainerBorder,
+                    theme.card,
+                ]}
+                start={{ x: 0, y: 0 }}          // Left side
+                end={{ x: 1, y: 0 }}            // Right side
+                style={styles.cardContainer}>
 
 
-            {/* <ImageBackground
+                {/* <ImageBackground
                 source={require('../../assets/images/otpbg.png')}
                 blurRadius={4}
                 style={[{ overflow: "hidden", borderRadius: 16, zIndex: -1, backgroundColor: theme.primary }, StyleSheet.absoluteFill]}
@@ -68,73 +73,73 @@ const OrdetTracking = ({ title, description, img }) => {
 
 
 
-            <View>
-                <TouchableOpacity onPress={toggleExpand} style={styles.innerRow}>
-                    {/* Left Text Section */}
-                    <View style={{ flex: 1, paddingRight: 10 }}>
-                        <View style={{ flexDirection: "row" }}>
-                            <VectorBg icon={"location"} bgColor={'lightgreen'} iconTint={"green"} />
-                            <View style={{ marginLeft: 10 }}>
-                                <Text style={headerConfig}>{title}</Text>
-                                <Text style={[paratextConfig, { marginTop: 5 }]}>{description}</Text>
+                <View >
+                    <TouchableOpacity onPress={toggleExpand} style={styles.innerRow}>
+                        {/* Left Text Section */}
+                        <View style={{ flex: 1, paddingRight: 10 }}>
+                            <View style={{ flexDirection: "row" }}>
+                                <VectorBg icon={"location"} bgColor={'lightgreen'} iconTint={"green"} />
+                                <View style={{ marginLeft: 10 }}>
+                                    <Text style={headerConfig}>{title}</Text>
+                                    <Text style={[paratextConfig, { marginTop: 5 }]}>{description}</Text>
 
-                            </View>
-                        </View>
-
-
-
-                    </View>
-
-                    {/* Right Image Section */}
-
-                    <View style={{ alignItems: "center" }}>
-                        <Ionicons style={{}} onPress={toggleExpand} name={!expanded ? 'chevron-down' : 'chevron-up'} color={theme.buttonText} size={20} />
-                        <Image source={require('../../assets/images/map.png')} style={{ width: 30, height: 30 }} />
-                    </View>
-
-                </TouchableOpacity>
-
-                {expanded && (
-                    <View style={styles.expandedSection}>
-                        <View style={styles.detailsContainer}>
-                            <View style={{ flexDirection: "column", paddingBottom: 5 }}>
-                                <Text style={[paratextConfig, { color: theme.secondaryText }]}>Order ID</Text>
-                                <Text style={[paratextConfig, { color: theme.buttonText }]}>#2342422424</Text>
-                            </View>
-                            <View style={{ flexDirection: "column", marginVertical: 5 }}>
-                                <View style={{ flexDirection: "row", justifyContent: "space-between", flex: 1 }}>
-                                    <View>
-                                        <Text style={[paratextConfig, { color: theme.secondaryText }]}>Delivery Person</Text>
-                                        <Text style={[paratextConfig, { color: theme.buttonText }]}>John Doe, +91 6380273804</Text>
-                                    </View>
-                                    <TouchableOpacity onPress={() => callNumber('6380273804')} style={{ borderRadius: 16, backgroundColor: theme.primary, padding: 6, alignSelf: "flex-start" }}>
-                                        <Text style={[paratextConfig, { color: theme.buttonText }]}>Call now</Text>
-                                    </TouchableOpacity>
                                 </View>
                             </View>
-                            <View style={{ flexDirection: "column", paddingBottom: 5 }}>
-                                <Text style={[paratextConfig, { color: theme.secondaryText }]}>Receiver's Name</Text>
-                                <Text style={[paratextConfig, { color: theme.buttonText }]}>Balamurugan</Text>
-                            </View>
-                            <View style={{ flexDirection: "column" }}>
-                                <Text style={[paratextConfig, { color: theme.secondaryText }]}>Receiver's Address</Text>
-                                <Text style={[paratextConfig, { color: theme.buttonText }]}>3rd Floor, B Block, Marvel Heights</Text>
-                            </View>
-                            <View style={{ flexDirection: "column", marginVertical: 5 }}>
-                                <Text style={[paratextConfig, { color: theme.secondaryText }]}>Order taken Time</Text>
-                                <Text style={[paratextConfig, { color: theme.buttonText }]}>12:00 PM</Text>
 
-                            </View>
-                            <View style={{ flexDirection: "column", marginVertical: 5 }}>
-                                <Text style={[paratextConfig, { color: theme.secondaryText }]}>Estimated Delivery Time</Text>
-                                <Text style={[paratextConfig, { color: theme.buttonText }]}>12:06 PM</Text>
 
-                            </View>
+
                         </View>
 
-                        <OrderTimeline/>
-                        {/* MAP VIEW */}
-                        {/* <MapView
+                        {/* Right Image Section */}
+
+                        <View style={{ alignItems: "center" }}>
+                            <Ionicons style={{}} onPress={toggleExpand} name={!expanded ? 'chevron-forward-outline' : 'chevron-forward-outline'} color={theme.buttonText} size={20} />
+                            {/* <Image source={require('../../assets/images/map.png')} style={{ width: 30, height: 30 }} /> */}
+                        </View>
+
+                    </TouchableOpacity>
+
+                    {expanded && (
+                        <View style={styles.expandedSection}>
+                            <View style={styles.detailsContainer}>
+                                <View style={{ flexDirection: "column", paddingBottom: 5 }}>
+                                    <Text style={[paratextConfig, { color: theme.secondaryText }]}>Order ID</Text>
+                                    <Text style={[paratextConfig, { color: theme.buttonText }]}>#2342422424</Text>
+                                </View>
+                                <View style={{ flexDirection: "column", marginVertical: 5 }}>
+                                    <View style={{ flexDirection: "row", justifyContent: "space-between", flex: 1 }}>
+                                        <View>
+                                            <Text style={[paratextConfig, { color: theme.secondaryText }]}>Delivery Person</Text>
+                                            <Text style={[paratextConfig, { color: theme.buttonText }]}>John Doe, +91 6380273804</Text>
+                                        </View>
+                                        <TouchableOpacity onPress={() => callNumber('6380273804')} style={{ borderRadius: 16, backgroundColor: theme.primary, padding: 6, alignSelf: "flex-start" }}>
+                                            <Text style={[paratextConfig, { color: theme.buttonText }]}>Call now</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+                                <View style={{ flexDirection: "column", paddingBottom: 5 }}>
+                                    <Text style={[paratextConfig, { color: theme.secondaryText }]}>Receiver's Name</Text>
+                                    <Text style={[paratextConfig, { color: theme.buttonText }]}>Balamurugan</Text>
+                                </View>
+                                <View style={{ flexDirection: "column" }}>
+                                    <Text style={[paratextConfig, { color: theme.secondaryText }]}>Receiver's Address</Text>
+                                    <Text style={[paratextConfig, { color: theme.buttonText }]}>3rd Floor, B Block, Marvel Heights</Text>
+                                </View>
+                                <View style={{ flexDirection: "column", marginVertical: 5 }}>
+                                    <Text style={[paratextConfig, { color: theme.secondaryText }]}>Order taken Time</Text>
+                                    <Text style={[paratextConfig, { color: theme.buttonText }]}>12:00 PM</Text>
+
+                                </View>
+                                <View style={{ flexDirection: "column", marginVertical: 5 }}>
+                                    <Text style={[paratextConfig, { color: theme.secondaryText }]}>Estimated Delivery Time</Text>
+                                    <Text style={[paratextConfig, { color: theme.buttonText }]}>12:06 PM</Text>
+
+                                </View>
+                            </View>
+
+                            <OrderTimeline />
+                            {/* MAP VIEW */}
+                            {/* <MapView
                            style={{ height: 300, width: "100%", marginTop: 10, borderRadius: 20 }}
                             provider={PROVIDER_GOOGLE}
                             initialRegion={{
@@ -172,12 +177,13 @@ const OrdetTracking = ({ title, description, img }) => {
                                 strokeWidth={4}
                             />
                         </MapView> */}
-                        {/* <Image source={require('../../assets/images/StaticMapView.jpeg')} style={{ height: 300, width: "100%", marginTop: 10, borderRadius: 20 }} /> */}
-                    </View>
-                )}
-            </View>
+                            {/* <Image source={require('../../assets/images/StaticMapView.jpeg')} style={{ height: 300, width: "100%", marginTop: 10, borderRadius: 20 }} /> */}
+                        </View>
+                    )}
+                </View>
 
-        </LinearGradient >
+            </LinearGradient >
+        </View>
     );
 };
 

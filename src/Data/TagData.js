@@ -9,9 +9,9 @@ export const TagData = [
   },
   {
     id: '2',
-    title: 'Last Order',
+    title: 'Subscriptions',
     icon: require('../../assets/images/cart.png'),
-    routeName: null,
+    routeName: 'SubscriptionScreen',
     badgeNeed : false,
   },
   {

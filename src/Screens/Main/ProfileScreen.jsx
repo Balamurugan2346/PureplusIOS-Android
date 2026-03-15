@@ -26,7 +26,7 @@ import { logout } from '../../Redux/LogoutActions';
 // --- Data Structure for the main list items ---
 const SETTINGS_ITEMS = [
   // { name: 'Notification', icon: 'notifications', type: 'toggle', key: 'notification' },
-  { name: 'Language Settings', icon: 'language', type: 'link', key: 'language' },
+  // { name: 'Language Settings', icon: 'language', type: 'link', key: 'language' },
   { name: 'Privacy Policy', icon: 'clipboard-outline', type: 'link', key: 'PrivacyPolicy' },
   { name: 'Terms and Conditions', icon: 'document', type: 'link', key: 'Terms' },
 ];
@@ -76,7 +76,7 @@ const ProfileScreen = ({ navigation }) => {
 
   const handleLogout = async () => {
     await clearDataBeforeLogout()
-    dispatch(logout());  
+    dispatch(logout());
     // dispatch(clearProfileState())
     // dispatch(clearBanners())
     // dispatch(clearProducts())
@@ -100,252 +100,294 @@ const ProfileScreen = ({ navigation }) => {
     // Implement account deletion flow
   };
 
-  // --- Helper Component for a single list item ---
-  const SettingsItem = ({ item, isDestructive = false }) => {
-    const isLink = item.type === 'link';
-    const isToggle = item.type === 'toggle';
-
-    return (
-      <TouchableOpacity
-        style={styles.listItem}
-        onPress={() => isLink && handleAction(item.key)}
-        disabled={isToggle} // Disable touch feedback for the toggle item itself
-        activeOpacity={isLink || isDestructive ? 0.7 : 1}
-      >
-        <View style={styles.iconBackground}>
-          <Ionicons name={item.icon} color={'#3498db'} size={22} />
-          {/* <Icon 
-            name={item.icon} 
-            size={22} 
-            color={isDestructive ? '#e74c3c' : '#3498db'} // Red for destructive, blue otherwise
-          /> */}
-        </View>
-        <Text style={[styles.itemText, isDestructive && styles.destructiveText]}>
-          {item.name}
-        </Text>
-
-        {isLink && (
-          <Ionicons name={'arrow-forward-outline'} color={'#3498db'} size={22} />
-        )}
-
-        {isToggle && (
-          <Switch
-            trackColor={{ false: "#ecf0f1", true: "#3498db" }}
-            thumbColor={isNotificationEnabled ? "white" : "#f4f3f4"}
-            ios_backgroundColor="#ecf0f1"
-            onValueChange={setIsNotificationEnabled}
-            value={isNotificationEnabled}
-          />
-        )}
-      </TouchableOpacity>
-    );
-  };
   // -----------------------------------------------
 
   const insets = useSafeAreaInsets()
 
   return (
-    <View style={[styles.screenContainer, { marginBottom: insets.bottom }]}>
-      <TopAppBar title='Profile' navigation={navigation} />
-      <ScrollView contentContainerStyle={styles.contentContainer}>
+    <View style={[styles.container, { marginBottom: insets.bottom }]}>
 
-        {/* --- Profile Information Section --- */}
-        <View style={styles.infoSection}>
-          <View style={{ width: '100%', justifyContent: 'space-between', flexDirection: "row" }}>
-            <Text style={styles.infoLabel}>Profile</Text>
-            <TouchableOpacity >
+      {/* HEADER */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={[styles.backButton, {
+            backgroundColor: "#8fa6bf",
+            padding: 10,
+            borderRadius: 12,
+            marginRight: 12
+          }]}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={20} color="#fff" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Profile</Text>
+      </View>
+
+      <ScrollView showsVerticalScrollIndicator={false}>
+
+        {/* PROFILE CARD */}
+
+        <View style={styles.card}>
+
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>PROFILE</Text>
+
+            <TouchableOpacity
+              style={styles.editButton}
+              onPress={() => navigation.navigate("EditProfileScreen")}
+            >
+              <Text style={styles.editText}>Edit profile</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.manageButton} onPress={() => {
-              navigation.navigate("EditProfileScreen")
-            }}>
-              <Text style={styles.manageButtonText}>Edit profile</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.infoItem}>
-            <Ionicons name={'person'} color={'#3498db'} size={22} />
-            <Text style={styles.infoValue}>{profileData.fullName ?? '--'}</Text>
-            {/* The pencil icon for edit is excluded as per "no header with back navigation" */}
+
           </View>
 
-          <View style={styles.infoItem}>
-            <Ionicons name={'call'} color={'#3498db'} size={22} />
-            <Text style={styles.infoValue}>{profileData.mobileNumber ?? '--'}</Text>
-          </View>
-
-          <View style={styles.infoItem}>
-            <Ionicons name={'mail'} color={'#3498db'} size={22} />
-            <Text style={styles.infoValue}>{profileData.email ?? '--'}</Text>
-          </View>
-
-          <View>
-
-            {/* <View style={styles.infoItem}>
-
-              <Ionicons name={'home'} color={'#3498db'} size={22} />
-              <Text style={styles.infoValue}>
-                {displayAddress
-                  ? `Last saved\n${displayAddress}`
-                  : '--'}
-              </Text>
-            </View> */}
-          </View>
-
-        </View>
-
-        {/* --- Settings List Section --- */}
-        <View style={styles.settingsSection}>
-          <Text style={styles.infoLabel}>Settings</Text>
-          {SETTINGS_ITEMS.map((item) => (
-            <SettingsItem item={item} key={item.key} />
-          ))}
-        </View>
-
-        {/* --- Destructive Action --- */}
-        <View style={styles.settingsSection}>
-          <TouchableOpacity
-            style={styles.listItem}
-            onPress={handleDeleteAccount}
-            activeOpacity={0.7}
-          >
-            <View style={styles.iconBackground}>
-              <Ionicons name={'remove-circle'} color={'red'} size={22} />
+          <View style={styles.profileRow}>
+            <View style={[styles.iconCircle, { backgroundColor: "#e9f2ff" }]}>
+              <Ionicons name="person" size={18} color="#4A90E2" />
             </View>
-            <Text style={[styles.itemText, styles.destructiveText]}>
-              Delete Account
-            </Text>
-            {/* <Ionicons name={'arrow-forward-outline'} color={'red'} size={22} /> */}
+
+            <View>
+              <Text style={styles.label}>Full Name</Text>
+              <Text style={styles.value}>{profileData.fullName ?? "--"}</Text>
+            </View>
+          </View>
+
+
+          <View style={styles.profileRow}>
+            <View style={[styles.iconCircle, { backgroundColor: "#e6f7ef" }]}>
+              <Ionicons name="call" size={18} color="#27ae60" />
+            </View>
+
+            <View>
+              <Text style={styles.label}>Phone Number</Text>
+              <Text style={styles.value}>{profileData.mobileNumber ?? "--"}</Text>
+            </View>
+          </View>
+
+
+          <View style={styles.profileRow}>
+            <View style={[styles.iconCircle, { backgroundColor: "#fff1e6" }]}>
+              <Ionicons name="mail" size={18} color="#e67e22" />
+            </View>
+
+            <View>
+              <Text style={styles.label}>Email Address</Text>
+              <Text style={styles.value}>{profileData.email ?? "--"}</Text>
+            </View>
+          </View>
+
+        </View>
+
+
+        {/* SETTINGS CARD */}
+
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>SETTINGS</Text>
+
+          {SETTINGS_ITEMS.map((item) => (
+            <TouchableOpacity
+              key={item.key}
+              style={styles.settingsRow}
+              onPress={() => handleAction(item.key)}
+            >
+
+              <View style={styles.settingsLeft}>
+                <View style={[styles.iconCircle, { backgroundColor: "#eef2ff" }]}>
+                  <Ionicons name={item.icon} size={18} color="#6C63FF" />
+                </View>
+
+                <Text style={styles.settingsText}>{item.name}</Text>
+              </View>
+
+              <Ionicons name="chevron-forward" size={18} color="#bbb" />
+
+            </TouchableOpacity>
+          ))}
+
+        </View>
+
+
+        {/* DELETE ACCOUNT */}
+
+        <View style={[styles.card, { borderColor: "#ffd6d6", borderWidth: 1, marginBottom: 20 }]}>
+          <TouchableOpacity
+            style={styles.deleteRow}
+            onPress={handleDeleteAccount}
+          >
+            <View style={[styles.iconCircle, { backgroundColor: "#ffeaea" }]}>
+              <Ionicons name="trash" size={18} color="#e74c3c" />
+            </View>
+
+            <Text style={styles.deleteText}>Delete Account</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Padding View to ensure content scrolls above the fixed footer */}
-        <View style={{ height: 100 }} />
+
+        <View style={{ height: 80 }} />
+
       </ScrollView>
 
-      {/* --- Fixed Logout Button (Footer) --- */}
+
+      {/* LOGOUT BUTTON */}
+
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.8}>
-          <Icon name="logout" size={20} color="white" />
-          <Text style={styles.logoutButtonText}>Logout</Text>
+        <TouchableOpacity
+          style={styles.logoutButton}
+          onPress={handleLogout}
+        >
+          <Ionicons name="log-out-outline" size={20} color="white" />
+          <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
       </View>
+
     </View>
   );
+
 };
 
-// --- Stylesheet ---
 const styles = StyleSheet.create({
-  screenContainer: {
+
+  container: {
     flex: 1,
-    backgroundColor: '#f4f4f4', // Light gray background
-  },
-  contentContainer: {
-    paddingTop: 10,
-    paddingBottom: 20, // Extra space at the bottom for scrolling
+    backgroundColor: "#F4F6FA"
   },
 
-  // --- Profile Info Section Styles ---
-  infoSection: {
-    backgroundColor: 'white',
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    marginBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ecf0f1',
+  header: {
+    backgroundColor: "#0C1C2C",
+    padding: 20,
+    paddingTop: 40,
+    flexDirection: "row",
+    alignItems: "center",
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30
   },
-  infoLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#34495e',
-    marginBottom: 10,
+
+  headerTitle: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "600",
+    marginLeft: 10
   },
-  infoItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#ecf0f1',
+
+  card: {
+    backgroundColor: "white",
+    marginHorizontal: 16,
+    marginTop: 20,
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 3
   },
-  infoIcon: {
-    marginRight: 15,
-    marginTop: 2, // Align icon better with multi-line text
+
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10
   },
-  infoValue: {
-    flex: 1,
-    fontSize: 15,
-    color: '#333',
-    marginLeft: 10,
-    lineHeight: 20,
+
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#999"
   },
-  manageButton: {
-    backgroundColor: 'white',
-    padding:10,
-    borderRadius: 15,
-    borderWidth: 1,
-    borderColor: '#3498db',
-   
+
+  editButton: {
+    backgroundColor: "#e9f2ff",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12
   },
-  manageButtonText: {
-    color: '#3498db',
+
+  editText: {
+    color: "#4A90E2",
+    fontSize: 12
+  },
+
+  profileRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12
+  },
+
+  iconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12
+  },
+
+  label: {
     fontSize: 11,
-    fontWeight: 'bold',
+    color: "#888"
   },
 
-  // --- Settings List Item Styles ---
-  settingsSection: {
-    backgroundColor: 'white',
-    marginBottom: 10,
-    paddingHorizontal: 10,
-  },
-  listItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 15,
-    paddingHorizontal: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ecf0f1',
-  },
-  iconBackground: {
-    width: 35,
-    height: 35,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 15,
-  },
-  itemText: {
-    flex: 1,
-    fontSize: 16,
-    color: '#333',
-  },
-  destructiveText: {
-    color: '#e74c3c',
+  value: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#333"
   },
 
-  // --- Footer and Logout Button Styles ---
+  settingsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 14,
+    borderTopColor: "#f1f1f1"
+  },
+
+  settingsLeft: {
+    flexDirection: "row",
+    alignItems: "center"
+  },
+
+  settingsText: {
+    fontSize: 15,
+    color: "#333",
+    marginLeft: 10
+  },
+
+  deleteRow: {
+    flexDirection: "row",
+    alignItems: "center"
+  },
+
+  deleteText: {
+    color: "#e74c3c",
+    fontSize: 15,
+    marginLeft: 10,
+    fontWeight: "600"
+  },
+
   footer: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 15,
-    backgroundColor: 'white',
-    borderTopWidth: 1,
-    borderTopColor: '#ecf0f1',
-    zIndex: 10, // Ensure it stays on top
+    padding: 16,
+    backgroundColor: "#fff"
   },
+
   logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#3498db',
-    borderRadius: 8,
+    backgroundColor: "#3498db",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     paddingVertical: 14,
+    borderRadius: 10
   },
-  logoutButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: '600',
-    marginLeft: 10,
-  },
+
+  logoutText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+    marginLeft: 8
+  }
+
 });
 
 export default ProfileScreen;

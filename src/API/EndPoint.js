@@ -28,7 +28,7 @@ export default {
   //currently working auths
   GETOTP: 'api/customer/auth/send-otp',
   VERIFYOTP: 'api/customer/auth/verify-otp',
-  REFRESHTOKEN:'api/customer/auth/refresh-token',
+  REFRESHTOKEN: 'api/customer/auth/refresh-token',
   CREATEPROFILE: 'api/customer/profile',
 
   //profile
@@ -41,23 +41,27 @@ export default {
   UPDATECART: 'api/customer/cart/add',
 
   //Shedule-order
-  GETALLSLOTS:'api/customer/delivery/slots',
-  
+  GETALLSLOTS: 'api/customer/delivery/slots',
+
 
   //Deposit
-  CALCULATE_DEPOSIT:'api/customer/deposit/calculate',
+  CALCULATE_DEPOSIT: 'api/customer/deposit/calculate',
 
 
   //Order
-  ORDER_PLACE:'api/customer/orders/place',
-  CANCEL_ORDER:'api/customer/orders/cancel',  
+  ORDER_PLACE: 'api/customer/orders/place',
+  CANCEL_ORDER: 'api/customer/orders/cancel',
+  ORDER_DETAILED: 'api/customer/orders',
+  GET_ALL_ORDERS: 'api/customer/orders',
+  GET_CURRENT_ORDER : 'api/customer/orders/current',
 
 
   //refill
   REFILL_BALANCE: 'api/customer/refill/balance',
-  refill_validate:'api/customer/refill/validate',
+  refill_validate: 'api/customer/refill/validate',
 
   //subscription
-  GETSUBSCRIPTIONPLANS:'api/customer/subscription',
-  PLACESUBSCRIPTIONORDER:'api/customer/subscription',
+  GETSUBSCRIPTIONPLANS: 'api/customer/subscription',
+  PLACESUBSCRIPTIONORDER: 'api/customer/subscription',
+  CUSTOMER_SUPPORT: 'api/customerSupport'
 };

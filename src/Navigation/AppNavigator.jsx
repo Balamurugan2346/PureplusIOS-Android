@@ -25,6 +25,9 @@ import AppEntry from '../Navigation/ActivityEntry';
 import EditProfileScreen from '../Screens/Profile/EditProfileScreen'
 import SheduleOrderScreen from '../Screens/Delivery/SheduleDeliveryScreen'
 import CustomerSupportScreen from '../Screens/CustomerSupport/CustomerSupportScreen'
+import SubscriptionProductList from '../Screens/Subscriptions/SubscriptionProductList';
+import OrderSuccessScreen from '../Screens/Order/OrderSuccessScreen'
+import OrderTrackingScreen from '../Screens/Product/Order/OrderTrackingScreen'
 
 const Stack = createNativeStackNavigator();
 
@@ -64,11 +67,13 @@ export default function AppNavigator() {
         <Stack.Screen name='LoginOrRegister' component={LoginOrRegister} />
         <Stack.Screen name='OtpVerification' component={OtpVerficationScreen} />
         <Stack.Screen name='EditProfileScreen' component={EditProfileScreen} />
+        <Stack.Screen  name='OrderTrackingScreen' component={OrderTrackingScreen}/>
 
 
 
         {/* dashboard and dashboard related screens */}
         <Stack.Screen name='DashBoard' component={Dashboard} />
+        <Stack.Screen name='OrderSuccess' component={OrderSuccessScreen} />
 
         {/* drawer navigation screen */}
         {/* <Stack.Screen name='Main' component={DrawerNavigator} />  //no need drawer for this app */}
@@ -93,6 +98,9 @@ export default function AppNavigator() {
 
         {/* shedule order screens*/}
         <Stack.Screen name='SheduleOrderScreen' component={SheduleOrderScreen} />
+
+        { /*  Subscriptions Screens */}
+        <Stack.Screen name='SubscriptionScreen' component={SubscriptionProductList}/>
 
       </Stack.Navigator>
     </>

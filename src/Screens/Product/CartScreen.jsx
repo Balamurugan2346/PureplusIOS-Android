@@ -18,14 +18,16 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useUserId } from '../../customHooks/useUserID'
 import { clearCart, loadCartItems, addToCart, updateCart } from '../../Redux/Slices/CartSlice';
 import { getSelectedAddressId } from '../../Utils/GetSelectedAddress';
-import { placeOrder } from '../../Redux/Slices/OrderSlice'
+import { getOrderDetailed, placeOrder } from '../../Redux/Slices/OrderSlice'
 import { useToast } from '../../Components/Toast/ToastProvider';
+import AppLoading from '../../Components/AppLoading';
+import { clearSheduleSlots } from '../../Redux/Slices/SheduleOrderSlice';
 const CartScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const { isBottomBarVisible } = useAppContext()
   const { cartItems, loading: cartLoading, error: cartError, isFetched: cartIsFetched } = useSelector((state) => state.cart)
   //ADDRESS LIST
-  const { addressList , selectedAddress : selectedAddressGlobalState } = useSelector((state) => state.address)
+  const { addressList, selectedAddress: selectedAddressGlobalState } = useSelector((state) => state.address)
 
 
   const { showToast } = useToast()
@@ -40,6 +42,8 @@ const CartScreen = ({ navigation }) => {
   const { error: ProfileError, loading: profileLoading, isFetched: isProfileApiFetched, profileData } = useSelector((state) => state.profile)
   const dispatch = useDispatch()
   const { userId, loading: userIDLoading } = useUserId();
+
+  const { placeOrder: { isLoading: placeOrderLoading, error: placeOrderError } , orderDetailed } = useSelector((state) => state.order)
 
   const headerConfig = {
     color: theme.greyText,
@@ -142,9 +146,48 @@ const CartScreen = ({ navigation }) => {
     }, 2000);
   }
 
+
+  const handleOrderDetails = (response) => {
+    try {
+      const orderId = response?.orderId;
+      console.log("id", orderId)
+
+      if (typeof orderId === 'number' && orderId > 0) {
+        // Clear schedule slots
+        dispatch(clearSheduleSlots());
+        console.log("coming here")
+
+        // Sync cart after placing order
+        // dispatch(loadCartItems(-1));
+        dispatch(
+          getOrderDetailed({
+            id: orderId,
+            onSuccess: () => {
+              navigation.navigate("OrderSuccess", { id: orderId });
+            },
+            onError: () => {
+              showToast("Order placed!!");
+            },
+          })
+        );
+
+
+      } else {
+        // Handle invalid or missing orderId
+        showToast("Order placed but invalid ID received", true);
+      }
+    } catch (error) {
+      // Catch unexpected parsing issues
+      showToast("Unexpected error while processing order", true);
+    }
+  }
+
   return (
     <View style={[styles.container, { backgroundColor: theme.secondaryBackground, paddingBottom: isBottomBarVisible ? 0 : insets.bottom }]}>
 
+      {placeOrderLoading || orderDetailed.isLoading &&  (
+        <AppLoading isVisible={placeOrderLoading  || orderDetailed.isLoading} />
+      )}
 
       {/* topbar */}
       <TopAppBar title='My Cart' navigation={navigation} />
@@ -158,13 +201,14 @@ const CartScreen = ({ navigation }) => {
         }>
 
           {/* coupon ui */}
-          <ViewCoupon navigation={navigation} />
+          {/* <ViewCoupon navigation={navigation} /> */}
 
           {/* cart items */}
           <LinearGradient
             colors={[theme.cardContainer, theme.cardContainer]}
             style={{
               borderRadius: 20,
+              marginTop:20,
               marginHorizontal: 10,
               padding: 10,
             }}
@@ -180,7 +224,7 @@ const CartScreen = ({ navigation }) => {
                   </View>
                 </View>
 
-                <Text style={[headerConfig, { fontFamily: Fonts.family.bold, fontSize: Fonts.size.xs, marginLeft: 10, marginBottom: 7 }]}>You can shedule for later</Text>
+                <Text style={[headerConfig, {fontSize: Fonts.size.sm, marginLeft: 10, marginBottom: 7 }]}>You can shedule for later</Text>
               </View>
 
 
@@ -188,9 +232,9 @@ const CartScreen = ({ navigation }) => {
                 navigation.navigate('SheduleOrderScreen')
               }} style={{ backgroundColor: "#FFF59D", borderRadius: 20, alignItems: "center", justifyContent: "center" }}>
 
-                <View style={{ flexDirection: "row", paddingHorizontal: 10, paddingVertical: 5, justifyContent: "center" }}>
+                <View style={{ flexDirection: "row", paddingHorizontal: 10, paddingVertical: 5, justifyContent: "center",alignItems:"center" }}>
                   <Ionicons name='time' color={"#FDD835"} size={20} />
-                  <Text style={[{ marginLeft: 3, color: "#5D4037", fontFamily: Fonts.family.regular }]}>Shedule</Text>
+                  <Text style={[{ marginLeft: 3, color: "#5D4037", fontFamily: Fonts.family.regular,fontSize:12 }]}>Shedule</Text>
                 </View>
 
               </Pressable>
@@ -224,10 +268,14 @@ const CartScreen = ({ navigation }) => {
           <PaymentSection navigation={navigation} onPayClick={async (paymentMethod) => {
             const id = await getSelectedAddressId();
             console.log(selectedSlot.id, "selected slot id from cart screen")
+            if (id == -1) {
+              showToast("Please select an address to place order", true)
+              return
+            }
             var data = {
               addressId: id,
-              deliveryType: selectedSlot.type,
-              slotId: selectedSlot.id,
+              deliveryType: selectedSlot.type ?? 'instant',
+              slotId: selectedSlot.id ?? 0,
               deliveryDate: new Date().toISOString(),
               depositAmount: 0,
               paymentMode: paymentMethod
@@ -235,11 +283,9 @@ const CartScreen = ({ navigation }) => {
             dispatch(placeOrder({
               body: data,
               onSuccess: (response) => {
-                console.log("order placed successfully from con", response)
-                 showToast("Order placed successfully",false)
-                //  navigation.goBack()
-              },onError:(err) => {
-                showToast("Failed to place order",true)
+                handleOrderDetails(response)
+              }, onError: (err) => {
+                showToast("Failed to place order", true)
               }
             }))
           }} />

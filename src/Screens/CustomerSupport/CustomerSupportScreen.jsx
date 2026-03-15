@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     View,
     Text,
@@ -6,22 +6,50 @@ import {
     ScrollView,
     TouchableOpacity,
     Linking,
-    Platform
+    Platform,
+    RefreshControl
+
 } from 'react-native';
 
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
 import TopAppBar from '../../Components/TopAppBar';
 import VectorBg from '../../Components/VectorBg';
 import { SUPPORT_CONFIG } from '../../Config/SupportConfig';
 import { useTheme } from '../../Context/ThemeContext';
 import Fonts from '../../../assets/fonts/Fonts';
+import { clearCustomerSupportDetails, loadCustomerSupportDetails } from '../../Redux/Slices/BannerSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import AppLoading from '../../Components/AppLoading';
 
 const CustomerSupportScreen = ({ navigation }) => {
     const { theme } = useTheme();
     const insets = useSafeAreaInsets();
     const [expandedIndex, setExpandedIndex] = useState(null);
+    const [refreshing, setRefreshing] = React.useState(false);
+    const dispatch = useDispatch();
+
+    const { customerSupportData, customerSupportLoading, customerSupportError, isCustomerSupportFetched } = useSelector(state => state.banners)
+
+    const email = customerSupportData?.email || null;
+    const phone = customerSupportData?.phoneNumber || null;
+    const whatsapp = customerSupportData?.whatsappNumber || null;
+
+    useEffect(() => {
+        if (!isCustomerSupportFetched) {
+            dispatch(loadCustomerSupportDetails());
+        }
+    }, [dispatch, isCustomerSupportFetched]); // 🔹 only run on mount
+
+
+    const handleRefresh = () => {
+        dispatch(clearCustomerSupportDetails())
+        dispatch(loadCustomerSupportDetails());
+        setTimeout(() => {
+            setRefreshing(false);
+        }, 2000);
+    }
+
 
     const headerConfig = {
         color: theme.greyText,
@@ -38,35 +66,33 @@ const CustomerSupportScreen = ({ navigation }) => {
     /* ---------------- ACTION HANDLERS ---------------- */
 
     const openDialer = () => {
-        Linking.openURL(`tel:${SUPPORT_CONFIG.phone}`);
+        if (!phone) return;
+        Linking.openURL(`tel:${phone}`);
     };
 
     const openEmail = () => {
+        if (!email) return;
+
         const subject = encodeURIComponent('Pure Plus Support');
         const body = encodeURIComponent(
             'Hi Pure Plus Support,\n\nI need help with my water delivery.\n\nThanks.'
         );
 
-        const mailtoURL = `mailto:${SUPPORT_CONFIG.email}?subject=${subject}&body=${body}`;
-
-        Linking.openURL(mailtoURL);
+        Linking.openURL(`mailto:${email}?subject=${subject}&body=${body}`);
     };
 
-
     const openWhatsApp = async () => {
-        const phone = SUPPORT_CONFIG.whatsapp.number.replace('+', '');
-        const message = encodeURIComponent(SUPPORT_CONFIG.whatsapp.defaultMessage);
+        if (!whatsapp) return;
 
-        // Native WhatsApp deep link
-        const whatsappURL = `whatsapp://send?phone=${phone}&text=${message}`;
+        const phoneNumber = whatsapp.replace('+', '');
+        const message = encodeURIComponent("Hi, I need help with my order");
 
-        // Web fallback (works everywhere)
-        const webURL = `https://wa.me/${phone}?text=${message}`;
+        const whatsappURL = `whatsapp://send?phone=${phoneNumber}&text=${message}`;
+        const webURL = `https://wa.me/${phoneNumber}?text=${message}`;
 
         try {
             await Linking.openURL(whatsappURL);
-        } catch (error) {
-            // WhatsApp app not available → open web
+        } catch {
             await Linking.openURL(webURL);
         }
     };
@@ -82,10 +108,21 @@ const CustomerSupportScreen = ({ navigation }) => {
             <ScrollView
                 contentContainerStyle={{
                     padding: 16,
-                    paddingBottom: 120 // space for fixed CTA
+                    paddingBottom: 120
                 }}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={handleRefresh}
+                    />
+                }
                 showsVerticalScrollIndicator={false}
             >
+
+                {customerSupportLoading && (
+                    <AppLoading isVisible={customerSupportLoading}/>
+                )}
+
                 {/* HELP CARD */}
                 <View style={[styles.helpCard, { backgroundColor: theme.cardContainer }]}>
                     <VectorBg icon="headset-outline" bgColor={theme.teritary} />
@@ -102,7 +139,7 @@ const CustomerSupportScreen = ({ navigation }) => {
                     <SupportItem
                         icon="call-outline"
                         title="Phone Support"
-                        value={SUPPORT_CONFIG.phone}
+                        value={phone || 'Not Available'}
                         onPress={openDialer}
                         theme={theme}
                     />
@@ -110,7 +147,7 @@ const CustomerSupportScreen = ({ navigation }) => {
                     <SupportItem
                         icon="mail-outline"
                         title="Email Support"
-                        value={SUPPORT_CONFIG.email}
+                        value={email || 'Not Available'}
                         onPress={openEmail}
                         theme={theme}
                     />
@@ -118,7 +155,7 @@ const CustomerSupportScreen = ({ navigation }) => {
                     <SupportItem
                         icon="logo-whatsapp"
                         title="WhatsApp Support"
-                        value="Chat with us on WhatsApp"
+                        value={whatsapp || 'Not Available'}
                         onPress={openWhatsApp}
                         theme={theme}
                     />

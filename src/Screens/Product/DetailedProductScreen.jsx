@@ -17,6 +17,7 @@ import { WaterFeatures } from '../../Data/waterFeaturesData'
 import { getSelectedAddress, getSelectedAddressId } from '../../Utils/GetSelectedAddress'
 import { useDispatch, useSelector } from 'react-redux';
 import { loadCartItems } from '../../Redux/Slices/CartSlice';
+import ProductImages from '../../Components/Product/ProductImages'
 const DetailedProductScreen = ({ navigation, userID }) => {
 
 
@@ -83,6 +84,7 @@ const DetailedProductScreen = ({ navigation, userID }) => {
 
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [receiversDetails, setReceiversDetails] = useState(null)
+  const [activeIndex, setActiveIndex] = useState(0);
   //  useState({
   //   receiverName:'',
   //   receiverNumber:'',
@@ -162,8 +164,37 @@ const DetailedProductScreen = ({ navigation, userID }) => {
           <AppNavButton color={theme.secondary} />
         </TouchableOpacity>
         {/* backgroundColor: theme.inputContainerBorder,  color for below image*/}
-        <View style={{ borderBottomLeftRadius: 20, borderBottomRightRadius: 20, height: height * 0.4, width: "100%", alignItems: "center" }}>
-          <Image source={require('../../../assets/images/watercanNew.png')} style={{ width: 300, height: 300, top: "8%" }} />
+        <View style={[styles.imageContainer, { marginTop: insets.top }]}>
+
+          <ScrollView
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onScroll={(event) => {
+              const slideSize = event.nativeEvent.layoutMeasurement.width;
+              const index = Math.floor(
+                event.nativeEvent.contentOffset.x / slideSize
+              );
+              setActiveIndex(index);
+            }}
+            scrollEventThrottle={16}
+          >
+            <ProductImages imageUrls={product?.imageUrls} />
+          </ScrollView>
+
+          {/* DOT INDICATORS */}
+          <View style={styles.dotContainer}>
+            {product?.imageUrls?.map((_, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.dot,
+                  activeIndex === index && styles.activeDot
+                ]}
+              />
+            ))}
+          </View>
+
         </View>
 
         <View style={styles.content}>
@@ -171,7 +202,7 @@ const DetailedProductScreen = ({ navigation, userID }) => {
           <View style={[styles.cardContainer, { backgroundColor: theme.cardContainer }]}>
 
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-              <Text style={[headerConfig, { color: theme.greyText, fontSize: Fonts.size.base }]}>{product.productName}</Text>
+              <Text style={[headerConfig, { color: theme.greyText, fontSize: Fonts.size.base }]}>{product.name}</Text>
               <TouchableOpacity style={{ flexDirection: "row", alignItems: "center", backgroundColor: "rgba(37, 119, 132, 0.1)", padding: 5, borderRadius: 30, paddingHorizontal: 10 }} onPress={() => setShowAddressBottomSheet(true)}>
                 <Text style={[paratextConfig, { color: theme.primary }]}>{selectedAddress ? 'Change' : 'Add'} Address</Text>
               </TouchableOpacity>
@@ -195,7 +226,7 @@ const DetailedProductScreen = ({ navigation, userID }) => {
               </View>
               <View style={{ flexDirection: "column", paddingBottom: 5 }}>
                 <Text style={[paratextConfig, { color: theme.secondaryText }]}>{`Total Price`}</Text>
-                                <Text style={[headerConfig, { color: theme.greyText }]}>Unit Price:₹{product.unitPrice}</Text>
+                <Text style={[headerConfig, { color: theme.greyText }]}>Unit Price:₹{product.unitPrice}</Text>
                 {/* <Text style={[headerConfig, { color: theme.greyText }]}>Unit Price:₹{quantity > 0 ? product.unitPrice * quantity : product.unitPrice}</Text> */}
               </View>
 
@@ -219,7 +250,7 @@ const DetailedProductScreen = ({ navigation, userID }) => {
               )}
 
             </View>
-            <View style={{ paddingVertical: 5, alignItems: "center" }}>
+            {/* <View style={{ paddingVertical: 5, alignItems: "center" }}>
               <View style={[styles.deliveryTag, {
                 marginTop: 3,
                 backgroundColor: "#f9f1abff", // light yellow
@@ -228,7 +259,7 @@ const DetailedProductScreen = ({ navigation, userID }) => {
                 <Image source={require('../../../assets/images/thunder.png')} style={{ width: 20, height: 20 }} tintColor={"#5D4037"} />
                 <Text style={[paratextConfig, { fontFamily: Fonts.family.bold, color: "#5D4037", marginRight: 8 }]}>Estimated Delivery Time : 35 Mins</Text>
               </View>
-            </View>
+            </View> */}
 
           </View>
 
@@ -264,6 +295,48 @@ export default DetailedProductScreen
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+
+  imageContainer: {
+    height: 320,
+    width: "100%",
+    backgroundColor: "#fff",
+    borderBottomLeftRadius: 25,
+    borderBottomRightRadius: 25,
+    justifyContent: "center",
+    alignItems: "center"
+  },
+
+  productImage: {
+    width: 350,
+    height: 300,
+    marginHorizontal: 10,
+  },
+
+  dotContainer: {
+    flexDirection: "row",
+    // position: "absolute",
+    marginBottom:5,
+    alignSelf: "center"
+  },
+
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 5,
+    backgroundColor: "#ccc",
+    marginHorizontal: 4
+  },
+
+  activeDot: {
+    backgroundColor: "#257784",
+    width: 18
+  },
+
+  productImage: {
+    width: 350,
+    height: 300,
+    marginHorizontal: 10
   },
 
   content: {

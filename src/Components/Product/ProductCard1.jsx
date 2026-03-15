@@ -1,149 +1,22 @@
-// import React from 'react';
-// import { View, Text, StyleSheet, Image, TouchableOpacity, Pressable } from 'react-native';
-// import Fonts from '../../../assets/fonts/Fonts';
-
-// export default function ProductCard1({ product, onPress }) {
-//   return (
-//     <Pressable onPress={()=>onPress()}>
-//       <View style={styles.card}>
-//         <View style={styles.row}>
-//           <Image
-//             source={require('../../../assets/images/watercan.png')}
-//             style={styles.image}
-//             resizeMode="contain"
-//           />
-
-//           <View style={{ flex: 1 }}>
-//             <Text style={[styles.title, { fontFamily: Fonts.family.bold }]}>{product.productName}</Text>
-//             <Text style={[styles.uom, { fontFamily: Fonts.family.regular }]}>{product.uom}</Text>
-
-//             <View style={styles.row}>
-//               <Text style={[styles.strike, { fontFamily: Fonts.family.medium }]}>₹{product.perCanPrice}</Text>
-//               {/* <Text style={styles.tax}> / {product.taxPercentage}% Tax</Text> */}
-//             </View>
-
-//             <Text style={[styles.price, { fontFamily: Fonts.family.semiBold }]}>₹{product.originalPrice} / Can</Text>
-//           </View>
-//         </View>
-
-//         <View style={styles.line} />
-
-//         <View style={styles.rowBetween}>
-//           <Text style={[styles.label, { fontFamily: Fonts.family.regular , paddingRight:10 }]}>Unit: {product.unitCount} Cans</Text>
-//           <Text style={[styles.unitPrice, { fontFamily: Fonts.family.medium }]}>    Total:₹{product.unitPrice} / Unit</Text>
-//         </View>
-//       </View>
-//     </Pressable>
-
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   card: {
-//     backgroundColor: '#fff',
-//     borderRadius: 18,
-//     padding: 16,
-//     marginVertical: 10,
-//     shadowColor: '#000',
-//     shadowOpacity: 0.05,
-//     shadowRadius: 8,
-//     elevation: 1,
-//     marginHorizontal: 10
-//   },
-//   row: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//   },
-//   rowBetween: {
-//     flexDirection: 'row',
-//     justifyContent: 'space-between',
-//     marginTop: 10,
-//   },
-//   image: {
-//     width: 70,
-//     height: 90,
-//     marginRight: 16,
-//   },
-//   title: {
-//     fontSize: 18,
-//     fontWeight: '700',
-//     color: '#0A1E3F',
-//   },
-//   uom: {
-//     fontSize: 14,
-//     marginVertical: 4,
-//     color: '#8A8A8A',
-//   },
-//   strike: {
-//     textDecorationLine: 'line-through',
-//     color: '#A0A0A0',
-//     fontSize: 14,
-//   },
-//   tax: {
-//     marginLeft: 4,
-//     fontSize: 14,
-//     color: '#555',
-//   },
-//   price: {
-//     fontSize: 18,
-//     fontWeight: '700',
-//     color: '#0A1E3F',
-//     marginTop: 3,
-//   },
-//   label: {
-//     fontSize: 15,
-//     color: '#6A6A6A',
-//   },
-//   unitPrice: {
-//     fontSize: 16,
-//     fontWeight: '700',
-//   },
-//   line: {
-//     height: 1,
-//     backgroundColor: '#EDEDED',
-//     marginVertical: 10,
-//   },
-// });
-
-
 import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Image,
-  TouchableOpacity,
-  Pressable,
+  Pressable
 } from 'react-native';
+
 import { useDispatch, useSelector } from 'react-redux';
 import Fonts from '../../../assets/fonts/Fonts';
 import { useTheme } from '../../Context/ThemeContext';
 
 export default function ProductCard1({ product, onPress }) {
+
+  const { theme } = useTheme();
   const dispatch = useDispatch();
 
-   const { theme, toggleTheme, isDark } = useTheme();
-
-    const headerConfig = {
-        color: theme.buttonText,
-        fontFamily: Fonts.family.bold,
-        fontSize: Fonts.size.xxl
-    }
-
-    const paratextConfig = {
-        color: theme.text,
-        fontFamily: Fonts.family.regular,
-        fontSize: Fonts.size.xs
-    }
-
-
-  const { cartItems, cartUpdateLoading } = useSelector(
-    (state) => state.cart
-  );
-
-  const isInCart = cartItems?.some(
-    (item) => item.productId === product.productId
-  );
+  const { cartItems } = useSelector((state) => state.cart);
 
   const cartItem = cartItems?.find(
     (item) => item.productId === product.productId
@@ -151,183 +24,156 @@ export default function ProductCard1({ product, onPress }) {
 
   const quantity = cartItem ? cartItem.quantity : 0;
 
-  const handleAdd = () => {
-    dispatch(
-      addItemLocal({
-        productId: product.productId,
-        productName: product.productName,
-        price: product.basePrice,
-      })
-    );
-  };
-
-  const handleIncrease = () => {
-    dispatch(
-      addItemLocal({
-        productId: product.productId,
-      })
-    );
-  };
-
-  const handleDecrease = () => {
-    dispatch(decreaseItemLocal(product.productId));
-  };
+  const image =
+    product.imageUrls && product.imageUrls.length > 0
+      ? { uri: product.imageUrls[0] }
+      : require('../../../assets/images/no_image.png');
 
   return (
     <Pressable onPress={onPress}>
-      <View style={styles.card}>
-        {/* TOP SECTION */}
-        <View style={styles.row}>
-          <Image
-            source={require('../../../assets/images/watercan.png')}
-            style={styles.image}
-            resizeMode="contain"
-          />
-
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.title, { fontFamily: Fonts.family.bold }]}>
-              {product.productName}
-            </Text>
-
-            <Text style={[styles.uom, { fontFamily: Fonts.family.regular }]}>
-              {product.unit}
-            </Text>
-
-            <View style={styles.row}>
-              <Text
-                style={[
-                  styles.strike,
-                  { fontFamily: Fonts.family.medium },
-                ]}
-              >
-                ₹{product.unitPrice}
-              </Text>
-            </View>
-
-            <Text
-              style={[
-                styles.price,
-                { fontFamily: Fonts.family.semiBold },
-              ]}
-            >
-              ₹{product.basePrice} / Can
-            </Text>
+      <View style={[styles.card, { backgroundColor: theme.card }]}>
+        
+        {/* CART BADGE */}
+        {quantity > 0 && (
+          <View style={[styles.cartBadge, { backgroundColor: theme.primary }]}>
+            <Text style={styles.cartBadgeText}>{quantity}</Text>
           </View>
+        )}
+
+        {/* IMAGE */}
+        <View style={styles.imageWrapper}>
+          <Image source={image} style={styles.image} resizeMode="cover" />
         </View>
 
-        <View style={styles.line} />
+        {/* PRODUCT NAME */}
+        <Text
+          style={[
+            styles.title,
+            { color: theme.text, fontFamily: Fonts.family.bold }
+          ]}
+          numberOfLines={2}
+        >
+          {product.name}
+        </Text>
 
-        {/* BOTTOM SECTION */}
-        <View style={styles.rowBetween}>
+        {/* UNIT PACK INFO */}
+        <View style={styles.unitBox}>
+          <Text style={styles.unitText}>
+            1 Unit = {product.unitCount} Cans
+          </Text>
+        </View>
+
+        {/* PRICE SECTION */}
+        <View style={styles.priceRow}>
           <Text
             style={[
-              styles.label,
-              { fontFamily: Fonts.family.regular },
+              styles.price,
+              { color: theme.text, fontFamily: Fonts.family.semiBold }
             ]}
           >
-            Unit: {product.unitCount} Cans
+            ₹{product.unitPrice}
           </Text>
 
-          {/* {isInCart && ( */}
-            <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: "rgba(37, 119, 132, 0.1)", padding: 5, borderRadius: 30, paddingHorizontal: 10 , opacity:isInCart ? 100 : 0 }}>
-              <Text style={[paratextConfig,{color:theme.primary}]}>Cart:{quantity}</Text>
-            </View>
-          {/* // )} */}
+          <Text style={styles.perUnit}> / Unit</Text>
         </View>
+
+        {/* PER CAN */}
+        <Text style={styles.perCan}>
+          ₹{product.basePrice} / Can
+        </Text>
+
       </View>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
+
   card: {
-    backgroundColor: '#fff',
+    width: 170,
     borderRadius: 18,
-    
-    padding: 16,
-    marginVertical: 10,
+    padding: 14,
+    marginHorizontal: 10,
+    marginVertical: 8,
+
     shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 1,
-    marginHorizontal: 10,
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 3
   },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  rowBetween: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  image: {
-    width: 70,
+
+  imageWrapper: {
+    backgroundColor: '#F5F7FB',
+    borderRadius: 14,
+    // alignItems: 'center',
+    // justifyContent: 'center',
     height: 90,
-    marginRight: 16,
+    marginBottom: 10
   },
+
+  image: {
+    width: 142,
+    borderRadius:14,
+    height: 90
+  },
+
   title: {
-    fontSize: 18,
-    color: '#0A1E3F',
-  },
-  uom: {
     fontSize: 14,
-    marginVertical: 4,
-    color: '#8A8A8A',
-  },
-  strike: {
-    textDecorationLine: 'line-through',
-    color: '#A0A0A0',
-    fontSize: 14,
-  },
-  price: {
-    fontSize: 18,
-    color: '#0A1E3F',
-    marginTop: 3,
-  },
-  label: {
-    fontSize: 15,
-    color: '#6A6A6A',
-  },
-  line: {
-    height: 1,
-    backgroundColor: '#EDEDED',
-    marginVertical: 10,
+    marginBottom: 6
   },
 
-  /* ADD BUTTON */
-  addBtn: {
-    backgroundColor: '#0A1E3F',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  addText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-
-  /* QUANTITY CONTROLS */
-  qtyContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F2F2F2',
-    borderRadius: 20,
+  unitBox: {
+    backgroundColor: '#EEF6FF',
+    paddingVertical: 4,
     paddingHorizontal: 8,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+    marginBottom: 6
   },
-  qtyBtn: {
-    padding: 6,
-  },
-  qtyText: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  qtyNumber: {
-    marginHorizontal: 10,
-    fontSize: 16,
-    fontWeight: '700',
-  },
-});
 
+  unitText: {
+    fontSize: 11,
+    color: '#3A6EA5',
+    fontFamily: Fonts.family.medium
+  },
+
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end'
+  },
+
+  price: {
+    fontSize: 18
+  },
+
+  perUnit: {
+    fontSize: 12,
+    color: '#888',
+    marginLeft: 3
+  },
+
+  perCan: {
+    fontSize: 12,
+    color: '#777',
+    marginTop: 2
+  },
+
+  cartBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    zIndex: 10,
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+
+  cartBadgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700'
+  }
+
+});

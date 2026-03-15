@@ -63,7 +63,7 @@ const PaymentSection = ({ navigation , onPayClick }) => {
          
         }} style={[styles.payButton, { backgroundColor: theme.primary }]}>
           <Text style={{ color: theme.buttonText, fontFamily: Fonts.family.medium }}>
-            Check out ₹234.87
+            Place Order 
           </Text>
         </TouchableOpacity>
       </View>

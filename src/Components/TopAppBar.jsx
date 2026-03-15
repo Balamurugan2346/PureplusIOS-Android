@@ -5,7 +5,7 @@ import AppNavButton from '../Components/AppNavButton';
 import { useAppContext } from '../Context/AppContext';
 import { useTheme } from '../Context/ThemeContext';
 
-const TopAppBar = ({title="Default",style,navigation}) => {
+const TopAppBar = ({title="Default",style,navigation,customNav= null,callback}) => {
 
     
   const insets = useSafeAreaInsets();
@@ -32,7 +32,13 @@ const TopAppBar = ({title="Default",style,navigation}) => {
         <View style={[styles.topBar, style =  { backgroundColor: theme.background, paddingTop: insets.top }]}>
             <View style={{ flexDirection: "row",alignItems:"center" }}>
                 <TouchableOpacity
-                    onPress={() => navigation.goBack()}
+                    onPress={() => {
+                        if(customNav){
+                            callback()
+                        }else{
+                            navigation.goBack()
+                        }
+                    }}
                 >
                     <AppNavButton color={theme.secondary} />
                 </TouchableOpacity>

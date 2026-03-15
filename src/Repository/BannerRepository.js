@@ -1,4 +1,4 @@
-import { getAllBanners } from '../API/Services/BannerService';
+import { getAllBanners, getCustomerSupportDetails } from '../API/Services/BannerService';
 
 export const BannerRepoitory = {
     getBanners: async () => {
@@ -8,6 +8,16 @@ export const BannerRepoitory = {
             return response.data
         } catch (e) {
             console.log("error while fetch banners", e)
+            throw e
+        }
+    },
+    getCustomerSupportDetails: async () => {
+        try {
+            // await new Promise(resolve => setTimeout(resolve, 155000));
+            const response = await getCustomerSupportDetails()
+            return response.data
+        } catch (e) {
+            console.log("error while fetch customer support details", e)
             throw e
         }
     }

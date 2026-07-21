@@ -235,7 +235,7 @@ const Dashboard = ({ navigation }) => {
     if (!isProductsFetched) {
       dispatch(loadProducts());
     }
-  }, [dispatch, isBannerFetched]);
+  }, [dispatch, isProductsFetched]);
 
   useEffect(() => {
     if (!isBannerFetched) {

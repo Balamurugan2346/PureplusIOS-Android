@@ -87,11 +87,11 @@ export default function GetStarted({ navigation }) {
         onHide={() => setShowToast(false)} />}
       <View style={{ flex: 1, paddingTop: insets.top, paddingBottom: insets.bottom, marginHorizontal: 20 }}>
 
-        <TouchableOpacity style={{ alignSelf: "flex-start", }} onPress={
+        <TouchableOpacity style={{ alignSelf: "flex-start",  opacity: page > 0 ? 100 : 0,}} onPress={
           page <= 0 ? () => { } : () => setPage(page - 1)
         }>
           {/* <Image tintColor={theme.text}   source={arrowLeft} style={{width:40,height:40,alignSelf:"flex-end",opacity:page > 0 ? 100 : 0}} resizeMode='contain' /> */}
-          <AppNavButton color={theme.secondary} style={{ opacity: page > 0 ? 100 : 0, marginTop: 10 }} />
+          <AppNavButton color={theme.secondary} style={{ marginTop: 10  ,  opacity: page > 0 ? 100 : 0, }} />
         </TouchableOpacity>
         <PagerView
           ref={pagerRef}

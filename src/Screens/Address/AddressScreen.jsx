@@ -263,15 +263,13 @@ const AddressScreen = ({ onClose, navigation }) => {
                                 {/* RIGHT ICONS */}
                                 <View style={styles.iconContainer}>
                                     <TouchableOpacity
-                                    style={{opacity:0}}
                                         onPress={() => {
-                                            // showToast("Under development", true)
-                                        }
-                                            // navigation.navigate('UsersLocationScreen', {
-                                            //     fromEdit: true,
-                                            //     data: item
-                                            // })
-                                        }>
+                                            onClose();
+                                            navigation.navigate('DetailedAddressInputScreen', {
+                                                isEdit: true,
+                                                pickedAddress: item,
+                                            });
+                                        }}>
                                         <Image source={require("../../../assets/images/edit.png")} style={styles.icon} />
                                     </TouchableOpacity>
 

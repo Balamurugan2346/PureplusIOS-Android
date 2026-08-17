@@ -267,15 +267,17 @@ const CartScreen = ({ navigation }) => {
           {/* payment button */}
           <PaymentSection navigation={navigation} onPayClick={async (paymentMethod) => {
             const id = await getSelectedAddressId();
-            console.log(selectedSlot.id, "selected slot id from cart screen")
-            if (id == -1) {
+            console.log(selectedSlot?.id, "selected slot id from cart screen")
+            if (id == -1 || id == null) {
               showToast("Please select an address to place order", true)
               return
             }
+            // Backend PlaceOrderRequest expects numeric ids; the cart items come
+            // from the server-side cart, so only order-level fields go here.
             var data = {
-              addressId: id,
-              deliveryType: selectedSlot.type ?? 'instant',
-              slotId: selectedSlot.id ?? 0,
+              addressId: Number(id),
+              deliveryType: selectedSlot?.type ?? 'instant',
+              slotId: Number(selectedSlot?.id ?? 0),
               deliveryDate: new Date().toISOString(),
               depositAmount: 0,
               paymentMode: paymentMethod
@@ -285,6 +287,7 @@ const CartScreen = ({ navigation }) => {
               onSuccess: (response) => {
                 handleOrderDetails(response)
               }, onError: (err) => {
+                console.log("errr",err)
                 showToast("Failed to place order", true)
               }
             }))

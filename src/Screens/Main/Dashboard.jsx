@@ -382,12 +382,9 @@ const Dashboard = ({ navigation }) => {
             </TouchableOpacity>
 
             <Text style={titleConfig}>Pure Plus</Text>
-            <TouchableOpacity style={{ opacity: 0 }}>
+            <TouchableOpacity onPress={() => navigation.navigate('Notifications')}>
               <View>
                 <Ionicons name="notifications-outline" size={26} color="#000" style={{ color: theme.text }} />
-                <View style={{ backgroundColor: "red", alignItems: "center", borderRadius: 50, position: "absolute", alignSelf: "flex-end", marginTop: -6, marginRight: -6 }}>
-                  <Text style={{ color: "white", fontSize: 8, padding: 4, paddingHorizontal: 8 }}>1</Text>
-                </View>
               </View>
             </TouchableOpacity>
           </View>
@@ -444,16 +441,19 @@ const Dashboard = ({ navigation }) => {
             </View>
           </View>
         )}
-        <View style={{ flexDirection: 'row', justifyContent: "space-around", marginHorizontal: 15 }}>
-
-          {TagData.map((item, index) => (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 12, paddingVertical: 4 }}
+        >
+          {TagData.map((item) => (
             <Tag key={item.id} icon={item.icon} title={item.title} badgeNeed={item.badgeNeed} onPress={() => {
               if (item.routeName) {
                 navigation.navigate(item.routeName)
               }
             }} />
           ))}
-        </View>
+        </ScrollView>
 
 
 

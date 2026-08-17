@@ -2,7 +2,7 @@ import { useAppContext } from '../../Context/AppContext';
 import { useTheme } from '../../Context/ThemeContext';
 import Fonts from '../../../assets/fonts/Fonts';
 import LinearGradient from 'react-native-linear-gradient';
-import { Image, InteractionManager, KeyboardAvoidingView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, InteractionManager, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AddressWithChangeButton from '../../Components/AddressWithChangeButton';
 import TopAppBar from '../../Components/TopAppBar';
@@ -14,15 +14,15 @@ const DetailedAddressInputScreen = ({ navigation }) => {
     const insets = useSafeAreaInsets();
     const { theme } = useTheme()
     const route = useRoute();
-    const { pickedAddress } = route.params || {};
-    console.log("Got address:", pickedAddress);
+    const { pickedAddress, isEdit = false } = route.params || {};
+    console.log("Got address:", pickedAddress, "isEdit:", isEdit);
 
     return (
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={[styles.container, { backgroundColor: theme.secondaryBackground, marginBottom: insets.bottom }]}>
-            <TopAppBar title='Add Address' navigation={navigation} />
+            <TopAppBar title={isEdit ? 'Edit Address' : 'Add Address'} navigation={navigation} />
             <ScrollView>
                 <View style={[styles.content]}>
-                    <AddressInputForm navigation={navigation} pickedAddress={pickedAddress} onNavigate={() => {
+                    <AddressInputForm navigation={navigation} pickedAddress={pickedAddress} isEdit={isEdit} onNavigate={() => {
                         navigation.reset({
                             index: 0,
                             routes: [{ name: "DashBoard" }],

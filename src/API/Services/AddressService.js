@@ -8,6 +8,11 @@ export const saveAddress = (address) => {
 };
 
 
+export const updateAddress = (address) => {
+  return apiClient.put(endpoints.UPDATEADDRESS, address);
+};
+
+
 export const getAllAddress = ()=>{
     return apiClient.get(`${endpoints.GETALLUSERADDRESS}`)
     //`${endpoints.GETALLUSERADDRESS}/${userId}`

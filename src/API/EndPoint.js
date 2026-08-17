@@ -22,6 +22,7 @@ export default {
   //address
   CREATEADDRESS: 'api/customer/address',
   GETALLUSERADDRESS: 'api/customer/address',
+  UPDATEADDRESS: 'api/customer/address',
   DELETEADDRESS: "api/customer/address",
 
 

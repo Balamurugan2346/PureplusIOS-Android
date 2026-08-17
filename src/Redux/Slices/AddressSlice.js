@@ -17,7 +17,24 @@ export const saveAddress = createAsyncThunk(
 );
 
 
-// GET ADDRESS LIST 
+// UPDATE ADDRESS
+export const updateAddress = createAsyncThunk(
+  "address/updateAddress",
+  async ({ body, onSuccess, onError }, { rejectWithValue }) => {
+    try {
+      const response = await AddressRepository.updateAddress(body);
+      const result = response?.data ?? response;
+      if (onSuccess) onSuccess(result);
+      return result;
+    } catch (err) {
+      if (onError) onError(err);
+      return rejectWithValue(err.response?.data || err.message);
+    }
+  }
+);
+
+
+// GET ADDRESS LIST
 export const getAddressList = createAsyncThunk(
   "address/getAddressList",
   async (_, { rejectWithValue }) => {
@@ -86,6 +103,19 @@ const addressSlice = createSlice({
         state.selectedAddress = action.payload.addressId;
       })
       .addCase(saveAddress.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      ////// UPDATE ADDRESS //////
+      .addCase(updateAddress.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateAddress.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(updateAddress.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })

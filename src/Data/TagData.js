@@ -21,8 +21,22 @@ export const TagData = [
     routeName: null,
     badgeNeed : false,
   },
-    {
+  {
     id: '4',
+    title: 'Bulk / Event',
+    icon: require('../../assets/images/canBusinessLogic.png'),
+    routeName: 'BulkRequest',
+    badgeNeed: false,
+  },
+  {
+    id: '5',
+    title: 'Service',
+    icon: require('../../assets/images/techSupport.png'),
+    routeName: 'ServiceRequest',
+    badgeNeed: false,
+  },
+    {
+    id: '6',
     title: 'support',
     icon: require('../../assets/images/techSupport.png'),
     routeName: 'CustomerSupportScreen',

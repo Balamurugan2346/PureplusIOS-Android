@@ -28,6 +28,16 @@ import CustomerSupportScreen from '../Screens/CustomerSupport/CustomerSupportScr
 import SubscriptionProductList from '../Screens/Subscriptions/SubscriptionProductList';
 import OrderSuccessScreen from '../Screens/Order/OrderSuccessScreen'
 import OrderTrackingScreen from '../Screens/Product/Order/OrderTrackingScreen'
+// New feature screens (Phase 4–7)
+import WalletScreen from '../Screens/Wallet/WalletScreen'
+import MyCansScreen from '../Screens/Cans/MyCansScreen'
+import BillingScreen from '../Screens/Billing/BillingScreen'
+import ServiceRequestScreen from '../Screens/ServiceRequest/ServiceRequestScreen'
+import BulkRequestScreen from '../Screens/Bulk/BulkRequestScreen'
+import BulkRequestStatusScreen from '../Screens/Bulk/BulkRequestStatusScreen'
+import ManageSubscriptionScreen from '../Screens/Subscriptions/ManageSubscriptionScreen'
+import CertificationScreen from '../Screens/Certification/CertificationScreen'
+import NotificationScreen from '../Screens/Main/Notification'
 
 const Stack = createNativeStackNavigator();
 
@@ -101,6 +111,23 @@ export default function AppNavigator() {
 
         { /*  Subscriptions Screens */}
         <Stack.Screen name='SubscriptionScreen' component={SubscriptionProductList}/>
+        <Stack.Screen name='ManageSubscription' component={ManageSubscriptionScreen}/>
+
+        {/* Money & assets */}
+        <Stack.Screen name='Wallet' component={WalletScreen} />
+        <Stack.Screen name='MyCans' component={MyCansScreen} />
+        <Stack.Screen name='Billing' component={BillingScreen} />
+
+        {/* Bulk / Event */}
+        <Stack.Screen name='BulkRequest' component={BulkRequestScreen} />
+        <Stack.Screen name='BulkRequestStatus' component={BulkRequestStatusScreen} />
+
+        {/* Support & trust */}
+        <Stack.Screen name='ServiceRequest' component={ServiceRequestScreen} />
+        <Stack.Screen name='Certification' component={CertificationScreen} />
+
+        {/* Notifications */}
+        <Stack.Screen name='Notifications' component={NotificationScreen} />
 
       </Stack.Navigator>
     </>

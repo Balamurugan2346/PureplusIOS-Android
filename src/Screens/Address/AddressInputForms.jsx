@@ -4,13 +4,13 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { clearAddressState, getAddressList, saveAddress } from '../../Redux/Slices/AddressSlice';
+import { clearAddressState, getAddressList, saveAddress, updateAddress } from '../../Redux/Slices/AddressSlice';
 import AppLoading from '../../Components/AppLoading';
 import { useToast } from '../../Components/Toast/ToastProvider';
 import { getData, storeData } from '../../OfflineStore/OfflineStore';
 import { saveCurrentLocationFormattedAddress } from '../../Redux/Slices/LocationSlice';
 
-const AddressInputForm = ({ navigation, pickedAddress, onNavigate }) => {
+const AddressInputForm = ({ navigation, pickedAddress, onNavigate, isEdit = false }) => {
     const { theme } = useTheme();
     const [userID, setUserID] = useState(-1)
     const dispatch = useDispatch();
@@ -20,17 +20,21 @@ const AddressInputForm = ({ navigation, pickedAddress, onNavigate }) => {
     //USER PROFILE
     const { error: ProfileError, loading: profileLoading, isFetched: isProfileApiFetched, profileData } = useSelector((state) => state.profile)
     const [formData, setFormData] = useState({
+        // present only when editing an existing address
+        id: pickedAddress.id ?? pickedAddress.addressId ?? undefined,
         userId: userID,
-        addressType: '',
+        addressType: pickedAddress.addressType ?? '',
         addressLine1: pickedAddress.addressLine1 ?? "",
         addressLine2: pickedAddress.addressLine2 ?? "",
         city: pickedAddress.city ?? "",
         state: pickedAddress.state ?? "",
-        pinCode: pickedAddress.pinCode ?? "",
-        landmark: '',
-        tag: 'Home',
-        receiverName:"",
-        receiverNumber: '',
+        pinCode: pickedAddress.pinCode ?? pickedAddress.pincode ?? "",
+        FloorNo: pickedAddress.FloorNo ?? pickedAddress.floorNo ?? '',
+        landmark: pickedAddress.landmark ?? '',
+        tag: pickedAddress.tag ?? 'Home',
+        receiverName: pickedAddress.receiverName ?? "",
+        receiverNumber: pickedAddress.receiverNumber ?? '',
+        hasLift: pickedAddress.hasLift ?? pickedAddress.lift ?? false,
         latitude: pickedAddress.latitude,
         longitude: pickedAddress.longitude,
     });
@@ -160,29 +164,53 @@ const AddressInputForm = ({ navigation, pickedAddress, onNavigate }) => {
             return;
         }
 
+        // Same form drives both create and edit; the thunk differs.
+        const action = isEdit ? updateAddress : saveAddress;
+
+        // Map the form's internal field names to the backend AddressRequest shape.
+        // (backend expects pincode / floorNo / lift — NOT pinCode / FloorNo / hasLift)
+        const apiBody = {
+            ...(isEdit && formData.id ? { id: formData.id } : {}),
+            userId: formData.userId,
+            addressType: formData.addressType,
+            addressLine1: formData.addressLine1,
+            addressLine2: formData.addressLine2,
+            city: formData.city,
+            state: formData.state,
+            pincode: formData.pinCode,
+            landmark: formData.landmark,
+            tag: formData.tag,
+            receiverName: formData.receiverName,
+            receiverNumber: formData.receiverNumber,
+            latitude: formData.latitude,
+            longitude: formData.longitude,
+            lift: !!formData.hasLift,
+            floorNo: Number(formData.FloorNo) || 0,
+        };
+
         try {
             //----------------------------------------
-            // 1️⃣ Save Address
+            // 1️⃣ Save / Update Address
             //----------------------------------------
             const res = await dispatch(
-                saveAddress({
-                    body: formData,
+                action({
+                    body: apiBody,
                     onSuccess: async (data) => {
-                        console.log("data from api0addre0", data.addressId)
-                        await storeData("selectedAddressID", data.addressId.toString());
-                        //for live reflection in ui in dashboard purpose only  (((((need to work)))))
+                        // create returns a new addressId; keep the selection pointing at it
+                        if (data?.addressId) {
+                            await storeData("selectedAddressID", data.addressId.toString());
+                        }
+                        //for live reflection in ui in dashboard purpose only
                         dispatch(saveCurrentLocationFormattedAddress(`${formData.addressLine1} ${formData.addressLine2}`))
                     },
                     onError: () => {
-                        showToast("Failed to save address", true);
+                        showToast(isEdit ? "Failed to update address" : "Failed to save address", true);
                     }
                 })
             );
 
-            // ❌ Wrong: res.error → doesn't work
-            // ✔ Correct:
-            if (!saveAddress.fulfilled.match(res)) {
-                showToast("Failed to save address", true);
+            if (!action.fulfilled.match(res)) {
+                showToast(isEdit ? "Failed to update address" : "Failed to save address", true);
                 return;
             }
 
@@ -192,7 +220,7 @@ const AddressInputForm = ({ navigation, pickedAddress, onNavigate }) => {
             const listRes = await dispatch(getAddressList());
 
             if (!getAddressList.fulfilled.match(listRes)) {
-                showToast("Address saved but failed to refresh list", true);
+                showToast("Saved but failed to refresh list", true);
                 onNavigate()
                 return;
             }
@@ -200,7 +228,7 @@ const AddressInputForm = ({ navigation, pickedAddress, onNavigate }) => {
             //----------------------------------------
             // 3️⃣ All Good
             //----------------------------------------
-            showToast("Address added successfully");
+            showToast(isEdit ? "Address updated successfully" : "Address added successfully");
             onNavigate()
         } catch (e) {
             showToast("Unexpected error occurred", true);
@@ -307,7 +335,7 @@ const AddressInputForm = ({ navigation, pickedAddress, onNavigate }) => {
                 style={[styles.saveBtn, { backgroundColor: theme.primary }]}
             >
                 <Text style={[styles.saveText, { color: theme.buttonText }]}>
-                    {loading ? 'Saving...' : 'Save Address'}
+                    {loading ? 'Saving...' : isEdit ? 'Update Address' : 'Save Address'}
                 </Text>
             </TouchableOpacity>
         </View>

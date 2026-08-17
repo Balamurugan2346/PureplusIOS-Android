@@ -1,179 +1,163 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Image,
-  Pressable
-} from 'react-native';
-
-import { useDispatch, useSelector } from 'react-redux';
+import { View, Text, StyleSheet, Image, Pressable, TouchableOpacity } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import { useSelector } from 'react-redux';
 import Fonts from '../../../assets/fonts/Fonts';
 import { useTheme } from '../../Context/ThemeContext';
 
-export default function ProductCard1({ product, onPress }) {
-
+/**
+ * Clean product card for the dashboard rail.
+ * Props: product, onPress (open detail), onInfoClick (optional quick-view).
+ */
+export default function ProductCard1({ product, onPress, onInfoClick }) {
   const { theme } = useTheme();
-  const dispatch = useDispatch();
-
   const { cartItems } = useSelector((state) => state.cart);
 
-  const cartItem = cartItems?.find(
-    (item) => item.productId === product.productId
-  );
+  const name = product?.name ?? product?.productName ?? 'Product';
+  const unitCount = product?.unitCount;
+  const unitPrice = product?.unitPrice;
+  const basePrice = product?.basePrice;
 
+  const cartItem = cartItems?.find((item) => item.productId === product?.productId);
   const quantity = cartItem ? cartItem.quantity : 0;
 
   const image =
-    product.imageUrls && product.imageUrls.length > 0
+    product?.imageUrls && product.imageUrls.length > 0
       ? { uri: product.imageUrls[0] }
       : require('../../../assets/images/no_image.png');
 
   return (
-    <Pressable onPress={onPress}>
-      <View style={[styles.card, { backgroundColor: theme.card }]}>
-        
-        {/* CART BADGE */}
-        {quantity > 0 && (
-          <View style={[styles.cartBadge, { backgroundColor: theme.primary }]}>
-            <Text style={styles.cartBadgeText}>{quantity}</Text>
-          </View>
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.card,
+        { backgroundColor: theme.card, opacity: pressed ? 0.92 : 1 },
+      ]}
+    >
+      {/* IMAGE */}
+      <View style={styles.imageWrapper}>
+        <Image source={image} style={styles.image} resizeMode="cover" />
+
+        {onInfoClick && (
+          <TouchableOpacity style={styles.infoBtn} onPress={onInfoClick} hitSlop={8}>
+            <Ionicons name="information-circle" size={20} color={theme.primary} />
+          </TouchableOpacity>
         )}
 
-        {/* IMAGE */}
-        <View style={styles.imageWrapper}>
-          <Image source={image} style={styles.image} resizeMode="cover" />
+        {quantity > 0 && (
+          <View style={[styles.cartBadge, { backgroundColor: theme.primary }]}>
+            <Text style={styles.cartBadgeText}>{quantity} in cart</Text>
+          </View>
+        )}
+      </View>
+
+      {/* NAME */}
+      <Text style={[styles.title, { color: theme.highlightedText }]} numberOfLines={2}>
+        {name}
+      </Text>
+
+      {/* UNIT CHIP */}
+      {unitCount != null && (
+        <View style={[styles.unitBox, { backgroundColor: `${theme.primary}1A` }]}>
+          <Ionicons name="cube-outline" size={12} color={theme.primary} />
+          <Text style={[styles.unitText, { color: theme.primary }]}>
+            1 Unit · {unitCount} Cans
+          </Text>
+        </View>
+      )}
+
+      {/* PRICE + ADD */}
+      <View style={styles.footer}>
+        <View>
+          <View style={styles.priceRow}>
+            <Text style={[styles.price, { color: theme.highlightedText }]}>₹{unitPrice}</Text>
+            <Text style={[styles.perUnit, { color: theme.secondaryText }]}> / unit</Text>
+          </View>
+          {basePrice != null && (
+            <Text style={[styles.perCan, { color: theme.secondaryText }]}>₹{basePrice} / can</Text>
+          )}
         </View>
 
-        {/* PRODUCT NAME */}
-        <Text
-          style={[
-            styles.title,
-            { color: theme.text, fontFamily: Fonts.family.bold }
-          ]}
-          numberOfLines={2}
+        <TouchableOpacity
+          style={[styles.addBtn, { backgroundColor: theme.primary }]}
+          onPress={onPress}
+          activeOpacity={0.85}
         >
-          {product.name}
-        </Text>
-
-        {/* UNIT PACK INFO */}
-        <View style={styles.unitBox}>
-          <Text style={styles.unitText}>
-            1 Unit = {product.unitCount} Cans
-          </Text>
-        </View>
-
-        {/* PRICE SECTION */}
-        <View style={styles.priceRow}>
-          <Text
-            style={[
-              styles.price,
-              { color: theme.text, fontFamily: Fonts.family.semiBold }
-            ]}
-          >
-            ₹{product.unitPrice}
-          </Text>
-
-          <Text style={styles.perUnit}> / Unit</Text>
-        </View>
-
-        {/* PER CAN */}
-        <Text style={styles.perCan}>
-          ₹{product.basePrice} / Can
-        </Text>
-
+          <Ionicons name="add" size={20} color={theme.buttonText} />
+        </TouchableOpacity>
       </View>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-
   card: {
-    width: 170,
-    borderRadius: 18,
-    padding: 14,
-    marginHorizontal: 10,
-    marginVertical: 8,
-
+    width: 172,
+    borderRadius: 20,
+    padding: 12,
+    marginHorizontal: 8,
+    marginVertical: 10,
     shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 3
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4,
   },
-
   imageWrapper: {
-    backgroundColor: '#F5F7FB',
-    borderRadius: 14,
-    // alignItems: 'center',
-    // justifyContent: 'center',
-    height: 90,
-    marginBottom: 10
+    backgroundColor: '#EEF3F9',
+    borderRadius: 16,
+    height: 110,
+    marginBottom: 10,
+    overflow: 'hidden',
   },
-
-  image: {
-    width: 142,
-    borderRadius:14,
-    height: 90
+  image: { width: '100%', height: '100%' },
+  infoBtn: {
+    position: 'absolute',
+    top: 6,
+    left: 6,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderRadius: 12,
   },
-
+  cartBadge: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 20,
+  },
+  cartBadgeText: { color: '#fff', fontSize: 10, fontFamily: Fonts.family.semiBold },
   title: {
     fontSize: 14,
-    marginBottom: 6
+    fontFamily: Fonts.family.semiBold,
+    marginBottom: 8,
+    minHeight: 38,
   },
-
   unitBox: {
-    backgroundColor: '#EEF6FF',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     paddingVertical: 4,
     paddingHorizontal: 8,
     borderRadius: 8,
     alignSelf: 'flex-start',
-    marginBottom: 6
+    marginBottom: 10,
   },
-
-  unitText: {
-    fontSize: 11,
-    color: '#3A6EA5',
-    fontFamily: Fonts.family.medium
-  },
-
-  priceRow: {
+  unitText: { fontSize: 11, fontFamily: Fonts.family.medium },
+  footer: {
     flexDirection: 'row',
-    alignItems: 'flex-end'
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
   },
-
-  price: {
-    fontSize: 18
-  },
-
-  perUnit: {
-    fontSize: 12,
-    color: '#888',
-    marginLeft: 3
-  },
-
-  perCan: {
-    fontSize: 12,
-    color: '#777',
-    marginTop: 2
-  },
-
-  cartBadge: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    zIndex: 10,
-    minWidth: 22,
-    height: 22,
-    borderRadius: 11,
+  priceRow: { flexDirection: 'row', alignItems: 'flex-end' },
+  price: { fontSize: 19, fontFamily: Fonts.family.bold },
+  perUnit: { fontSize: 12, marginLeft: 2, marginBottom: 2 },
+  perCan: { fontSize: 11, marginTop: 2, fontFamily: Fonts.family.regular },
+  addBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
   },
-
-  cartBadgeText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '700'
-  }
-
 });

@@ -12,6 +12,7 @@ export const placeOrder = createAsyncThunk(
       if (onSuccess) onSuccess(result);
       return result
     } catch (err) {
+      console.log("err", err)
       onError && onError(err)
       return rejectWithValue(err.response?.data || err.message);
     }

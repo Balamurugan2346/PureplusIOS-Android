@@ -83,7 +83,56 @@ export const themes = {
     tagIconColor: "#3F9E5FFF"                // Vibrant green for icons
   },
 
-   
+
 };
+
+/**
+ * Shared, theme-independent scales (DESIGN_SYSTEM.md §3–4). 4-pt grid.
+ * Import directly: `import { spacing, radius, typography, fontFamily } from '../Themes/Themes'`.
+ */
+export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 };
+
+export const radius = { sm: 8, md: 12, lg: 16, pill: 999 };
+
+// Aligned with the existing font registry (assets/fonts/Fonts.js) — the app ships Lexend.
+export const fontFamily = {
+  regular: 'Lexend-Regular',
+  medium: 'Lexend-Medium',
+  semibold: 'Lexend-SemiBold',
+  bold: 'Lexend-Bold',
+  light: 'Lexend-Light',
+};
+
+// Type scale — pair with the AppText component (variant="h2" etc.)
+export const typography = {
+  h1: { fontFamily: fontFamily.semibold, fontSize: 24 },
+  h2: { fontFamily: fontFamily.semibold, fontSize: 20 },
+  h3: { fontFamily: fontFamily.medium, fontSize: 18 },
+  body: { fontFamily: fontFamily.regular, fontSize: 15 },
+  bodyStrong: { fontFamily: fontFamily.medium, fontSize: 15 },
+  caption: { fontFamily: fontFamily.regular, fontSize: 12 },
+  label: { fontFamily: fontFamily.medium, fontSize: 12 },
+  button: { fontFamily: fontFamily.semibold, fontSize: 16 },
+  price: { fontFamily: fontFamily.bold, fontSize: 18 },
+};
+
+// Semantic colors + correctly-spelled aliases, merged into every theme WITHOUT
+// removing any existing keys (so all ~230 current consumers keep working).
+const semantic = {
+  success: '#2FBF71',
+  warning: '#E0A500',
+  info: '#69D4EA',
+  disabled: '#3A4A5C',
+  divider: '#22384F',
+};
+
+Object.keys(themes).forEach((name) => {
+  const t = themes[name];
+  // add semantic colors only if the theme didn't define them
+  Object.entries(semantic).forEach(([k, v]) => { if (t[k] === undefined) t[k] = v; });
+  // correctly-spelled aliases for the known typos (migrate call sites over time)
+  if (t.tertiary === undefined && t.teritary !== undefined) t.tertiary = t.teritary;
+  if (t.textForGlass === undefined && t.textForGlassEffext !== undefined) t.textForGlass = t.textForGlassEffext;
+});
 
 

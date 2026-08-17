@@ -1,4 +1,4 @@
-import { saveAddress , getAllAddress , deleteAddress } from '../API/Services/AddressService';
+import { saveAddress , getAllAddress , deleteAddress , updateAddress } from '../API/Services/AddressService';
 
 export const AddressRepository = {
     saveAddress: async (address) => {
@@ -8,6 +8,16 @@ export const AddressRepository = {
             return response.data
         } catch (e) {
             console.log("error while save address", e)
+            throw e
+        }
+    },
+
+    updateAddress: async (address) => {
+        try {
+            const response = await updateAddress(address)
+            return response.data
+        } catch (e) {
+            console.log("error while updating address", e)
             throw e
         }
     },

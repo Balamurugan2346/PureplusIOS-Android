@@ -23,6 +23,16 @@ import { clearCurrentLocationFormattedAddres, clearDecodedAddress } from '../../
 import { clearCart } from '../../Redux/Slices/CartSlice';
 import { logout } from '../../Redux/LogoutActions';
 
+// --- Account / services list items (key = navigator route name) ---
+const ACCOUNT_ITEMS = [
+  { name: 'Wallet', icon: 'wallet-outline', color: '#4A90E2', key: 'Wallet' },
+  { name: 'My Cans', icon: 'water-outline', color: '#27ae60', key: 'MyCans' },
+  { name: 'Billing', icon: 'receipt-outline', color: '#e67e22', key: 'Billing' },
+  { name: 'My Subscriptions', icon: 'repeat-outline', color: '#6C63FF', key: 'ManageSubscription' },
+  { name: 'My Bulk Requests', icon: 'list-outline', color: '#8e44ad', key: 'BulkRequestStatus' },
+  { name: 'Quality & Certification', icon: 'shield-checkmark-outline', color: '#16a085', key: 'Certification' },
+];
+
 // --- Data Structure for the main list items ---
 const SETTINGS_ITEMS = [
   // { name: 'Notification', icon: 'notifications', type: 'toggle', key: 'notification' },
@@ -176,6 +186,29 @@ const ProfileScreen = ({ navigation }) => {
             </View>
           </View>
 
+        </View>
+
+
+        {/* MY ACCOUNT CARD */}
+
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>MY ACCOUNT</Text>
+
+          {ACCOUNT_ITEMS.map((item) => (
+            <TouchableOpacity
+              key={item.key}
+              style={styles.settingsRow}
+              onPress={() => navigation.navigate(item.key)}
+            >
+              <View style={styles.settingsLeft}>
+                <View style={[styles.iconCircle, { backgroundColor: `${item.color}1A` }]}>
+                  <Ionicons name={item.icon} size={18} color={item.color} />
+                </View>
+                <Text style={styles.settingsText}>{item.name}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color="#bbb" />
+            </TouchableOpacity>
+          ))}
         </View>
 
 

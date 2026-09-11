@@ -11,6 +11,7 @@ class OrderService {
   track(id) { return http.get(endpoints.order.track(id)); }
   eta(id) { return http.get(endpoints.order.eta(id)); }
   invoice(id) { return http.get(endpoints.order.invoice(id)); }
+  modify(id, payload) { return http.put(endpoints.order.modify(id), payload); }
   canCancel(id) { return http.get(endpoints.order.canCancel(id)); }
   cancel(id) { return http.post(endpoints.order.cancel(id)); }
 }

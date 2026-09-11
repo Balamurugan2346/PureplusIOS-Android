@@ -51,6 +51,12 @@ const ManageSubscriptionScreen = ({ navigation }) => {
 
   return (
     <NavScreen title="My Subscriptions" navigation={navigation}>
+      <AppButton
+        title="+ New subscription"
+        borderOnly
+        style={{ marginBottom: spacing.md }}
+        onAction={() => navigation?.navigate?.('CreateSubscription')}
+      />
       <StateView loading={state.loading} error={state.error} empty={!state.data.length}
         onRetry={load} emptyText="No active subscriptions">
         <FlatList

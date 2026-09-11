@@ -74,20 +74,22 @@ const OtpVerificationScreen = ({ navigation }) => {
                 Login({
                     mobileNumber: `${mobileNumber}`,
                     otp: otp,
-                    onSuccess: (data) => {
+                    onSuccess: async (data) => {
                         console.log('dataaaaaaaa', data)
                         try {
                             if (savedOtp == otp) {
                                 if (data.success && data.isNewUser) {
                                     showToast(`Successfully completed`)
-                                    // storeData('preAuthToken', data.preAuthToken) // no use of preauth token
-                                     storeData('accessToken', data.token)// no use of preauth token
+                                    // New user already has a valid JWT from verify-otp; the profile
+                                    // POST (/api/customer/profile) is [Authorize]-guarded, so the token
+                                    // must be persisted BEFORE we navigate to profile creation.
+                                    await storeData('accessToken', data.token)
                                     navigation.replace('Username')
                                 } else if (data.success) {
                                     showToast(`Successfully completed11`)
-                                    storeData('isLoggedIn', "1")
-                                    storeData('accessToken', data.token)
-                                    storeData('userID', data.user.id.toString())
+                                    await storeData('isLoggedIn', "1")
+                                    await storeData('accessToken', data.token)
+                                    await storeData('userID', data.user.id.toString())
                                     navigation.reset({
                                         index: 0,
                                         routes: [{ name: 'DashBoard' }],

@@ -4,6 +4,7 @@ import NavScreen from '../../Components/NavScreen';
 import AppText from '../../Components/AppText';
 import AppButton from '../../Components/AppButton';
 import BulkService from '../../API/modules/BulkService';
+import { getSelectedAddressId } from '../../Utils/GetSelectedAddress';
 import { spacing, radius } from '../../Themes/Themes';
 import { useTheme } from '../../Context/ThemeContext';
 
@@ -33,15 +34,24 @@ const BulkRequestScreen = ({ navigation }) => {
     }
     setSubmitting(true);
     try {
+      const addressId = Number(await getSelectedAddressId());
+      if (!addressId || addressId === -1) {
+        Alert.alert('Select an address', 'Please choose a delivery address before requesting.');
+        setSubmitting(false);
+        return;
+      }
+      // Backend CreateBulkRequest shape (verified against Swagger):
+      // { requestType, productId, quantity, requestedDate, addressId, gstin, eventDetails }
       await BulkService.create({
-        purpose,
-        productId: form.productId,
+        requestType: purpose,                         // 'B2B' | 'EVENT'
+        productId: Number(form.productId) || 0,
         quantity: Number(form.quantity),
-        requiredDate: form.requiredDate,
-        venueAddress: form.venueAddress,
-        contactPerson: form.contactPerson,
+        requestedDate: form.requiredDate,
+        addressId,
         gstin: purpose === 'B2B' ? form.gstin : undefined,
-        notes: form.notes,
+        eventDetails: [form.venueAddress, form.contactPerson, form.notes]
+          .filter(Boolean)
+          .join(' | '),
       });
       Alert.alert('Submitted', 'Your request is in the approval queue.', [
         { text: 'OK', onPress: () => navigation?.navigate?.('BulkRequestStatus') },

@@ -2,6 +2,7 @@ import { useAppContext } from '../../../Context/AppContext';
 import { useTheme } from '../../../Context/ThemeContext';
 import Fonts from '../../../../assets/fonts/Fonts';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import AppButton from '../../../Components/AppButton';
 import { useEffect, useState } from 'react';
 import { Image, LayoutAnimation, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, UIManager, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -216,6 +217,16 @@ const OrderDetailedScreen = ({ navigation, route }) => {
 
                         {/*Order summary */}
                         <OrderSummary isOrderDetails={true} />
+
+                        {/* Modify — only while PLACED */}
+                        {String(orderDetailed?.data?.status ?? '').toUpperCase() === 'PLACED' && (
+                          <AppButton
+                            title="Modify order"
+                            borderOnly
+                            style={{ margin: 10 }}
+                            onAction={() => navigation?.navigate?.('ModifyOrder', { orderId: orderId })}
+                          />
+                        )}
                     </View>
                 </ScrollView>
             ) : (

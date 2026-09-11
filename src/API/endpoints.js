@@ -8,9 +8,9 @@
 
 const endpoints = {
   auth: {
-    sendOtp: 'api/customer/auth/send-otp',       // { mobileNumber }
-    verifyOtp: 'api/customer/auth/verify-otp',   // { mobileNumber, otp } -> { token, preAuthToken }
-    refreshToken: 'api/customer/auth/refresh-token', // { token } -> { token }
+    sendOtp: 'api/customer/auth/send-otp',       // { mobileNumber } -> { otp (demo), message, expiresAt }
+    verifyOtp: 'api/customer/auth/verify-otp',   // { mobileNumber, otp } -> { success, isNewUser, token, user }
+    refreshToken: 'api/customer/auth/refresh-token', // { token } -> { success, token }
   },
 
   profile: {
@@ -69,6 +69,7 @@ const endpoints = {
     track: (id) => `api/customer/orders/track/${id}`,
     eta: (id) => `api/customer/orders/eta/${id}`,
     invoice: (id) => `api/customer/orders/invoice/${id}`, // NOTE: backend stub (hardcoded URL) for now
+    modify: (id) => `api/customer/orders/${id}`,           // PUT — change slot/date while PLACED
     canCancel: (id) => `api/customer/orders/${id}/can-cancel`,
     cancel: (id) => `api/customer/orders/${id}/cancel`,   // lifecycle cancel (ASSIGNED-lock + ownership)
   },

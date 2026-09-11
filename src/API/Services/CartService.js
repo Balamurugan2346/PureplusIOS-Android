@@ -13,3 +13,11 @@ export const updateCart = (cart) => {
 export const addToCart =(cart)=>{
     return apiClient.post(endpoints.ADDTOCART,cart)
 }
+
+export const getCartCount = () => {
+    return apiClient.get(endpoints.CARTCOUNT)
+}
+
+export const removeFromCart = (id) => {
+    return apiClient.delete(`${endpoints.REMOVEFROMCART}/${id}`)
+}

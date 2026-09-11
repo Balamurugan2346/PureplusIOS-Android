@@ -3,7 +3,7 @@ import Fonts from '../../../assets/fonts/Fonts';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import { useEffect, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import CartItem from '../../Components/Cart/CartItem';
 import OrderSummary from '../../Components/Cart/OrderSummary';
@@ -59,7 +59,10 @@ const CartScreen = ({ navigation }) => {
 
 
   const [selectedAddress, setSelectedAddress] = useState(null);
-  const [receiversDetails, setReceiversDetails] = useState(null)
+  const [receiversDetails, setReceiversDetails] = useState(null);
+  const [forSomeoneElse, setForSomeoneElse] = useState(false);
+  const [receiverName, setReceiverName] = useState('');
+  const [receiverPhone, setReceiverPhone] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   //  useState({
   //   receiverName:'',
@@ -224,7 +227,11 @@ const CartScreen = ({ navigation }) => {
                   </View>
                 </View>
 
-                <Text style={[headerConfig, {fontSize: Fonts.size.sm, marginLeft: 10, marginBottom: 7 }]}>You can shedule for later</Text>
+                <Text style={[headerConfig, {fontSize: Fonts.size.sm, marginLeft: 10, marginBottom: 7 }]}>
+                  {selectedSlot?.type === 'scheduled' && selectedSlot?.date
+                    ? `Scheduled: ${selectedSlot.date}${selectedSlot.label ? ` · ${selectedSlot.label}` : ''}`
+                    : 'Deliver now (instant) · tap to schedule'}
+                </Text>
               </View>
 
 
@@ -234,7 +241,9 @@ const CartScreen = ({ navigation }) => {
 
                 <View style={{ flexDirection: "row", paddingHorizontal: 10, paddingVertical: 5, justifyContent: "center",alignItems:"center" }}>
                   <Ionicons name='time' color={"#FDD835"} size={20} />
-                  <Text style={[{ marginLeft: 3, color: "#5D4037", fontFamily: Fonts.family.regular,fontSize:12 }]}>Shedule</Text>
+                  <Text style={[{ marginLeft: 3, color: "#5D4037", fontFamily: Fonts.family.regular,fontSize:12 }]}>
+                    {selectedSlot?.type === 'scheduled' ? 'Change' : 'Schedule'}
+                  </Text>
                 </View>
 
               </Pressable>
@@ -261,6 +270,40 @@ const CartScreen = ({ navigation }) => {
           <PaymentWithAddressBar displayName={displayReceiverName} receiversDetails={receiversDetails} isOrderForSelf={isOrderForSelf} address={selectedAddress} navigation={navigation} showBottomSheet={() => setShowAddressBottomSheet(true)} />
           {/* )} */}
 
+          {/* CUS-29: Order for someone else */}
+          <View style={styles.forSomeoneCard}>
+            <View style={styles.forSomeoneRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={[headerConfig, { fontSize: Fonts.size.sm }]}>Order for someone else</Text>
+                <Text style={[paratextConfig, { marginTop: 2 }]}>Add receiver name & phone</Text>
+              </View>
+              <Switch
+                value={forSomeoneElse}
+                onValueChange={setForSomeoneElse}
+                trackColor={{ true: '#4A90E2' }}
+              />
+            </View>
+            {forSomeoneElse && (
+              <View style={{ marginTop: 10 }}>
+                <TextInput
+                  value={receiverName}
+                  onChangeText={setReceiverName}
+                  placeholder="Receiver's full name"
+                  placeholderTextColor={paratextConfig.color}
+                  style={[styles.receiverInput, { color: headerConfig.color, borderColor: '#ccc' }]}
+                />
+                <TextInput
+                  value={receiverPhone}
+                  onChangeText={setReceiverPhone}
+                  placeholder="Receiver's phone (optional)"
+                  placeholderTextColor={paratextConfig.color}
+                  keyboardType="phone-pad"
+                  style={[styles.receiverInput, { color: headerConfig.color, borderColor: '#ccc', marginTop: 8 }]}
+                />
+              </View>
+            )}
+          </View>
+
           {/* bill summary */}
           <OrderSummary />
 
@@ -274,21 +317,41 @@ const CartScreen = ({ navigation }) => {
             }
             // Backend PlaceOrderRequest expects numeric ids; the cart items come
             // from the server-side cart, so only order-level fields go here.
+            // Schedule vs instant (CUS-13): the backend only treats an order as
+            // scheduled when deliveryType === "scheduled" AND slotId AND deliveryDate
+            // are all present (CustomerCreateOrderAsync → order_type_id=2, expected
+            // delivery = date + slot start). Otherwise it's instant (now + 30 min).
+            // depositAmount is IGNORED server-side (deposit is computed there), so 0 is fine.
+            // CUS-29: receiver fields added when ordering for someone else.
+            const isScheduled = selectedSlot?.type === 'scheduled' && !!selectedSlot?.date;
             var data = {
               addressId: Number(id),
-              deliveryType: selectedSlot?.type ?? 'instant',
-              slotId: Number(selectedSlot?.id ?? 0),
-              deliveryDate: new Date().toISOString(),
+              deliveryType: isScheduled ? 'scheduled' : 'instant',
+              slotId: isScheduled ? Number(selectedSlot?.id ?? 0) : null,
+              deliveryDate: isScheduled
+                ? new Date(selectedSlot.date).toISOString()
+                : new Date().toISOString(),
               depositAmount: 0,
-              paymentMode: paymentMethod
+              paymentMode: paymentMethod,
+              ...(forSomeoneElse && receiverName.trim() && {
+                receiverName: receiverName.trim(),
+                receiverPhone: receiverPhone.trim() || undefined,
+              }),
             }
+            console.log('PLACE ORDER BODY', data)
             dispatch(placeOrder({
               body: data,
               onSuccess: (response) => {
                 handleOrderDetails(response)
               }, onError: (err) => {
-                console.log("errr",err)
-                showToast("Failed to place order", true)
+                console.log("errr", err)
+                // surface the backend's real reason (e.g. "We don't deliver to this area yet")
+                const msg =
+                  err?.response?.data?.message ||
+                  err?.response?.data?.title ||
+                  err?.message ||
+                  "Failed to place order";
+                showToast(msg, true)
               }
             }))
           }} />
@@ -339,6 +402,25 @@ const styles = StyleSheet.create({
 
   container: {
     flex: 1,
+  },
+  forSomeoneCard: {
+    marginHorizontal: 10,
+    marginTop: 10,
+    padding: 14,
+    borderRadius: 16,
+    backgroundColor: '#f0f4ff',
+  },
+  forSomeoneRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  receiverInput: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    backgroundColor: '#fff',
   },
 
   paymentContainer: {

@@ -120,19 +120,16 @@ const ScheduleDeliveryScreen = ({ navigation }) => {
        CONFIRM BUTTON LOGIC
     ====================================================== */
     const handleConfirm = () => {
-        // ⚡ Instant delivery
+        // ⚡ Instant delivery — clear any prior schedule and go back.
         if (deliveryType === 'instant') {
-            const payload = {
-                orderType: 'instant',
-                delivery_date: new Date().toISOString().split('T')[0],
-                delivery_time: new Date().toLocaleTimeString(),
-            };
-
-            console.log('INSTANT ORDER PAYLOAD:', payload);
             dispatch(saveSelectedSlot({
                 id: 0,
                 type: 'instant',
+                date: null,
+                label: null,
             }))
+            showToast('Instant delivery selected');
+            navigation.goBack();
             return;
         }
 
@@ -142,18 +139,16 @@ const ScheduleDeliveryScreen = ({ navigation }) => {
             return;
         }
 
-        const payload = {
-            orderType: 'schedule',
-            delivery_date: selectedDate,
-            delivery_time_slot: selectedSlot.slots,
-            delivery_time_slot_id: selectedSlot.slotId,
-        };
-        console.log("payload slot", payload)
+        // Persist the FULL schedule — id, the picked date, and a readable label — so the
+        // cart can send them to /orders/place. Backend expects deliveryType === "scheduled"
+        // (exact string) + slotId + deliveryDate; anything else is treated as instant.
         dispatch(saveSelectedSlot({
             id: selectedSlot.slotId,
-            type: 'schedule',
+            type: 'scheduled',
+            date: selectedDate,                 // 'YYYY-MM-DD'
+            label: selectedSlot.slotName ?? null,
         }))
-        console.log('SCHEDULE ORDER PAYLOAD:', payload);
+        showToast(`Scheduled for ${selectedDate}`);
         navigation.goBack();
     };
 

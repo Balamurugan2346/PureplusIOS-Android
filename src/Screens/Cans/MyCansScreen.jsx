@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import NavScreen from '../../Components/NavScreen';
 import AppText from '../../Components/AppText';
+import AppButton from '../../Components/AppButton';
 import StateView from '../../Components/StateView';
 import formatCurrency from '../../Utils/formatCurrency';
 import { refillService } from '../../API/modules/MiscService';
@@ -13,6 +14,7 @@ import { useTheme } from '../../Context/ThemeContext';
  * Refund is full once all cans are returned (schedules a collection visit).
  */
 const MyCansScreen = ({ navigation }) => {
+
   const { theme } = useTheme();
   const [state, setState] = useState({ loading: true, error: null, data: null });
 
@@ -53,6 +55,13 @@ const MyCansScreen = ({ navigation }) => {
               To request a deposit refund, return all held cans on your next delivery or raise a
               service request. Refunds are full, with no restocking deduction.
             </AppText>
+          </View>
+
+          <View style={{ marginTop: spacing.xl }}>
+            <AppButton
+              title="Schedule refill"
+              onAction={() => navigation?.navigate?.('Refill')}
+            />
           </View>
         </ScrollView>
       </StateView>

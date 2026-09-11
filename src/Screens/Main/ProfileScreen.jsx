@@ -29,6 +29,7 @@ const ACCOUNT_ITEMS = [
   { name: 'My Cans', icon: 'water-outline', color: '#27ae60', key: 'MyCans' },
   { name: 'Billing', icon: 'receipt-outline', color: '#e67e22', key: 'Billing' },
   { name: 'My Subscriptions', icon: 'repeat-outline', color: '#6C63FF', key: 'ManageSubscription' },
+  { name: 'New Subscription', icon: 'add-circle-outline', color: '#6C63FF', key: 'CreateSubscription' },
   { name: 'My Bulk Requests', icon: 'list-outline', color: '#8e44ad', key: 'BulkRequestStatus' },
   { name: 'Quality & Certification', icon: 'shield-checkmark-outline', color: '#16a085', key: 'Certification' },
 ];

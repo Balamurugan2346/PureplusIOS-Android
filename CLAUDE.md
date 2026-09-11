@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> **Project state & cross-cutting decisions live in the repo-root brief: [`../../CLAUDE.md`](../../CLAUDE.md)** (read it first — it's the source of truth for what's done, known bugs, and locked decisions). This file is the **Customer-app architecture reference**. End sessions with `/save-session`.
+
 ## Project Overview
 
 Pureplus is a React Native 0.81 water delivery app (iOS + Android) built for customers to browse products, manage a cart, place/track orders, and handle subscriptions. Authentication is OTP-based (mobile number → OTP → JWT). The app targets both platforms from a single codebase.
@@ -124,3 +126,14 @@ The main API base URL is hardcoded in `src/API/Client.js` (not in `.env`).
 - **"Shedule" is the intentional spelling used throughout** the codebase (slice name, screen name, repository name) — keep this spelling for consistency.
 - **`useUserId()` hook** (`src/customHooks/useUserID.js`) — standard way to get the current user ID from AsyncStorage in components.
 - Lottie animations live in `assets/animations/`.
+
+## Recent additions (2026-08) — new foundation & caveats
+
+- **New OOP service layer:** `src/API/modules/*.js` — one class per domain (Order, Cart, Address, Wallet, Subscription, Bulk, ServiceRequest, Notification, Certification, …) built on `src/API/http.js` (unwraps the `{success,data,message}` envelope, throws typed `ApiError`, handles 429) + `src/API/endpoints.js` (grouped path constants). New screens use these; **legacy screens still use the functional `src/API/Services/*` + `Repository/*` chain** — both coexist.
+- ⚠️ **Windows FS is case-insensitive:** `src/api/services/` == `src/API/Services/`. **Never create the lowercase path** — it silently overwrites the legacy services. New class services go in `src/API/modules/`.
+- **New shared components:** `NavScreen` (TopAppBar + padded body — standard screen shell), `AppText` (typography), `StateView` (loading/error/empty), `PriceBreakdown`, `StatusBadge`. Theme now exports `spacing`/`radius`/`typography`/`fontFamily` (font is **Lexend**, see `assets/fonts/Fonts.js`).
+- **Theme objects:** `light`, `dark`, `darkSea`, `forest` (only `darkSea` is fully populated + active).
+- ⚠️ **API field-name matching:** several payloads were mismatched vs the backend and are now fixed (address `pincode`/`floorNo`/`lift`; bulk `requestType`/`requestedDate`/`addressId`/`eventDetails`; service-request `description`). The new screens' **response** field reads are still guessed — verify against live data. See `MOBILE_INTEGRATION_STATUS.md`.
+- **Serviceability is pincode-only** (backend matches the address `pincode` to `store_service_area`). Place-order needs a saved address with a real pincode + that pincode seeded into a live store.
+- **Verify compilation without an emulator:** `npx react-native bundle --entry-file index.js --platform android --dev true --bundle-output /tmp/b.js` (exit 0 = all imports/JSX resolve).
+- Docs in this folder: `MOBILE_INTEGRATION_STATUS.md` (API integration truth), `BUILD_PLAN.md` (phased plan), `DESIGN_SYSTEM.md` (tokens/components).

@@ -14,9 +14,11 @@ class AuthService {
   }
 
   async verifyOtp(mobileNumber, otp) {
+    // /api/customer/auth/verify-otp returns a full JWT (`token`) + `isNewUser` even
+    // for new users — there is no preAuthToken in this flow (that was the legacy
+    // /api/auth two-step signup). Persist the token; profile creation is authorized.
     const data = await http.post(endpoints.auth.verifyOtp, { mobileNumber, otp });
     if (data?.token) await TokenStore.setAccessToken(data.token);
-    if (data?.preAuthToken) await TokenStore.setPreAuthToken(data.preAuthToken);
     return data;
   }
 

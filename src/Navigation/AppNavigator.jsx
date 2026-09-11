@@ -27,6 +27,7 @@ import SheduleOrderScreen from '../Screens/Delivery/SheduleDeliveryScreen'
 import CustomerSupportScreen from '../Screens/CustomerSupport/CustomerSupportScreen'
 import SubscriptionProductList from '../Screens/Subscriptions/SubscriptionProductList';
 import OrderSuccessScreen from '../Screens/Order/OrderSuccessScreen'
+import ModifyOrderScreen from '../Screens/Order/ModifyOrderScreen'
 import OrderTrackingScreen from '../Screens/Product/Order/OrderTrackingScreen'
 // New feature screens (Phase 4–7)
 import WalletScreen from '../Screens/Wallet/WalletScreen'
@@ -36,7 +37,9 @@ import ServiceRequestScreen from '../Screens/ServiceRequest/ServiceRequestScreen
 import BulkRequestScreen from '../Screens/Bulk/BulkRequestScreen'
 import BulkRequestStatusScreen from '../Screens/Bulk/BulkRequestStatusScreen'
 import ManageSubscriptionScreen from '../Screens/Subscriptions/ManageSubscriptionScreen'
+import CreateSubscriptionScreen from '../Screens/Subscriptions/CreateSubscriptionScreen'
 import CertificationScreen from '../Screens/Certification/CertificationScreen'
+import RefillScreen from '../Screens/Refill/RefillScreen'
 import NotificationScreen from '../Screens/Main/Notification'
 
 const Stack = createNativeStackNavigator();
@@ -84,6 +87,7 @@ export default function AppNavigator() {
         {/* dashboard and dashboard related screens */}
         <Stack.Screen name='DashBoard' component={Dashboard} />
         <Stack.Screen name='OrderSuccess' component={OrderSuccessScreen} />
+        <Stack.Screen name='ModifyOrder' component={ModifyOrderScreen} />
 
         {/* drawer navigation screen */}
         {/* <Stack.Screen name='Main' component={DrawerNavigator} />  //no need drawer for this app */}
@@ -112,11 +116,13 @@ export default function AppNavigator() {
         { /*  Subscriptions Screens */}
         <Stack.Screen name='SubscriptionScreen' component={SubscriptionProductList}/>
         <Stack.Screen name='ManageSubscription' component={ManageSubscriptionScreen}/>
+        <Stack.Screen name='CreateSubscription' component={CreateSubscriptionScreen}/>
 
         {/* Money & assets */}
         <Stack.Screen name='Wallet' component={WalletScreen} />
         <Stack.Screen name='MyCans' component={MyCansScreen} />
         <Stack.Screen name='Billing' component={BillingScreen} />
+        <Stack.Screen name='Refill' component={RefillScreen} />
 
         {/* Bulk / Event */}
         <Stack.Screen name='BulkRequest' component={BulkRequestScreen} />

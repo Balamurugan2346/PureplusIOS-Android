@@ -36,7 +36,12 @@ export const AuthRepository = {
             const response = await createProfile(fullName,email)
             return response.data
         }catch(e){
-            console.log("error creating profile")
+            // Was swallowing the error and returning undefined — a failed profile
+            // save then looked like success to the thunk (onSuccess(undefined) threw
+            // on `.success`, surfacing only a generic error). Rethrow so the real
+            // reason (401/400/500) reaches the screen.
+            console.log("error creating profile", e)
+            throw e
         }
     }
 }

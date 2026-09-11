@@ -36,10 +36,17 @@ export default {
   GETUSERPROFILE: 'api/customer/profile',
   UPDATEUSERPROFILE: 'api/customer/profile',
 
-  //CART
+  //CART  (verified against backend CustomerCartRepository.cs)
+  // NOTE: the app's updateCart thunk always sends an ABSOLUTE quantity and is used for the
+  // FIRST add too (CartButton sends quantity:1 on a not-yet-in-cart item). `cart/add`
+  // (CustomerAddAsync) is absolute-set + upsert + delete-at-0 — the only endpoint that
+  // handles all three (first-add / set-quantity / remove). `cart/update-quantity` THROWS
+  // "Cart item not found" on a missing line, so it must NOT be used for add.
   GETCART: 'api/customer/cart',
-  ADDTOCART: 'api/customer/cart',  // no need
-  UPDATECART: 'api/customer/cart/add',
+  CARTCOUNT: 'api/customer/cart/count',
+  ADDTOCART: 'api/customer/cart/add',    // POST { productId, quantity } — upsert (absolute)
+  UPDATECART: 'api/customer/cart/add',   // same upsert endpoint; sending 0 removes the line
+  REMOVEFROMCART: 'api/customer/cart/remove',  // DELETE /remove/{id}
 
   //Shedule-order
   GETALLSLOTS: 'api/customer/delivery/slots',
@@ -64,5 +71,5 @@ export default {
   //subscription
   GETSUBSCRIPTIONPLANS: 'api/customer/subscription',
   PLACESUBSCRIPTIONORDER: 'api/customer/subscription',
-  CUSTOMER_SUPPORT: 'api/customerSupport'
+  CUSTOMER_SUPPORT: 'api/CustomerSupport'   // route casing fixed (was 'api/customerSupport')
 };

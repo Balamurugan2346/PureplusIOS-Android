@@ -40,7 +40,8 @@ const ServiceRequestScreen = ({ navigation }) => {
     if (submitting) return;
     setSubmitting(true);
     try {
-      await ServiceRequestService.create({ category, notes });
+      // Backend CreateServiceRequest: { category, description, orderId?, productId?, addressId? }
+      await ServiceRequestService.create({ category, description: notes });
       setNotes('');
       Alert.alert('Raised', 'Your service request has been submitted.');
       load();

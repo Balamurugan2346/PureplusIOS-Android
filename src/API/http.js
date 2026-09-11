@@ -15,8 +15,11 @@ export class ApiError extends Error {
 }
 
 /**
- * The backend returns { success, data, message }. This unwraps it so callers
- * get `data` directly, and normalizes every failure into an ApiError.
+ * The backend returns one of TWO envelopes:
+ *   A) { success, data, message }              — most controllers
+ *   B) { status, message, data }               — Refill + Subscription only
+ * This unwraps both so callers get `data` directly, and normalizes every
+ * failure into an ApiError.
  *
  * Handles 429 (OTP rate limit) distinctly via `err.isRateLimit`.
  */
@@ -24,11 +27,23 @@ function unwrap(promise) {
   return promise.then(
     (res) => {
       const body = res?.data;
-      // Envelope shape
+      // Envelope A: { success, data, message }
       if (body && typeof body === 'object' && 'success' in body) {
         if (body.success === false) {
           throw new ApiError(body.message || 'Request failed', {
             status: res.status,
+            data: body,
+          });
+        }
+        return body.data !== undefined ? body.data : body;
+      }
+      // Envelope B: { status: <int>, message, data } — Refill + Subscription.
+      // A create returns { status, message, subscriptionId } with no `data`, so
+      // fall back to the whole body when `data` is absent (callers read subscriptionId).
+      if (body && typeof body === 'object' && typeof body.status === 'number' && 'message' in body) {
+        if (body.status >= 400) {
+          throw new ApiError(body.message || 'Request failed', {
+            status: body.status,
             data: body,
           });
         }

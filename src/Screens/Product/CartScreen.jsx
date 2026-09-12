@@ -22,6 +22,7 @@ import { getOrderDetailed, placeOrder } from '../../Redux/Slices/OrderSlice'
 import { useToast } from '../../Components/Toast/ToastProvider';
 import AppLoading from '../../Components/AppLoading';
 import { clearSheduleSlots } from '../../Redux/Slices/SheduleOrderSlice';
+import { resolveServiceability } from '../../Redux/Slices/ServiceabilitySlice';
 const CartScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const { isBottomBarVisible } = useAppContext()
@@ -33,6 +34,8 @@ const CartScreen = ({ navigation }) => {
   const { showToast } = useToast()
   //selected slots or instant
   const { selectedSlot } = useSelector((state) => state.sheduleOrder)
+  //serviceability of the selected delivery address (CUS-07) — blocks ordering when false
+  const { serviceable, reason: svcReason } = useSelector((state) => state.serviceability)
 
   //LOCATIONS + GEOCODING API DATA  
   const { error: LocationError, display_name, address: DetailedAddress, isFetched: isLocationApiFetched, currentLocationAddressFetched, currentLocationFormattedAddress, entireGEOData, loading: isGEOcodingApiLoading } = useSelector((state) => state.locations)
@@ -86,6 +89,10 @@ const CartScreen = ({ navigation }) => {
         receiverName: matched.receiverName ?? '',
         receiverNumber: matched.receiverNumber ?? '',
       });
+
+      // Re-check serviceability for the address the order will actually go to.
+      const pin = matched.pincode ?? matched.pinCode ?? matched.pin_code;
+      if (pin) dispatch(resolveServiceability(String(pin).trim()));
     } else {
       // setSelectedAddress(currentLocationFormattedAddress ?? null); no need to store location part in address
       setSelectedAddress(null)
@@ -313,6 +320,12 @@ const CartScreen = ({ navigation }) => {
             console.log(selectedSlot?.id, "selected slot id from cart screen")
             if (id == -1 || id == null) {
               showToast("Please select an address to place order", true)
+              return
+            }
+            // Don't even attempt placement for an unserviceable address (CUS-07). The
+            // backend rejects it too, but this gives an immediate, clearer message.
+            if (serviceable === false) {
+              showToast(svcReason || "We don't deliver to this area yet. Please change the address.", true)
               return
             }
             // Backend PlaceOrderRequest expects numeric ids; the cart items come

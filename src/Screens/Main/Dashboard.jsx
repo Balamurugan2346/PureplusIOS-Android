@@ -52,6 +52,8 @@ import { requestNotificationPermission } from '../../Utils/NotificationUtils';
 import { getFcmToken } from '../../Utils/FirebaseUtils';
 import { getCurrentOrder } from '../../Redux/Slices/OrderSlice';
 import FirstLetterAvatar from '../../Components/Profile/FirstLetterAvatar';
+import { resolveServiceability } from '../../Redux/Slices/ServiceabilitySlice';
+import UnserviceableArea from '../../Components/UnserviceableArea';
 
 // Placeholder Carousel Data
 const bannerData = [
@@ -161,9 +163,15 @@ const Dashboard = ({ navigation }) => {
 
   const { currentOrder } = useSelector((state) => state.order)
 
-  useEffect(() => {
-    console.log("productList", productList)
-  }, [productList])
+  //SERVICEABILITY (CUS-07): the selected delivery address's pincode decides which
+  //store's catalog is shown, or "not serviceable". serviceable===false hides products.
+  const {
+    checked: svcChecked,
+    serviceable,
+    reason: svcReason,
+    storeName: svcStoreName,
+    pincode: svcPincode,
+  } = useSelector((state) => state.serviceability)
 
 
   //FETCHING LOCATION ALSO GET DECODED ADDRESS FROM PROVIDER(GEOAPIFY.COM)
@@ -284,17 +292,22 @@ const Dashboard = ({ navigation }) => {
   const getAddressFromStateList = async () => {
     const id = await getSelectedAddressId();
     if (addressList) {
-      // console.log("list", addressList)
-      addressList.map((address, index) => {
-        if (address.id == id) {
-          setDisplayAddress(`${address.addressLine1}, ${address.addressLine2}`)
-        }
-      })
+      const matched = addressList.find((address) => address.id == id);
+      if (matched) {
+        setDisplayAddress(`${matched.addressLine1}, ${matched.addressLine2}`)
+        // Resolve serviceability for the SELECTED delivery address's pincode. Changing the
+        // address (incl. a receiver's address for someone else) re-runs this and swaps the
+        // catalog / unserviceable state. Backend field is `pincode`; forms use `pinCode`.
+        const pin = matched.pincode ?? matched.pinCode ?? matched.pin_code;
+        if (pin) dispatch(resolveServiceability(String(pin).trim()));
+      }
     }
   }
+  // Re-resolve whenever the address list changes (new/edited/selected address).
   useEffect(() => {
     getAddressFromStateList()
-  }, [])
+    console.log("called")
+  }, [addressList])
 
 
 
@@ -459,11 +472,21 @@ const Dashboard = ({ navigation }) => {
 
 
 
-        {/* product section */}
-        <View style={[styles.productSection]}>
-          <Text style={[textConfig, { paddingVertical: 5 }]}>Our products</Text>
+        {/* Unserviceable area: pincode has no serving store -> hide catalog, block ordering. */}
+        {svcChecked && serviceable === false ? (
+          <UnserviceableArea
+            pincode={svcPincode}
+            reason={svcReason}
+            onChangeAddress={() => setShowAddressBottomSheet(true)}
+          />
+        ) : (
+          /* product section */
+          <View style={[styles.productSection]}>
+            <Text style={[textConfig, { paddingVertical: 5 }]}>
+              Our products{svcStoreName ? ` · ${svcStoreName}` : ''}
+            </Text>
 
-          {/* {productsLoading && (
+            {/* {productsLoading && (
             <View style={{ flexDirection: "row" }}>
 
 
@@ -518,7 +541,7 @@ const Dashboard = ({ navigation }) => {
             </View>
           )} */}
 
-          {/* {productError && !productsLoading && (
+            {/* {productError && !productsLoading && (
             <View style={{ alignSelf: "center", }}>
               <Text style={[headerConfig, { color: theme.error, fontFamily: Fonts.family.regular }]}>
                 Couldn’t load products
@@ -528,48 +551,48 @@ const Dashboard = ({ navigation }) => {
               </TouchableOpacity>
             </View>
           )} */}
-          {/* 
+            {/* 
           {isProductsFetched && !productError && productList.length === 0 && (
             <Text style={[headerConfig, { alignSelf: "center", margin: 10 }]}>
               No Products Found
             </Text>
           )} */}
 
-          {/* {isProductsFetched && !productError && productList.length > 0 && ( */}
-          <ScrollView
-            showsHorizontalScrollIndicator={false}
-            horizontal
-            style={styles.productGrid}
-          >
-            {productList.data && productList.data.map((product, index) => (
-              // <ProductCardRect
-              //   key={index}
-              //   category="Soft Drink"
-              //   title="Sparkle Cola 300ml"
-              //   navigate={() => navigation.navigate("DetailedProductScreen", { product })}
-              //   price="$1.50"
-              //   onRefillQuantityChange={(q) => Alert.alert(`Cola quantity set to ${q}`)}
-              // />
-              <ProductCard1
-                key={index}
-                product={product}
-                onPress={() => {
-                  if (userID != -1) {
-                    navigation.navigate("DetailedProductScreen", { product, userID })
+            {/* {isProductsFetched && !productError && productList.length > 0 && ( */}
+            <ScrollView
+              showsHorizontalScrollIndicator={false}
+              horizontal
+              style={styles.productGrid}
+            >
+              {productList.data && productList.data.map((product, index) => (
+                // <ProductCardRect
+                //   key={index}
+                //   category="Soft Drink"
+                //   title="Sparkle Cola 300ml"
+                //   navigate={() => navigation.navigate("DetailedProductScreen", { product })}
+                //   price="$1.50"
+                //   onRefillQuantityChange={(q) => Alert.alert(`Cola quantity set to ${q}`)}
+                // />
+                <ProductCard1
+                  key={index}
+                  product={product}
+                  onPress={() => {
+                    if (userID != -1) {
+                      navigation.navigate("DetailedProductScreen", { product, userID })
+                    }
                   }
-                }
 
-                }
-                onInfoClick={() => {
-                  setShowBottomSheet((prev) => !prev);
-                  setBottomSheetProductDetailsData(product);
-                }}
-              />
-            ))}
-          </ScrollView>
-          {/* )} */}
-        </View>
-
+                  }
+                  onInfoClick={() => {
+                    setShowBottomSheet((prev) => !prev);
+                    setBottomSheetProductDetailsData(product);
+                  }}
+                />
+              ))}
+            </ScrollView>
+            {/* )} */}
+          </View>
+        )}
 
 
 
@@ -584,7 +607,7 @@ const Dashboard = ({ navigation }) => {
       )}
 
       {console.log("cart", cartItems)}
-      {!loading && cartIsFetched && cartItems.length > 0 && (
+      {!loading && cartIsFetched && cartItems.length > 0 && serviceable !== false && (
         <ViewCartButton navigation={navigation} cart={cartItems} />
       )}
 
@@ -596,6 +619,9 @@ const Dashboard = ({ navigation }) => {
         <AddressScreen
           navigation={navigation}
           onClose={() => setShowAddressBottomSheet(false)}
+          callGetSelectedAddressCallBack={() => {
+            dispatch(getAddressList())
+          }}
         />
       </BottomSheet>
 

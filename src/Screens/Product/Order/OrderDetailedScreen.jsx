@@ -4,7 +4,7 @@ import Fonts from '../../../../assets/fonts/Fonts';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AppButton from '../../../Components/AppButton';
 import { useEffect, useState } from 'react';
-import { Image, LayoutAnimation, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, UIManager, View } from 'react-native';
+import { Alert, Image, LayoutAnimation, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, UIManager, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import OrderSummary from '../../../Components/Cart/OrderSummary';
 import Line from '../../../Components/Line';
@@ -15,7 +15,27 @@ import OrderTimeline from '../../../Components/OrderTracking/OrderTimeLIne';
 import { useDispatch, useSelector } from 'react-redux';
 import { getDetailedProducts } from '../../../Redux/Slices/ProductsSlice';
 import AppLoading from '../../../Components/AppLoading';
-import { clearOrderDetailed, getOrderDetailed } from '../../../Redux/Slices/OrderSlice';
+import { cancelOrder, clearOrderDetailed, getAllOrders, getOrderDetailed } from '../../../Redux/Slices/OrderSlice';
+import { useToast } from '../../../Components/Toast/ToastProvider';
+import OrderApi from '../../../API/modules/OrderService';
+
+/** CUS-16/17/20: map any backend order-status string to a label, color and icon. */
+const statusMeta = (raw) => {
+    const s = String(raw ?? '').toLowerCase();
+    if (s.includes('cancel')) return { label: 'Cancelled', color: '#E53935', icon: 'close-circle' };
+    if (s.includes('fail')) return { label: 'Delivery failed', color: '#E53935', icon: 'alert-circle' };
+    if (s.includes('out')) return { label: 'Out for delivery', color: '#FB8C00', icon: 'bicycle' };
+    if (s.includes('deliver') || s.includes('complete')) return { label: 'Delivered', color: '#43A047', icon: 'checkmark-circle' };
+    if (s.includes('assign') || s.includes('load')) return { label: raw, color: '#FB8C00', icon: 'cube' };
+    return { label: raw || 'Placed', color: '#FB8C00', icon: 'time' };
+};
+
+const formatDateTime = (value) => {
+    if (!value) return '—';
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return String(value);
+    return d.toLocaleString();
+};
 
 const OrderDetailedScreen = ({ navigation, route }) => {
 
@@ -80,12 +100,57 @@ const OrderDetailedScreen = ({ navigation, route }) => {
 
 
     const { orderDetailed } = useSelector((state) => state.order)
+    const { showToast } = useToast()
 
+    const order = orderDetailed?.data
+    const meta = statusMeta(order?.deliveryStatus ?? order?.status)
 
-    const displayItemsLength = (orderDetailed) => {
-        if (orderDetailed) {
+    // CUS-20: authoritative cancel-window from backend (canCancel === PLACED / pre-ASSIGNED).
+    const [canCancel, setCanCancel] = useState(false)
+    const [cancelling, setCancelling] = useState(false)
 
-        }
+    useEffect(() => {
+        let active = true
+        if (!orderId) return
+        OrderApi.canCancel(orderId)
+            .then((res) => { if (active) setCanCancel(!!res?.canCancel) })
+            .catch(() => { if (active) setCanCancel(false) })
+        return () => { active = false }
+    }, [orderId])
+
+    const handleCancel = () => {
+        Alert.alert(
+            'Cancel order',
+            'Are you sure you want to cancel this order? Cancellation is free while the order has not yet been assigned to a driver.',
+            [
+                { text: 'Keep order', style: 'cancel' },
+                {
+                    text: 'Yes, cancel',
+                    style: 'destructive',
+                    onPress: () => {
+                        setCancelling(true)
+                        dispatch(cancelOrder({
+                            id: orderId,
+                            onSuccess: () => {
+                                setCancelling(false)
+                                setCanCancel(false)
+                                showToast('Order cancelled')
+                                dispatch(getAllOrders({}))
+                                dispatch(getOrderDetailed({ id: orderId, onSuccess: () => { }, onError: () => { } }))
+                            },
+                            onError: (err) => {
+                                setCancelling(false)
+                                showToast(
+                                    err?.response?.data?.message ||
+                                    'This order can no longer be cancelled here. Please contact the store.',
+                                    true,
+                                )
+                            },
+                        }))
+                    },
+                },
+            ],
+        )
     }
 
     return (
@@ -117,14 +182,14 @@ const OrderDetailedScreen = ({ navigation, route }) => {
 
 
                                 <View style={{ paddingHorizontal: 10, paddingVertical: 5, alignItems: "center" }}>
-                                    <Text style={[headerConfig, { fontSize: Fonts.size.xs }]}>Arrived in </Text>
                                     <View style={[styles.deliveryTag, {
                                         marginTop: 3,
-                                        backgroundColor: "#FFF59D", // light yellow
-                                        borderColor: "#FDD835"
+                                        backgroundColor: meta.color + '22',
+                                        borderColor: meta.color,
+                                        borderWidth: 1,
                                     }]}>
-                                        <Image source={require('../../../../assets/images/thunder.png')} style={{ width: 20, height: 20 }} tintColor={theme.tagIconColor} />
-                                        <Text style={[paratextConfig, { fontFamily: Fonts.family.bold, color: "#5D4037", marginRight: 8 }]}>6 Mins</Text>
+                                        <Ionicons name={meta.icon} color={meta.color} size={16} style={{ marginRight: 4 }} />
+                                        <Text style={[paratextConfig, { fontFamily: Fonts.family.bold, color: meta.color, marginRight: 6 }]}>{meta.label}</Text>
                                     </View>
                                 </View>
                             </View>
@@ -134,33 +199,31 @@ const OrderDetailedScreen = ({ navigation, route }) => {
 
 
                                 <View style={{ flexDirection: "row", alignItems: "center" }}>
-                                    <Image source={require('../../../../assets/images/orderSuccess.png')} style={{ width: 30, height: 30 }} />
-                                    <Text style={[headerConfig, { marginLeft: 6, color: '#43A047', fontSize: Fonts.size.sm }]}>Delivered</Text>
+                                    <Ionicons name={meta.icon} color={meta.color} size={26} />
+                                    <Text style={[headerConfig, { marginLeft: 6, color: meta.color, fontSize: Fonts.size.sm }]}>{meta.label}</Text>
                                 </View>
                             </View>
                             {expanded && (
                                 <View style={styles.detailsContainer}>
                                     <View style={{ flexDirection: "column", paddingBottom: 5 }}>
                                         <Text style={[paratextConfig, { color: theme.secondaryText }]}>Order ID</Text>
-                                        <Text style={[paratextConfig, { color: theme.greyText }]}>#2342422424</Text>
+                                        <Text style={[paratextConfig, { color: theme.greyText }]}>#{order?.orderId}</Text>
                                     </View>
-                                    <View style={{ flexDirection: "column", marginVertical: 5 }}>
-                                        <Text style={[paratextConfig, { color: theme.secondaryText }]}>Receiver Details</Text>
-                                        <Text style={[paratextConfig, { color: theme.greyText }]}>John Doe, +91 7897014106</Text>
-                                    </View>
+                                    {!!(order?.receiverName || order?.receiverPhone) && (
+                                        <View style={{ flexDirection: "column", marginVertical: 5 }}>
+                                            <Text style={[paratextConfig, { color: theme.secondaryText }]}>Receiver Details</Text>
+                                            <Text style={[paratextConfig, { color: theme.greyText }]}>
+                                                {[order?.receiverName, order?.receiverPhone].filter(Boolean).join(', ')}
+                                            </Text>
+                                        </View>
+                                    )}
                                     <View style={{ flexDirection: "column" }}>
                                         <Text style={[paratextConfig, { color: theme.secondaryText }]}>Address</Text>
-                                        <Text style={[paratextConfig, { color: theme.greyText }]}>3rd Floor, B Block, Marvel Heights</Text>
+                                        <Text style={[paratextConfig, { color: theme.greyText }]}>{order?.deliveryAddress ?? '—'}</Text>
                                     </View>
                                     <View style={{ flexDirection: "column", marginVertical: 5 }}>
                                         <Text style={[paratextConfig, { color: theme.secondaryText }]}>Placed Time</Text>
-                                        <Text style={[paratextConfig, { color: theme.greyText }]}>12:00 PM</Text>
-
-                                    </View>
-                                    <View style={{ flexDirection: "column", marginVertical: 5 }}>
-                                        <Text style={[paratextConfig, { color: theme.secondaryText }]}>Arrived Time</Text>
-                                        <Text style={[paratextConfig, { color: theme.greyText }]}>12:06 PM</Text>
-
+                                        <Text style={[paratextConfig, { color: theme.greyText }]}>{formatDateTime(order?.orderDate)}</Text>
                                     </View>
                                 </View>
                             )}
@@ -218,14 +281,24 @@ const OrderDetailedScreen = ({ navigation, route }) => {
                         {/*Order summary */}
                         <OrderSummary isOrderDetails={true} />
 
-                        {/* Modify — only while PLACED */}
-                        {String(orderDetailed?.data?.status ?? '').toUpperCase() === 'PLACED' && (
-                          <AppButton
-                            title="Modify order"
-                            borderOnly
-                            style={{ margin: 10 }}
-                            onAction={() => navigation?.navigate?.('ModifyOrder', { orderId: orderId })}
-                          />
+                        {/* CUS-19/20 — self-service is open only while the order is unassigned (PLACED).
+                            can-cancel from the backend is the authoritative gate for this window. */}
+                        {canCancel && (
+                          <>
+                            <AppButton
+                              title="Modify order"
+                              borderOnly
+                              style={{ margin: 10, marginBottom: 0 }}
+                              onAction={() => navigation?.navigate?.('ModifyOrder', { orderId: orderId })}
+                            />
+                            <AppButton
+                              title="Cancel order"
+                              isLoading={cancelling}
+                              loadingText="Cancelling..."
+                              style={{ margin: 10, backgroundColor: '#E53935' }}
+                              onAction={handleCancel}
+                            />
+                          </>
                         )}
                     </View>
                 </ScrollView>

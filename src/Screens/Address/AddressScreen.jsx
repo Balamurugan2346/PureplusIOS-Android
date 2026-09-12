@@ -16,7 +16,7 @@ import { getData, storeData } from '../../OfflineStore/OfflineStore';
 import { useToast } from '../../Components/Toast/ToastProvider';
 import { getSelectedAddressId } from '../../Utils/GetSelectedAddress'
 
-const AddressScreen = ({ onClose, navigation }) => {
+const AddressScreen = ({ onClose, navigation , callGetSelectedAddressCallBack }) => {
 
     const { theme } = useTheme()
     const [userID, setUserID] = useState(-1)
@@ -240,6 +240,7 @@ const AddressScreen = ({ onClose, navigation }) => {
 
                                 onClose();
                                 showToast("Address Added");
+                                callGetSelectedAddressCallBack()
                             }}
                             onLongPress={() => handleLongPress(item.id)}
                         >

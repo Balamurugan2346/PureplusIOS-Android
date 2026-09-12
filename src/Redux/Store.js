@@ -8,6 +8,7 @@ import ProfileReducer from './Slices/ProfileSlice'
 import CartReducer from './Slices/CartSlice'
 import SheduleOrder from './Slices/SheduleOrderSlice'
 import orderReducer from './Slices/OrderSlice'
+import serviceabilityReducer from './Slices/ServiceabilitySlice'
 import { LOGOUT } from './LogoutActions';
 
 
@@ -20,7 +21,8 @@ const appReducer = combineReducers({
   profile: ProfileReducer,
   cart: CartReducer,
   sheduleOrder:SheduleOrder,
-  order: orderReducer
+  order: orderReducer,
+  serviceability: serviceabilityReducer
 });
 
 

@@ -64,6 +64,7 @@ export const cancelOrder = createAsyncThunk(
       if (onSuccess) onSuccess(result);
       return result
     } catch (err) {
+      onError && onError(err)
       return rejectWithValue(err.response?.data || err.message);
     }
   }

@@ -249,7 +249,7 @@ const AddressScreen = ({ onClose, navigation , callGetSelectedAddressCallBack })
                                 {/* LEFT SIDE TEXT */}
                                 <View style={{ flex: 1, marginRight: 10 }}>
                                     <Text style={[headerConfig, { color: theme.background }]}>
-                                        {item.addressType}
+                                        {item.tag}
                                     </Text>
 
                                     {/* LIMIT LONG TEXT */}

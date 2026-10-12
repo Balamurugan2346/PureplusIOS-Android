@@ -29,7 +29,12 @@ const AddressInputForm = ({ navigation, pickedAddress, onNavigate, isEdit = fals
         city: pickedAddress.city ?? "",
         state: pickedAddress.state ?? "",
         pinCode: pickedAddress.pinCode ?? pickedAddress.pincode ?? "",
-        FloorNo: pickedAddress.FloorNo ?? pickedAddress.floorNo ?? '',
+        // Backend sends floor as a NUMBER (floor_no AS FloorNo → `floorNo`). A TextInput only
+        // renders string values, so coerce to a string or the field shows blank on edit.
+        // A 0 floor is treated as empty (the save maps '' back to 0 losslessly).
+        FloorNo: (pickedAddress.FloorNo ?? pickedAddress.floorNo)
+            ? String(pickedAddress.FloorNo ?? pickedAddress.floorNo)
+            : '',
         landmark: pickedAddress.landmark ?? '',
         tag: pickedAddress.tag ?? 'Home',
         receiverName: pickedAddress.receiverName ?? "",
@@ -74,7 +79,7 @@ const AddressInputForm = ({ navigation, pickedAddress, onNavigate, isEdit = fals
             <TextInput
                 placeholder={label}
                 placeholderTextColor={theme.secondaryText}
-                value={formData[key]}
+                value={formData[key] != null ? String(formData[key]) : ''}
                 keyboardType={type}
                 onChangeText={(text) => handleChange(key, text)}
                 style={[

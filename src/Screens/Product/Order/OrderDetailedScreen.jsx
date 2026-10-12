@@ -3,8 +3,8 @@ import { useTheme } from '../../../Context/ThemeContext';
 import Fonts from '../../../../assets/fonts/Fonts';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AppButton from '../../../Components/AppButton';
-import { useEffect, useState } from 'react';
-import { Alert, Image, LayoutAnimation, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, UIManager, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { Alert, Image, LayoutAnimation, Linking, Platform, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, UIManager, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import OrderSummary from '../../../Components/Cart/OrderSummary';
 import Line from '../../../Components/Line';
@@ -35,6 +35,24 @@ const formatDateTime = (value) => {
     const d = new Date(value);
     if (isNaN(d.getTime())) return String(value);
     return d.toLocaleString();
+};
+
+/**
+ * Track-order is offered only while the order is still in flight — i.e. canonical status
+ * PLACED / ASSIGNED / OUT_FOR_DELIVERY (per backend OrderLifecycleRules). Hidden once the
+ * order is DELIVERED, CANCELLED or FAILED (terminal), and for DELIVERED_PAYMENT_PENDING /
+ * DISPUTED. Legacy LOADED / dispatched spellings are accepted too. Match the backend's
+ * normalization: upper-case + strip non-alphanumerics before comparing.
+ */
+const TRACKABLE_STATUSES = new Set([
+    'PLACED', 'PENDING', 'NEW', 'ORDERPLACED', '1',         // placed
+    'ASSIGNED',                                             // assigned
+    'LOADED', 'PICKEDUP',                                   // legacy dispatched
+    'OUTFORDELIVERY', 'OFD', 'INTRANSIT', 'INPROGRESS', 'DISPATCHED', 'DISPATCH', // out for delivery
+]);
+const canTrackOrder = (raw) => {
+    const k = String(raw ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    return TRACKABLE_STATUSES.has(k);
 };
 
 const OrderDetailedScreen = ({ navigation, route }) => {
@@ -82,23 +100,6 @@ const OrderDetailedScreen = ({ navigation, route }) => {
     }
 
 
-    useEffect(() => {
-        if (orderId) {
-            dispatch(clearOrderDetailed())
-        console.log("called")
-        dispatch(getOrderDetailed({
-            id: orderId,
-            onSuccess: () => {
-
-            },
-            onError: () => {
-
-            },
-        }))
-        }
-    }, [orderId])
-
-
     const { orderDetailed } = useSelector((state) => state.order)
     const { showToast } = useToast()
 
@@ -108,15 +109,51 @@ const OrderDetailedScreen = ({ navigation, route }) => {
     // CUS-20: authoritative cancel-window from backend (canCancel === PLACED / pre-ASSIGNED).
     const [canCancel, setCanCancel] = useState(false)
     const [cancelling, setCancelling] = useState(false)
+    const [refreshing, setRefreshing] = useState(false)
+    // CUS-18 invoice — offered once the order is delivered.
+    const [invoiceLoading, setInvoiceLoading] = useState(false)
+    const isDelivered = /deliver|complete/i.test(String(order?.deliveryStatus ?? order?.status ?? ''))
 
-    useEffect(() => {
-        let active = true
+    // Re-check the backend cancel window alongside any order refresh.
+    const refreshCanCancel = useCallback(() => {
         if (!orderId) return
         OrderApi.canCancel(orderId)
-            .then((res) => { if (active) setCanCancel(!!res?.canCancel) })
-            .catch(() => { if (active) setCanCancel(false) })
-        return () => { active = false }
+            .then((res) => setCanCancel(!!res?.canCancel))
+            .catch(() => setCanCancel(false))
     }, [orderId])
+
+    // silent=true keeps the current data on screen (no loader flash) — used by pull-to-refresh
+    // and the in-flight poll; the initial load clears first so the loader shows.
+    const fetchOrder = useCallback(({ silent = false } = {}) => {
+        if (!orderId) return
+        if (!silent) dispatch(clearOrderDetailed())
+        dispatch(getOrderDetailed({ id: orderId, onSuccess: () => { }, onError: () => { } }))
+        refreshCanCancel()
+    }, [orderId, dispatch, refreshCanCancel])
+
+    // initial load
+    useEffect(() => { fetchOrder() }, [fetchOrder])
+
+    // pull-to-refresh
+    const onRefresh = useCallback(() => {
+        if (!orderId) return
+        setRefreshing(true)
+        dispatch(getOrderDetailed({
+            id: orderId,
+            onSuccess: () => setRefreshing(false),
+            onError: () => setRefreshing(false),
+        }))
+        refreshCanCancel()
+    }, [orderId, dispatch, refreshCanCancel])
+
+    // Live-refresh while the order is still in flight (PLACED / ASSIGNED / OUT_FOR_DELIVERY):
+    // poll every 20s and stop automatically once it reaches a terminal status or unmounts.
+    const inFlight = canTrackOrder(order?.deliveryStatus ?? order?.status)
+    useEffect(() => {
+        if (!orderId || !inFlight) return
+        const t = setInterval(() => fetchOrder({ silent: true }), 20000)
+        return () => clearInterval(t)
+    }, [orderId, inFlight, fetchOrder])
 
     const handleCancel = () => {
         Alert.alert(
@@ -136,7 +173,7 @@ const OrderDetailedScreen = ({ navigation, route }) => {
                                 setCanCancel(false)
                                 showToast('Order cancelled')
                                 dispatch(getAllOrders({}))
-                                dispatch(getOrderDetailed({ id: orderId, onSuccess: () => { }, onError: () => { } }))
+                                fetchOrder({ silent: true })
                             },
                             onError: (err) => {
                                 setCancelling(false)
@@ -153,6 +190,26 @@ const OrderDetailedScreen = ({ navigation, route }) => {
         )
     }
 
+    // CUS-18 invoice fetch. Backend currently returns 501 (generation not built yet) → surface
+    // that honestly rather than pretending. When it ships, { invoiceUrl } opens in the browser.
+    const handleInvoice = async () => {
+        if (!orderId || invoiceLoading) return
+        setInvoiceLoading(true)
+        try {
+            const res = await OrderApi.invoice(orderId)
+            const url = res?.invoiceUrl
+            if (url && await Linking.canOpenURL(url)) {
+                await Linking.openURL(url)
+            } else {
+                Alert.alert('Invoice', 'Invoice is not available yet.')
+            }
+        } catch (e) {
+            Alert.alert('Invoice unavailable', e?.message || 'Invoice is not available yet.')
+        } finally {
+            setInvoiceLoading(false)
+        }
+    }
+
     return (
         <View style={[styles.container, { backgroundColor: theme.secondaryBackground, paddingBottom: insets.bottom }]}>
             <TopAppBar title='Order Details' navigation={navigation} />
@@ -162,7 +219,11 @@ const OrderDetailedScreen = ({ navigation, route }) => {
             )}
 
             {orderDetailed && orderDetailed?.data ? (
-                <ScrollView>
+                <ScrollView
+                    refreshControl={
+                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                    }
+                >
                     <View style={[styles.content]}>
 
                         {/* order id  */}
@@ -230,8 +291,22 @@ const OrderDetailedScreen = ({ navigation, route }) => {
 
                         </View>
 
-                        {/* timeline */}
-                        <OrderTimeline fromWhiteBg={true} style={[styles.cardContainer, { backgroundColor: theme.cardContainer }]} />
+                        {/* Track order — only while the order is in flight (PLACED / ASSIGNED /
+                            OUT_FOR_DELIVERY). Hidden once delivered, cancelled or failed. */}
+                        {canTrackOrder(order?.deliveryStatus ?? order?.status) && (
+                            <TouchableOpacity
+                                onPress={() => navigation?.navigate?.('OrderTrackingScreen', { id: orderId })}
+                                style={[styles.trackBtn, { backgroundColor: theme.primary }]}
+                            >
+                                <Ionicons name="location" size={20} color={theme.buttonText} style={{ marginRight: 8 }} />
+                                <Text style={[paratextConfig, { color: theme.buttonText, fontFamily: Fonts.family.semiBold, fontSize: Fonts.size.sm }]}>
+                                    Track Order
+                                </Text>
+                            </TouchableOpacity>
+                        )}
+
+                        {/* timeline — driven by the real order.history / status */}
+                        {/* <OrderTimeline order={order} fromWhiteBg={true} style={[styles.cardContainer, { backgroundColor: theme.cardContainer }]} /> */}
 
                         {/* <OrderProdItem/> */}
                         <View style={[styles.cardContainer, { backgroundColor: theme.cardContainer }]}>
@@ -278,27 +353,40 @@ const OrderDetailedScreen = ({ navigation, route }) => {
 
                         </View>
 
-                        {/*Order summary */}
-                        <OrderSummary isOrderDetails={true} />
+                        {/*Order summary — driven by the real order/{id} breakdown snapshot */}
+                        <OrderSummary isOrderDetails={true} order={order} />
+
+                        {/* CUS-18 invoice — available once the order is delivered. */}
+                        {isDelivered && (
+                          <View style={{ paddingHorizontal: 10 }}>
+                            <AppButton
+                              title="Download invoice"
+                              borderOnly
+                              isLoading={invoiceLoading}
+                              loadingText="Fetching..."
+                              onAction={handleInvoice}
+                            />
+                          </View>
+                        )}
 
                         {/* CUS-19/20 — self-service is open only while the order is unassigned (PLACED).
                             can-cancel from the backend is the authoritative gate for this window. */}
                         {canCancel && (
-                          <>
+                          <View style={{ paddingHorizontal: 10 }}>
                             <AppButton
                               title="Modify order"
                               borderOnly
-                              style={{ margin: 10, marginBottom: 0 }}
+                              style={{ marginBottom: 0 }}
                               onAction={() => navigation?.navigate?.('ModifyOrder', { orderId: orderId })}
                             />
                             <AppButton
                               title="Cancel order"
                               isLoading={cancelling}
                               loadingText="Cancelling..."
-                              style={{ margin: 10, backgroundColor: '#E53935' }}
+                              style={{ backgroundColor: '#E53935' }}
                               onAction={handleCancel}
                             />
-                          </>
+                          </View>
                         )}
                     </View>
                 </ScrollView>
@@ -348,6 +436,20 @@ const styles = StyleSheet.create({
 
     content: {
         margin: 8
+    },
+    trackBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 14,
+        paddingVertical: 12,
+        marginHorizontal: 10,
+        marginTop: 2,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 5,
     },
     header: {
         marginLeft: 6,

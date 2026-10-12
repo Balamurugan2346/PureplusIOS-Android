@@ -29,7 +29,6 @@ import AppAdvertiseMent from '../../Components/AppAdvertiseMent';
 import Banner from '../../Components/Banner';
 import ViewCartButton from '../../Components/Cart/ViewCartButton';
 import CustomDialog from '../../Components/CustomDialog';
-import OrderTracking from '../../Components/OrderTracking';
 import Product from '../../Components/Product/ProductCard1';
 import Tag from '../../Components/Tag';
 import useScrollDirection from '../../Components/UseScrollDirection';
@@ -50,7 +49,6 @@ import { clearCart, loadCartItems } from '../../Redux/Slices/CartSlice';
 import { logout } from '../../Redux/LogoutActions';
 import { requestNotificationPermission } from '../../Utils/NotificationUtils';
 import { getFcmToken } from '../../Utils/FirebaseUtils';
-import { getCurrentOrder } from '../../Redux/Slices/OrderSlice';
 import FirstLetterAvatar from '../../Components/Profile/FirstLetterAvatar';
 import { resolveServiceability } from '../../Redux/Slices/ServiceabilitySlice';
 import UnserviceableArea from '../../Components/UnserviceableArea';
@@ -161,8 +159,6 @@ const Dashboard = ({ navigation }) => {
   const { cartItems, loading: cartLoading, error: cartError, isFetched: cartIsFetched, cartUpdateLoading } = useSelector((state) => state.cart)
 
 
-  const { currentOrder } = useSelector((state) => state.order)
-
   //SERVICEABILITY (CUS-07): the selected delivery address's pincode decides which
   //store's catalog is shown, or "not serviceable". serviceable===false hides products.
   const {
@@ -253,18 +249,6 @@ const Dashboard = ({ navigation }) => {
 
 
   useEffect(() => {
-    //call any time 
-    dispatch(getCurrentOrder({
-      onSuccess: () => {
-
-      },
-      onError: () => {
-
-      }
-    }))
-  }, [dispatch])
-
-  useEffect(() => {
     if (!isProfileApiFetched) {
       dispatch(getUserProfile());
     }
@@ -324,14 +308,6 @@ const Dashboard = ({ navigation }) => {
     dispatch(loadProducts())
     dispatch(loadCustomerSupportDetails())
     dispatch(getUserProfile())
-    dispatch(getCurrentOrder({
-      onSuccess: () => {
-
-      },
-      onError: () => {
-
-      }
-    }))
     syncAddress();
     synCCart()
     requestNotificationPermission()
@@ -454,11 +430,8 @@ const Dashboard = ({ navigation }) => {
             </View>
           </View>
         )}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 12, paddingVertical: 4 }}
-        >
+        {/* Quick actions: exactly 4 buttons spread equally across the full width. */}
+        <View style={{ flexDirection: 'row', paddingHorizontal: 8, paddingVertical: 4 }}>
           {TagData.map((item) => (
             <Tag key={item.id} icon={item.icon} title={item.title} badgeNeed={item.badgeNeed} onPress={() => {
               if (item.routeName) {
@@ -466,7 +439,7 @@ const Dashboard = ({ navigation }) => {
               }
             }} />
           ))}
-        </ScrollView>
+        </View>
 
 
 
@@ -601,10 +574,6 @@ const Dashboard = ({ navigation }) => {
 
 
       </ScrollView>
-
-      {currentOrder && (
-        <OrderTracking currentOrder={currentOrder} style={{ marginBottom: insets.bottom }} title={"Track Your current Order"} description={`Arriving in ${currentOrder?.data?.eta}`} img={require('../../../assets/images/person.png')} navigation={navigation} />
-      )}
 
       {console.log("cart", cartItems)}
       {!loading && cartIsFetched && cartItems.length > 0 && serviceable !== false && (

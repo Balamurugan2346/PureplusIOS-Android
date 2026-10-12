@@ -29,6 +29,26 @@ const CartItem = ({ cartItem }) => {
         fontSize: Fonts.size.xs
     }
 
+    // Product image from the cart response's imageUrls (a product can carry several
+    // images — like any e-commerce listing — so we show the first). Falls back to the
+    // bundled watercan asset when there are no images. Also tolerates the array arriving
+    // as a JSON string, which the backend emits via `ImageUrls::text` in some paths.
+    const resolveProductImage = () => {
+        let urls = cartItem?.imageUrls;
+        if (typeof urls === 'string') {
+            const s = urls.trim();
+            if (s.startsWith('[')) {
+                try { urls = JSON.parse(s); } catch { urls = []; }
+            } else {
+                urls = s ? [s] : [];
+            }
+        }
+        if (Array.isArray(urls) && urls.length > 0 && urls[0]) {
+            return { uri: urls[0] };
+        }
+        return require('../../../assets/images/watercan2.png');
+    };
+
     const handleIncrease = (item) => {
         dispatch(
             updateCart({
@@ -75,7 +95,7 @@ const CartItem = ({ cartItem }) => {
     return (
         <View>
             <View style={styles.container}>
-                <Image source={require('../../../assets/images/watercan2.png')} style={{ width: 40, height: 40, marginRight: 10 }} />
+                <Image source={resolveProductImage()} style={{ width: 40, height: 40, marginRight: 10, borderRadius: 6 }} resizeMode="cover" />
                 <View style={{ flex: 1 }}>
                     <Text style={[headerConfig]}>{`${cartItem.productName}`}</Text>
                     <View style={{ flexDirection: "row" }}>

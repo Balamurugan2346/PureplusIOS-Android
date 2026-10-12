@@ -6,7 +6,9 @@ import {
   ScrollView,
   TouchableOpacity,
   Switch,
+  Alert,
 } from 'react-native';
+import AccountService from '../../API/modules/AccountService';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // You'll need to install this library: npm install react-native-vector-icons
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import TopAppBar from '../../Components/TopAppBar';
@@ -32,6 +34,13 @@ const ACCOUNT_ITEMS = [
   { name: 'New Subscription', icon: 'add-circle-outline', color: '#6C63FF', key: 'CreateSubscription' },
   { name: 'My Bulk Requests', icon: 'list-outline', color: '#8e44ad', key: 'BulkRequestStatus' },
   { name: 'Quality & Certification', icon: 'shield-checkmark-outline', color: '#16a085', key: 'Certification' },
+];
+
+// --- Services & support (moved here from the Dashboard quick-actions to de-duplicate;
+//     these are help/account actions, not shopping actions). key = navigator route name. ---
+const SUPPORT_ITEMS = [
+  { name: 'Service Requests', icon: 'construct-outline', color: '#e67e22', key: 'ServiceRequest' },
+  { name: 'Help & Support', icon: 'headset-outline', color: '#4A90E2', key: 'CustomerSupportScreen' },
 ];
 
 // --- Data Structure for the main list items ---
@@ -105,10 +114,52 @@ const ProfileScreen = ({ navigation }) => {
     // Implement your actual logout logic (clear tokens, navigate to login)
   };
 
-  const handleDeleteAccount = () => {
-    console.log('Deleting account...');
-    alert('Account Deletion initiated.');
-    // Implement account deletion flow
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // CUS-33: preview dues/blockers first; only offer to close when clear. The backend also
+  // enforces this (DELETE returns 409 with blockers), so this never closes an account with dues.
+  const handleDeleteAccount = async () => {
+    if (isDeleting) return;
+    try {
+      setIsDeleting(true);
+      const check = await AccountService.deletionCheck();
+      const blockers = check?.blockers ?? check?.reasons ?? [];
+      const canClose = check?.canClose ?? check?.canDelete ?? blockers.length === 0;
+
+      if (!canClose) {
+        const lines = Array.isArray(blockers) && blockers.length
+          ? blockers.map((b) => `• ${typeof b === 'string' ? b : b?.message ?? JSON.stringify(b)}`).join('\n')
+          : 'You still have outstanding dues, held cans, or active orders.';
+        Alert.alert('Can’t close account yet', `${lines}\n\nPlease settle these first.`);
+        return;
+      }
+
+      Alert.alert(
+        'Close account?',
+        'This deactivates your account and you won’t be able to log back in. Financial history is retained as required.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Close account',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                await AccountService.deleteAccount();
+                await clearDataBeforeLogout();
+                dispatch(logout());
+                navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+              } catch (err) {
+                showToast(err?.message || 'Could not close the account. Please try again.', true);
+              }
+            },
+          },
+        ],
+      );
+    } catch (err) {
+      showToast(err?.message || 'Could not check account status. Please try again.', true);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   // -----------------------------------------------
@@ -196,6 +247,29 @@ const ProfileScreen = ({ navigation }) => {
           <Text style={styles.sectionTitle}>MY ACCOUNT</Text>
 
           {ACCOUNT_ITEMS.map((item) => (
+            <TouchableOpacity
+              key={item.key}
+              style={styles.settingsRow}
+              onPress={() => navigation.navigate(item.key)}
+            >
+              <View style={styles.settingsLeft}>
+                <View style={[styles.iconCircle, { backgroundColor: `${item.color}1A` }]}>
+                  <Ionicons name={item.icon} size={18} color={item.color} />
+                </View>
+                <Text style={styles.settingsText}>{item.name}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color="#bbb" />
+            </TouchableOpacity>
+          ))}
+        </View>
+
+
+        {/* SERVICES & SUPPORT CARD (moved from Dashboard to de-duplicate) */}
+
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>SERVICES & SUPPORT</Text>
+
+          {SUPPORT_ITEMS.map((item) => (
             <TouchableOpacity
               key={item.key}
               style={styles.settingsRow}

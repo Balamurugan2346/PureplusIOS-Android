@@ -6,10 +6,15 @@ import { useState } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Toast from 'react-native-toast-message';
 
-const PaymentSection = ({ navigation , onPayClick }) => {
+const PaymentSection = ({ navigation , onPayClick, payableTotal }) => {
   const { theme } = useTheme();
 
   const [selectedMethod, setSelectedMethod] = useState('UPI');
+
+  // Grand total to pay at the door (estimate.grandTotal). Only shown once the estimate
+  // has resolved to a positive amount; otherwise the button stays a plain "Place Order".
+  const hasTotal = Number(payableTotal) > 0;
+  const totalLabel = hasTotal ? `₹${Number(payableTotal).toFixed(2)}` : '';
 
   const paymentMethods = [
     { id: 'UPI', label: 'Google Pay / UPI', icon: require('../../../assets/images/gpayLogo.png') },
@@ -60,10 +65,10 @@ const PaymentSection = ({ navigation , onPayClick }) => {
 
         <TouchableOpacity onPress={() => {
           onPayClick(selectedMethod)
-         
+
         }} style={[styles.payButton, { backgroundColor: theme.primary }]}>
           <Text style={{ color: theme.buttonText, fontFamily: Fonts.family.medium }}>
-            Place Order 
+            {hasTotal ? `Place Order · ${totalLabel}` : 'Place Order'}
           </Text>
         </TouchableOpacity>
       </View>

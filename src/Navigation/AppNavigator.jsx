@@ -34,8 +34,10 @@ import WalletScreen from '../Screens/Wallet/WalletScreen'
 import MyCansScreen from '../Screens/Cans/MyCansScreen'
 import BillingScreen from '../Screens/Billing/BillingScreen'
 import ServiceRequestScreen from '../Screens/ServiceRequest/ServiceRequestScreen'
+import ServiceRequestDetailScreen from '../Screens/ServiceRequest/ServiceRequestDetailScreen'
 import BulkRequestScreen from '../Screens/Bulk/BulkRequestScreen'
 import BulkRequestStatusScreen from '../Screens/Bulk/BulkRequestStatusScreen'
+import BulkRequestDetailScreen from '../Screens/Bulk/BulkRequestDetailScreen'
 import ManageSubscriptionScreen from '../Screens/Subscriptions/ManageSubscriptionScreen'
 import CreateSubscriptionScreen from '../Screens/Subscriptions/CreateSubscriptionScreen'
 import CertificationScreen from '../Screens/Certification/CertificationScreen'
@@ -127,9 +129,11 @@ export default function AppNavigator() {
         {/* Bulk / Event */}
         <Stack.Screen name='BulkRequest' component={BulkRequestScreen} />
         <Stack.Screen name='BulkRequestStatus' component={BulkRequestStatusScreen} />
+        <Stack.Screen name='BulkRequestDetail' component={BulkRequestDetailScreen} />
 
         {/* Support & trust */}
         <Stack.Screen name='ServiceRequest' component={ServiceRequestScreen} />
+        <Stack.Screen name='ServiceRequestDetail' component={ServiceRequestDetailScreen} />
         <Stack.Screen name='Certification' component={CertificationScreen} />
 
         {/* Notifications */}

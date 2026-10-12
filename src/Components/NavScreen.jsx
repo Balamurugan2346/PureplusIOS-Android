@@ -10,12 +10,14 @@ import { useTheme } from '../Context/ThemeContext';
  *
  *   <NavScreen title="Wallet" navigation={navigation}>...</NavScreen>
  */
-const NavScreen = ({ title, navigation, children, padded = true, style }) => {
+const NavScreen = ({ title, navigation, children, padded = true, style, background }) => {
   const { theme } = useTheme();
+  // `background` lets a screen override the themed (dark) body — e.g. a white surface.
+  const bodyBg = background ?? theme.background;
   return (
-    <View style={{ flex: 1, backgroundColor: theme.background }}>
+    <View style={{ flex: 1, backgroundColor: bodyBg }}>
       <TopAppBar title={title} navigation={navigation} />
-      <View style={[{ flex: 1, paddingTop: spacing.md }, padded && { paddingHorizontal: spacing.lg }, style]}>
+      <View style={[{ flex: 1, paddingTop: spacing.md, backgroundColor: bodyBg }, padded && { paddingHorizontal: spacing.lg }, style]}>
         {children}
       </View>
     </View>

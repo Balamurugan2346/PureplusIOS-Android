@@ -94,6 +94,26 @@ export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 };
 
 export const radius = { sm: 8, md: 12, lg: 16, pill: 999 };
 
+/**
+ * Light surface palette — for screens that must render on a WHITE background inside the
+ * dark darkSea theme (e.g. Modify Order, Bulk/Event Request). Keep the brand `primary` from the
+ * active theme; everything else switches to dark-on-light so content is legible.
+ * Usage: `const s = { ...lightSurface, primary: theme.primary };`
+ */
+export const lightSurface = {
+  background: '#FFFFFF',
+  card: '#F4F6FA',
+  cardContainer: '#FFFFFF',
+  text: '#1A2433',
+  highlightedText: '#0C1C2C',
+  secondaryText: '#6B7280',
+  greyText: '#374151',
+  divider: '#E5E8EF',
+  inputContainer: '#F7F8F9',
+  inputContainerBorder: '#E5E8EF',
+  buttonText: '#FFFFFF',
+};
+
 // Aligned with the existing font registry (assets/fonts/Fonts.js) — the app ships Lexend.
 export const fontFamily = {
   regular: 'Lexend-Regular',

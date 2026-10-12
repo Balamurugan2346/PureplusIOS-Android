@@ -5,7 +5,7 @@ import AppText from '../../Components/AppText';
 import AppButton from '../../Components/AppButton';
 import BulkService from '../../API/modules/BulkService';
 import { getSelectedAddressId } from '../../Utils/GetSelectedAddress';
-import { spacing, radius } from '../../Themes/Themes';
+import { spacing, radius, lightSurface } from '../../Themes/Themes';
 import { useTheme } from '../../Context/ThemeContext';
 
 /**
@@ -14,6 +14,8 @@ import { useTheme } from '../../Context/ThemeContext';
  */
 const BulkRequestScreen = ({ navigation }) => {
   const { theme } = useTheme();
+  // White surface (this screen renders on white, not the dark theme bg) — keep brand primary.
+  const s = { ...lightSurface, primary: theme.primary };
   const [purpose, setPurpose] = useState('B2B'); // B2B | EVENT
   const [form, setForm] = useState({
     productId: '', quantity: '', requiredDate: '', venueAddress: '',
@@ -65,29 +67,29 @@ const BulkRequestScreen = ({ navigation }) => {
 
   const Field = ({ label, value, onChangeText, ...rest }) => (
     <View style={{ marginBottom: spacing.md }}>
-      <AppText variant="label" color={theme.secondaryText} style={{ marginBottom: spacing.xs }}>{label}</AppText>
+      <AppText variant="label" color={s.secondaryText} style={{ marginBottom: spacing.xs }}>{label}</AppText>
       <TextInput
         value={value}
         onChangeText={onChangeText}
-        placeholderTextColor={theme.secondaryText}
-        style={[styles.input, { color: theme.text, borderColor: theme.inputContainerBorder,
-          backgroundColor: theme.inputContainer }]}
+        placeholderTextColor={s.secondaryText}
+        style={[styles.input, { color: s.text, borderColor: s.inputContainerBorder,
+          backgroundColor: s.inputContainer }]}
         {...rest}
       />
     </View>
   );
 
   return (
-    <NavScreen title="Bulk / Event Request" navigation={navigation}>
+    <NavScreen title="Bulk / Event Request" navigation={navigation} background={s.background}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.toggle}>
           {['B2B', 'EVENT'].map((p) => {
             const active = p === purpose;
             return (
               <TouchableOpacity key={p} onPress={() => setPurpose(p)}
-                style={[styles.toggleBtn, { borderColor: active ? theme.primary : theme.divider,
+                style={[styles.toggleBtn, { borderColor: active ? theme.primary : s.divider,
                   backgroundColor: active ? `${theme.primary}22` : 'transparent' }]}>
-                <AppText variant="bodyStrong" color={active ? theme.primary : theme.secondaryText}>
+                <AppText variant="bodyStrong" color={active ? theme.primary : s.secondaryText}>
                   {p === 'B2B' ? 'B2B (business)' : 'Event / Function'}
                 </AppText>
               </TouchableOpacity>
@@ -105,7 +107,7 @@ const BulkRequestScreen = ({ navigation }) => {
         )}
         <Field label="Notes" value={form.notes} onChangeText={set('notes')} placeholder="Anything else" multiline />
 
-        <AppText variant="caption" color={theme.secondaryText} style={{ marginBottom: spacing.md }}>
+        <AppText variant="caption" color={s.secondaryText} style={{ marginBottom: spacing.md }}>
           {purpose === 'EVENT'
             ? 'Events are confirmed once the advance token is paid. Cancelling inside the window forfeits the advance.'
             : 'B2B orders are billed monthly against your approved postpaid account.'}

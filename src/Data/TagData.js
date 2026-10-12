@@ -18,7 +18,7 @@ export const TagData = [
     id: '3',
     title: 'Refill',
     icon: require('../../assets/images/ion.png'),
-    routeName: null,
+    routeName: 'Refill',
     badgeNeed : false,
   },
   {
@@ -28,18 +28,8 @@ export const TagData = [
     routeName: 'BulkRequest',
     badgeNeed: false,
   },
-  {
-    id: '5',
-    title: 'Service',
-    icon: require('../../assets/images/techSupport.png'),
-    routeName: 'ServiceRequest',
-    badgeNeed: false,
-  },
-    {
-    id: '6',
-    title: 'support',
-    icon: require('../../assets/images/techSupport.png'),
-    routeName: 'CustomerSupportScreen',
-    badgeNeed : false,
-  },
+  // NOTE: 'Service' (ServiceRequest) and 'support' (CustomerSupportScreen) were moved OUT of the
+  // dashboard quick-actions into Profile → "SERVICES & SUPPORT" (they are help/account actions, not
+  // shopping actions). This de-duplicates them (they previously appeared on BOTH Dashboard and Profile).
+  // The dashboard keeps only transactional quick-actions: Orders, Subscriptions, Refill, Bulk/Event.
 ];

@@ -41,16 +41,16 @@ const BulkRequestStatusScreen = ({ navigation }) => {
             >
               <View style={styles.rowBetween}>
                 <AppText variant="bodyStrong" color={theme.highlightedText}>
-                  {item?.purpose ?? 'Request'} · {item?.quantity ?? '-'} units
+                  {item?.requestType ?? 'Request'} · {item?.quantity ?? '-'} units
                 </AppText>
                 <StatusBadge status={item?.status} />
               </View>
               <AppText variant="caption" color={theme.secondaryText} style={{ marginTop: spacing.xs }}>
-                Required: {item?.requiredDate ?? '-'}
+                Required: {item?.requestedDate ?? '-'}
               </AppText>
-              {item?.quotedPrice != null && (
+              {item?.estimatedAmount != null && (
                 <AppText variant="body" color={theme.text} style={{ marginTop: spacing.xs }}>
-                  Quote: {formatCurrency(item.quotedPrice)}
+                  Quote: {formatCurrency(item.estimatedAmount)}
                 </AppText>
               )}
             </TouchableOpacity>

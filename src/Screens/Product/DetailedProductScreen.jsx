@@ -282,6 +282,9 @@ const DetailedProductScreen = ({ navigation, userID }) => {
       >
         <AddressScreen
           navigation={navigation}
+          callGetSelectedAddressCallBack={()=>{
+            //do nothing
+          }}
           onClose={() => setShowAddressBottomSheet(false)}
         />
       </BottomSheet>

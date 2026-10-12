@@ -5,7 +5,7 @@ import AppText from '../../Components/AppText';
 import AppButton from '../../Components/AppButton';
 import StateView from '../../Components/StateView';
 import formatCurrency from '../../Utils/formatCurrency';
-import { refillService } from '../../API/modules/MiscService';
+import { canService } from '../../API/modules/MiscService';
 import { spacing, radius } from '../../Themes/Themes';
 import { useTheme } from '../../Context/ThemeContext';
 
@@ -21,7 +21,8 @@ const MyCansScreen = ({ navigation }) => {
   const load = useCallback(async () => {
     setState((s) => ({ ...s, loading: true, error: null }));
     try {
-      const data = await refillService.balance();
+      // CUS-25: dedicated /api/customer/cans (held cans per product + totals + deposits paid).
+      const data = await canService.held();
       setState({ loading: false, error: null, data });
     } catch (e) {
       setState({ loading: false, error: e, data: null });
@@ -30,8 +31,18 @@ const MyCansScreen = ({ navigation }) => {
 
   useEffect(() => { load(); }, [load]);
 
-  const held = state.data?.cansHeld ?? state.data?.heldCans ?? state.data?.balance ?? 0;
-  const depositPaid = state.data?.depositPaid ?? state.data?.totalDeposit ?? 0;
+  // Defensive reads — confirm exact field names on the first real-data pass.
+  const lines = state.data?.heldCans ?? state.data?.cans ?? state.data?.lines ?? [];
+  const held =
+    state.data?.totalHeld ??
+    state.data?.cansHeldTotal ??
+    state.data?.cansHeld ??
+    (Array.isArray(lines) ? lines.reduce((sum, l) => sum + (l?.held ?? l?.quantity ?? 0), 0) : 0);
+  const depositPaid =
+    state.data?.totalDepositPaid ??
+    state.data?.depositPaid ??
+    state.data?.totalDeposit ??
+    (Array.isArray(lines) ? lines.reduce((sum, l) => sum + (l?.depositPaid ?? 0), 0) : 0);
 
   return (
     <NavScreen title="My Cans" navigation={navigation}>

@@ -11,7 +11,7 @@ import AppButton from '../../Components/AppButton';
 import StateView from '../../Components/StateView';
 import OrderService from '../../API/modules/OrderService';
 import { loadSheduleSlots } from '../../Redux/Slices/SheduleOrderSlice';
-import { spacing, radius } from '../../Themes/Themes';
+import { spacing, radius, lightSurface } from '../../Themes/Themes';
 import { useTheme } from '../../Context/ThemeContext';
 
 /**
@@ -23,6 +23,8 @@ import { useTheme } from '../../Context/ThemeContext';
  */
 const ModifyOrderScreen = ({ navigation, route }) => {
   const { theme } = useTheme();
+  // White surface (this screen renders on white, not the dark theme bg) — keep brand primary.
+  const s = { ...lightSurface, primary: theme.primary };
   const dispatch = useDispatch();
   const orderId = route?.params?.orderId;
 
@@ -46,7 +48,7 @@ const ModifyOrderScreen = ({ navigation, route }) => {
     setSaving(true);
     try {
       await OrderService.modify(orderId, {
-        slotId: selectedSlot?.id ?? selectedSlot?.slotId,
+        slotId: selectedSlot?.slotId ?? selectedSlot?.id,
         deliveryDate: formatDate(selectedDate),
       });
       Alert.alert('Order updated', 'Your delivery slot has been changed.', [
@@ -67,18 +69,18 @@ const ModifyOrderScreen = ({ navigation, route }) => {
   };
 
   return (
-    <NavScreen title="Modify Order" navigation={navigation}>
+    <NavScreen title="Modify Order" navigation={navigation} background={s.background}>
       <ScrollView showsVerticalScrollIndicator={false}>
 
         {/* Date picker */}
-        <AppText variant="label" color={theme.secondaryText} style={{ marginBottom: spacing.sm }}>
+        <AppText variant="label" color={s.secondaryText} style={{ marginBottom: spacing.sm }}>
           Delivery date
         </AppText>
         <TouchableOpacity
           onPress={() => setShowPicker(true)}
-          style={[styles.datePill, { borderColor: theme.divider, backgroundColor: theme.card }]}
+          style={[styles.datePill, { borderColor: s.divider, backgroundColor: s.card }]}
         >
-          <AppText variant="bodyStrong" color={theme.text}>{formatDate(selectedDate)}</AppText>
+          <AppText variant="bodyStrong" color={s.text}>{formatDate(selectedDate)}</AppText>
         </TouchableOpacity>
 
         {showPicker && (
@@ -95,7 +97,7 @@ const ModifyOrderScreen = ({ navigation, route }) => {
         )}
 
         {/* Slot picker */}
-        <AppText variant="label" color={theme.secondaryText} style={{ marginVertical: spacing.md }}>
+        <AppText variant="label" color={s.secondaryText} style={{ marginVertical: spacing.md }}>
           Delivery slot
         </AppText>
 
@@ -110,18 +112,19 @@ const ModifyOrderScreen = ({ navigation, route }) => {
             keyExtractor={(item, i) => String(item?.id ?? item?.slotId ?? i)}
             scrollEnabled={false}
             renderItem={({ item }) => {
-              const id = item?.id ?? item?.slotId;
-              const active = (selectedSlot?.id ?? selectedSlot?.slotId) === id;
-              const label = item?.label ?? item?.slotLabel ?? item?.name ?? String(id);
+              const id = item?.slotId ?? item?.id;
+              const active = (selectedSlot?.slotId ?? selectedSlot?.id) === id;
+              // Slot label is `slotName` (matches the Schedule screen); fall back before showing an id.
+              const label = item?.slotName ?? item?.label ?? item?.slotLabel ?? item?.name ?? `Slot ${id}`;
               return (
                 <TouchableOpacity
                   onPress={() => setSelectedSlot(item)}
                   style={[styles.slotRow, {
-                    borderColor: active ? theme.primary : theme.divider,
-                    backgroundColor: active ? `${theme.primary}18` : theme.card,
+                    borderColor: active ? theme.primary : s.divider,
+                    backgroundColor: active ? `${theme.primary}18` : s.card,
                   }]}
                 >
-                  <AppText variant="bodyStrong" color={active ? theme.primary : theme.text}>
+                  <AppText variant="bodyStrong" color={active ? theme.primary : s.text}>
                     {label}
                   </AppText>
                   {active && (
@@ -135,7 +138,7 @@ const ModifyOrderScreen = ({ navigation, route }) => {
 
         <View style={{ height: spacing.xl }} />
 
-        <AppText variant="caption" color={theme.secondaryText} style={{ marginBottom: spacing.md }}>
+        <AppText variant="caption" color={s.secondaryText} style={{ marginBottom: spacing.md }}>
           Changes are only possible while your order is in PLACED status. Once a delivery partner
           is assigned, this option locks.
         </AppText>

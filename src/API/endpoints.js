@@ -19,12 +19,26 @@ const endpoints = {
     update: 'api/customer/profile',
   },
 
-  // Geocoding goes through the BACKEND now (not Geoapify). Confirm exact paths in Swagger
-  // once the Google Maps backend endpoints (W-11) land; serviceability is live today.
+  // CUS-33 account closure (dues-gated). deletion-check previews blockers; DELETE closes (409 if blocked).
+  account: {
+    deletionCheck: 'api/customer/account/deletion-check',
+    remove: 'api/customer/account',
+  },
+
+  // Geocoding will go through the BACKEND (Google Maps, metered) instead of Geoapify.
+  // Serviceability is live today (local DB lookup, NO Google call).
+  //
+  // GOOGLE GEOCODING — code is fully wired in GeoService.reverseGeocode/forwardGeocode but kept
+  // DORMANT: the backend endpoints below are NOT built yet and there is no paid Google plan, so the
+  // app still uses Geoapify (src/API/Services/LocationService.js) for the demo. To go live:
+  //   1) backend ships GET /api/customer/geo/reverse + /forward (see projectdocuments/04_Google_Maps_Geocoding.md)
+  //   2) owner adds a billing-enabled, IP-restricted Google Geocoding key (server-side)
+  //   3) swap LocationService's Geoapify calls for GeoService.* (the commented block in that file)
+  //      and delete the Geoapify key + MapClient.
   geo: {
     serviceabilityResolve: (pincode) => `api/serviceability/resolve?pincode=${encodeURIComponent(pincode)}`,
-    // reverseGeocode: 'api/customer/geo/reverse',  // vendor-gated; manual pincode fallback until live
-    // forwardGeocode: 'api/customer/geo/forward',
+    reverseGeocode: (lat, lng) => `api/customer/geo/reverse?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}`, // lat/lng -> {formattedAddress, pincode, city, state}
+    forwardGeocode: (address) => `api/customer/geo/forward?address=${encodeURIComponent(address)}`,                           // typed address -> {lat, lng, pincode, ...}
   },
 
   address: {
@@ -80,6 +94,11 @@ const endpoints = {
     pause: (id) => `api/customer/subscription/${id}/pause`,
     resume: (id) => `api/customer/subscription/${id}/resume`,
     cancel: (id) => `api/customer/subscription/${id}/cancel`,
+  },
+
+  // CUS-25 My Cans — dedicated held-cans endpoint (prefer this over refill/balance for the My Cans screen).
+  cans: {
+    get: 'api/customer/cans', // { heldCans:[{productId, productName, held, depositPaid}], totalHeld, ... }
   },
 
   refill: {

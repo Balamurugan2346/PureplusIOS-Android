@@ -17,7 +17,7 @@ const Tag = ({ title, onClick, icon ,badgeNeed ,onPress }) => {
             <View style={[styles.cardContainer, { backgroundColor: theme.cardContainer }]}>
                 <Image source={icon} style={{ width: 25, height: 25 }} tintColor={theme.primary} />
             </View>
-            <Text style={[paratextConfig, { marginTop: 3 }]}>{title}</Text>
+            <Text numberOfLines={1} style={[paratextConfig, { marginTop: 3, textAlign: 'center' }]}>{title}</Text>
             {badgeNeed && (
                 <View style={styles.badge}>
                     <Text style={styles.badgeText}>1</Text>
@@ -35,16 +35,15 @@ const styles = StyleSheet.create({
 
 
     container: {
-        alignSelf: "flex-start",
+        flex: 1,
         alignItems: "center",
     },
 
     cardContainer: {
         alignSelf: "center",
         overflow: 'hidden',
-        padding: 16,
         alignItems: "center",
-        marginHorizontal: 8,
+        marginHorizontal: 6,
         borderRadius: 16,
         justifyContent: "center",
         padding: 12,

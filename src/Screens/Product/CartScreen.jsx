@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import CartItem from '../../Components/Cart/CartItem';
-import OrderSummary from '../../Components/Cart/OrderSummary';
+import EstimateSummary from '../../Components/Cart/EstimateSummary';
 import PaymentWithAddressBar from '../../Components/Cart/PayButtonWithAddressBar';
 import PaymentSection from '../../Components/Cart/PaymentSection';
 import TopAppBar from '../../Components/TopAppBar';
@@ -23,12 +23,17 @@ import { useToast } from '../../Components/Toast/ToastProvider';
 import AppLoading from '../../Components/AppLoading';
 import { clearSheduleSlots } from '../../Redux/Slices/SheduleOrderSlice';
 import { resolveServiceability } from '../../Redux/Slices/ServiceabilitySlice';
+import CheckoutService from '../../API/modules/CheckoutService';
+import OrderService from '../../API/modules/OrderService';
+import CartService from '../../API/modules/CartService';
 const CartScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const { isBottomBarVisible } = useAppContext()
   const { cartItems, loading: cartLoading, error: cartError, isFetched: cartIsFetched } = useSelector((state) => state.cart)
   //ADDRESS LIST
   const { addressList, selectedAddress: selectedAddressGlobalState } = useSelector((state) => state.address)
+  //PRODUCTS (for per-product taxPercent needed by the checkout estimate)
+  const { productList } = useSelector((state) => state.products)
 
 
   const { showToast } = useToast()
@@ -67,11 +72,22 @@ const CartScreen = ({ navigation }) => {
   const [receiverName, setReceiverName] = useState('');
   const [receiverPhone, setReceiverPhone] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  // CUS-12 checkout estimate + first-order offer
+  const [selectedAddressObj, setSelectedAddressObj] = useState(null);
+  const [estimate, setEstimate] = useState(null);
+  const [estimateLoading, setEstimateLoading] = useState(false);
+  const [estimateError, setEstimateError] = useState(null);
+  const [isFirstOrder, setIsFirstOrder] = useState(false);
   //  useState({
   //   receiverName:'',
   //   receiverNumber:'',
   //   receiversAddress:''
   // })
+
+  useEffect(()=>{
+
+    console.log("estimate",estimate)
+  },[estimate])
 
   const getAddressFromStateList = async () => {
     const id = await getSelectedAddressId();
@@ -84,6 +100,8 @@ const CartScreen = ({ navigation }) => {
       setSelectedAddress(
         `${matched.addressLine1 ?? ''} ${matched.addressLine2 ?? ''}`.trim()
       );
+      // Keep the full address object — the checkout estimate needs its id/floor/lift.
+      setSelectedAddressObj(matched);
 
       setReceiversDetails({
         receiverName: matched.receiverName ?? '',
@@ -96,7 +114,55 @@ const CartScreen = ({ navigation }) => {
     } else {
       // setSelectedAddress(currentLocationFormattedAddress ?? null); no need to store location part in address
       setSelectedAddress(null)
+      setSelectedAddressObj(null);
       setReceiversDetails(null);
+    }
+  };
+
+  // Per-product GST% for the estimate items (cart rows don't carry it; look it up from the catalog).
+  const taxFor = (productId) => {
+    const p = productList?.find((x) => x.productId === productId);
+    return Number(p?.taxPercent ?? p?.taxPercentage ?? 0) || 0;
+  };
+
+  // CUS-12: fetch the live price breakdown. Business rule — only call the API when a
+  // delivery address is actually selected; otherwise clear any stale estimate.
+  const fetchEstimate = async () => {
+    const addr = selectedAddressObj;
+    console.log("addr",addr)
+    console.log("cartitems",cartItems)
+    if (!addr || !(Number(addr.id) > 0)) { setEstimate(null); setEstimateError(null); return; }
+    if (!cartItems || cartItems.length === 0) { setEstimate(null); setEstimateError(null); 
+      return; 
+    }
+
+   
+    const items = cartItems.map((ci) => ({
+      productId: ci.productId,
+      quantity: ci.quantity,          // 1 quantity = 1 unit
+      unitPrice: Number(ci.price) || 0,
+      taxPercent:18, //need to replace from backend logic
+    }));
+
+    const payload = {
+      addressId: Number(addr.id),
+      floor: Number(addr.floorNo ?? addr.floor ?? 0) || 0,
+      hasLift: !!(addr.lift ?? addr.hasLift),
+      isFirstOrder: !!isFirstOrder,
+      items,
+    };
+
+    console.log("payload",payload)
+    try {
+      setEstimateLoading(true);
+      setEstimateError(null);
+      const data = await CheckoutService.estimate(payload);
+      setEstimate(data);
+    } catch (e) {
+      setEstimate(null);
+      setEstimateError(e?.message || 'Could not fetch the price estimate.');
+    } finally {
+      setEstimateLoading(false);
     }
   };
 
@@ -128,6 +194,18 @@ const CartScreen = ({ navigation }) => {
     ? profileData?.fullName
     : receiversDetails?.receiverName || profileData?.fullName;
 
+  // Delivery schedule summary (CUS-13): an order is "scheduled" only when the slot
+  // carries both a type of 'scheduled' AND a date — otherwise it's instant.
+  const isScheduledSlot = selectedSlot?.type === 'scheduled' && !!selectedSlot?.date;
+
+  // 'YYYY-MM-DD' → a readable "Mon, 14 Oct". Falls back to the raw string if unparseable.
+  const formatSlotDate = (d) => {
+    if (!d) return '';
+    const dt = new Date(d);
+    if (isNaN(dt.getTime())) return d;
+    return dt.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+  };
+
 
 
   const synCCart = () => {
@@ -145,7 +223,24 @@ const CartScreen = ({ navigation }) => {
 
   useEffect(() => {
     getAddressFromStateList()
-  }, [currentLocationFormattedAddress])
+  }, [currentLocationFormattedAddress, addressList, selectedAddressGlobalState])
+
+  // First-order check — drives the complimentary-can offer and the estimate's isFirstOrder flag.
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const r = await OrderService.isFirst();
+        if (active) setIsFirstOrder(!!r?.isFirstOrder);
+      } catch (e) { /* non-blocking; default stays false */ }
+    })();
+    return () => { active = false; };
+  }, [])
+
+  // Re-price whenever the cart, the selected address, or first-order status changes.
+  useEffect(() => {
+    fetchEstimate();
+  }, [selectedAddressObj?.id, cartItems, isFirstOrder])
 
 
   const handleRefresh = () => {
@@ -225,8 +320,13 @@ const CartScreen = ({ navigation }) => {
           >
             {/* delivery time ui */}
 
+            {/* Delivery-time row. The left block is a two-line vertical stack: a bold
+                primary line (the delivery mode) and a secondary line carrying the detail —
+                for a scheduled order that's the full date + slot time. The secondary line
+                wraps to 2 lines instead of truncating, so the slot time is never clipped to
+                a placeholder "…". The button stays flexShrink:0 so it can't be pushed off. */}
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <View style={{ flexDirection: "row", alignItems: "center", flex: 1, marginRight: 10 }}>
                 <View style={{ backgroundColor: "lightgreen", borderRadius: 10, width: 40, height: 40, alignItems: "center", justifyContent: "center" }}>
 
                   <View style={{ backgroundColor: "white", width: 25, height: 25, borderRadius: 30, justifyContent: "center", alignItems: "center" }}>
@@ -234,17 +334,26 @@ const CartScreen = ({ navigation }) => {
                   </View>
                 </View>
 
-                <Text style={[headerConfig, {fontSize: Fonts.size.sm, marginLeft: 10, marginBottom: 7 }]}>
-                  {selectedSlot?.type === 'scheduled' && selectedSlot?.date
-                    ? `Scheduled: ${selectedSlot.date}${selectedSlot.label ? ` · ${selectedSlot.label}` : ''}`
-                    : 'Deliver now (instant) · tap to schedule'}
-                </Text>
+                <View style={{ flex: 1, marginLeft: 10 }}>
+                  <Text style={[headerConfig, { fontSize: Fonts.size.sm }]}>
+                    {isScheduledSlot ? 'Scheduled delivery' : 'Deliver now'}
+                  </Text>
+                  <Text
+                    numberOfLines={2}
+                    ellipsizeMode="tail"
+                    style={[paratextConfig, { marginTop: 2 }]}
+                  >
+                    {isScheduledSlot
+                      ? `${formatSlotDate(selectedSlot.date)}${selectedSlot.label ? ` · ${selectedSlot.label}` : ''}`
+                      : 'Instant · delivered within ~30 min'}
+                  </Text>
+                </View>
               </View>
 
 
               <Pressable onPress={() => {
                 navigation.navigate('SheduleOrderScreen')
-              }} style={{ backgroundColor: "#FFF59D", borderRadius: 20, alignItems: "center", justifyContent: "center" }}>
+              }} style={{ backgroundColor: "#FFF59D", borderRadius: 20, alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
 
                 <View style={{ flexDirection: "row", paddingHorizontal: 10, paddingVertical: 5, justifyContent: "center",alignItems:"center" }}>
                   <Ionicons name='time' color={"#FDD835"} size={20} />
@@ -278,7 +387,7 @@ const CartScreen = ({ navigation }) => {
           {/* )} */}
 
           {/* CUS-29: Order for someone else */}
-          <View style={styles.forSomeoneCard}>
+   {/* <View style={styles.forSomeoneCard}>
             <View style={styles.forSomeoneRow}>
               <View style={{ flex: 1 }}>
                 <Text style={[headerConfig, { fontSize: Fonts.size.sm }]}>Order for someone else</Text>
@@ -309,13 +418,19 @@ const CartScreen = ({ navigation }) => {
                 />
               </View>
             )}
-          </View>
+          </View>        */}
 
-          {/* bill summary */}
-          <OrderSummary />
+          {/* bill summary — live checkout estimate (CUS-12) */}
+          <EstimateSummary
+            estimate={estimate}
+            loading={estimateLoading}
+            error={estimateError}
+            isFirstOrder={isFirstOrder}
+            addressSelected={!!(selectedAddressObj && Number(selectedAddressObj.id) > 0)}
+          />
 
           {/* payment button */}
-          <PaymentSection navigation={navigation} onPayClick={async (paymentMethod) => {
+          <PaymentSection navigation={navigation} payableTotal={estimate?.grandTotal} onPayClick={async (paymentMethod) => {
             const id = await getSelectedAddressId();
             console.log(selectedSlot?.id, "selected slot id from cart screen")
             if (id == -1 || id == null) {
@@ -326,6 +441,24 @@ const CartScreen = ({ navigation }) => {
             // backend rejects it too, but this gives an immediate, clearer message.
             if (serviceable === false) {
               showToast(svcReason || "We don't deliver to this area yet. Please change the address.", true)
+              return
+            }
+            // Min-order gate — the estimate already computed per-line min-order compliance.
+            if (estimate && estimate.allMinimumsMet === false) {
+              showToast("Minimum order not met. Please check the bill summary.", true)
+              return
+            }
+            // CUS: validate every cart line against min-order / bulk rules before placing.
+            try {
+              for (const ci of cartItems) {
+                const res = await CartService.validate({ productId: ci.productId, quantity: ci.quantity });
+                if (res && res.bulkAllowed === false) {
+                  showToast(`Product ${ci.productId}: this quantity isn't allowed.`, true)
+                  return
+                }
+              }
+            } catch (e) {
+              showToast(e?.message || "Could not validate the cart. Please try again.", true)
               return
             }
             // Backend PlaceOrderRequest expects numeric ids; the cart items come
@@ -391,7 +524,9 @@ const CartScreen = ({ navigation }) => {
       )}
 
       {showAddressBottomSheet && <BottomSheet visible={showAddressBottomSheet} onClose={() => setShowAddressBottomSheet(false)}>
-        <AddressScreen navigation={navigation} onClose={() => setShowAddressBottomSheet(false)} />
+        <AddressScreen navigation={navigation} onClose={() => setShowAddressBottomSheet(false)} callGetSelectedAddressCallBack={()=>{
+          //do nothing for now
+        }} />
       </BottomSheet>
       }
 

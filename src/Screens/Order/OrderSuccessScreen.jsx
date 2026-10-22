@@ -12,12 +12,15 @@ import { useSelector } from 'react-redux';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import { useTheme } from '../../Context/ThemeContext';
-import Fonts from '../../../assets/fonts/Fonts';
 import TopAppBar from '../../Components/TopAppBar';
+import AppText from '../../Components/AppText';
+import AppButton from '../../Components/AppButton';
+import { floatShadow, radius, spacing } from '../../Themes/Themes';
 
 const OrderSuccessScreen = ({ navigation, route }) => {
 
     const insets = useSafeAreaInsets()
+    const { theme } = useTheme()
 
     const id = route?.params?.id;
     console.log("Order ID:", id);
@@ -34,7 +37,23 @@ const OrderSuccessScreen = ({ navigation, route }) => {
 
     const orderName = displayOrderNames(order?.items)
     const address = order?.deliveryAddress;
-    const orderedTime = order?.orderDate;
+
+    // Proper en-IN date formatting (replaces the raw ISO/epoch string shown before).
+    const formatOrderedTime = (raw) => {
+        if (!raw) return '';
+        const d = new Date(raw);
+        if (isNaN(d.getTime())) return String(raw);
+        return d.toLocaleString('en-IN', {
+            day: '2-digit', month: 'short', year: 'numeric',
+            hour: '2-digit', minute: '2-digit', hour12: true,
+        });
+    };
+    const orderedTime = formatOrderedTime(order?.orderDate);
+
+    // Pay-at-door banner — shown only when the backend gave us both a total and a method.
+    const payTotal = order?.grandTotal ?? order?.totalAmount;
+    const payMethod = order?.paymentMode ?? order?.paymentMethod;
+    const showPayBanner = Number(payTotal) > 0 && !!payMethod;
 
     const goHome = () => {
         navigation.reset({
@@ -61,80 +80,62 @@ const OrderSuccessScreen = ({ navigation, route }) => {
     }, []);
 
     return (
-        <View style={[styles.container, { paddingBottom: insets.bottom }]}>
+        <View style={[styles.container, { backgroundColor: theme.surface, paddingBottom: insets.bottom }]}>
+
+            {/* Decorative shapes */}
+            <View style={[styles.decorTopRight, { backgroundColor: theme.sky200 }]} pointerEvents="none" />
+            <View style={[styles.decorLeft, { backgroundColor: theme.successTint }]} pointerEvents="none" />
 
             <TopAppBar callback={() => {
                 goHome()
             }} navigation={navigation} customNav={"yes"} title='Order Success' />
 
-            <View style={styles.card}>
-
-                {/* Back Button
-                <TouchableOpacity
-                    style={styles.backButton}
-                    onPress={() => {
-                        goHome()
-                    }}
-                >
-                    <Ionicons name="arrow-back" size={22} color="#fff" />
-                </TouchableOpacity>
-
-                <Text style={[styles.header, { fontFamily: Fonts.family.semiBold }]}>
-                    Order Status
-                </Text> */}
+            <View style={[styles.card, { backgroundColor: theme.surfaceCard }, floatShadow]}>
 
                 {/* Success Icon */}
                 <View style={styles.iconWrapper}>
-                    <View style={styles.iconCircle}>
-                        <Ionicons name="checkmark" size={34} color="#0B2E13" />
+                    <View style={[styles.iconOuter, { backgroundColor: theme.successTint }]}>
+                        <View style={[styles.iconCircle, { backgroundColor: theme.success }]}>
+                            <Ionicons name="checkmark" size={32} color={theme.onPrimary} />
+                        </View>
                     </View>
                 </View>
 
                 {/* Success Text */}
-                <Text style={[styles.successText, { fontFamily: Fonts.family.bold }]}>
+                <AppText variant="display" color={theme.ink} style={styles.successText}>
                     Order Successful!
-                </Text>
+                </AppText>
 
-                <Text style={[styles.subText, { fontFamily: Fonts.family.medium }]}>
-                    Your order has been placed and is being processed by the restaurant.
-                </Text>
+                <AppText variant="body" color={theme.inkMuted} style={styles.subText}>
+                    Your order has been placed and is being prepared by your Pureplus store.
+                </AppText>
 
-                <View style={styles.divider} />
+                <View style={[styles.divider, { backgroundColor: theme.borderSubtle }]} />
 
                 {/* Order Name */}
-                <Text style={[styles.label, { fontFamily: Fonts.family.medium }]}>
-                    ORDER
-                </Text>
-
-                <Text style={[styles.value, { fontFamily: Fonts.family.semiBold }]}>
-                    {orderName}
-                </Text>
+                <AppText variant="badge" color={theme.success} style={styles.label}>ORDER</AppText>
+                <AppText variant="bodyStrong" color={theme.ink} style={styles.value}>{orderName}</AppText>
 
                 {/* Address */}
-                <Text style={[styles.label, { fontFamily: Fonts.family.medium }]}>
-                    ADDRESS
-                </Text>
-
-                <Text style={[styles.value, { fontFamily: Fonts.family.semiBold }]}>
-                    {address}
-                </Text>
+                <AppText variant="badge" color={theme.success} style={styles.label}>ADDRESS</AppText>
+                <AppText variant="bodyStrong" color={theme.ink} style={styles.value}>{address}</AppText>
 
                 {/* Ordered Time */}
-                <Text style={[styles.label, { fontFamily: Fonts.family.medium }]}>
-                    ORDERED TIME
-                </Text>
+                <AppText variant="badge" color={theme.success} style={styles.label}>ORDERED TIME</AppText>
+                <AppText variant="bodyStrong" color={theme.ink} style={styles.value}>{orderedTime}</AppText>
 
-                <Text style={[styles.value, { fontFamily: Fonts.family.semiBold }]}>
-                    {orderedTime}
-                </Text>
+                {/* Pay-at-door banner */}
+                {showPayBanner && (
+                    <View style={[styles.payBanner, { backgroundColor: theme.infoTint }]}>
+                        <Ionicons name="information-circle-outline" size={18} color={theme.info} />
+                        <AppText variant="caption" color={theme.info} style={{ marginLeft: spacing.sm, flex: 1 }}>
+                            {`Pay ₹${Number(payTotal).toFixed(2)} by ${payMethod} when your cans arrive.`}
+                        </AppText>
+                    </View>
+                )}
 
                 {/* Button */}
-                <TouchableOpacity style={styles.homeButton} onPress={goHome}>
-                    <Text style={[styles.homeText, { fontFamily: Fonts.family.bold }]}>
-                        Back to Home
-                    </Text>
-                </TouchableOpacity>
-
+                <AppButton title="Back to Home" onAction={goHome} style={{ marginTop: spacing.xl }} />
             </View>
 
         </View>
@@ -148,93 +149,91 @@ const styles = StyleSheet.create({
 
     container: {
         flex: 1,
-        backgroundColor: 'white',
-        // justifyContent: 'center',
-        // alignItems: 'center'
+    },
+
+    decorTopRight: {
+        position: 'absolute',
+        top: 120,
+        right: -50,
+        width: 180,
+        height: 180,
+        borderRadius: 190,
+        opacity: 0.6,
+    },
+
+    decorLeft: {
+        position: 'absolute',
+        top: 100,
+        left: -60,
+        width: 140,
+        height: 140,
+        borderRadius: 70,
+        opacity:0.6,
     },
 
     card: {
-        width: '92%',
+        width: '90%',
         alignSelf: "center",
-        marginTop: "15%",
-        alignContent: "center",
-        backgroundColor: '#1A2D44',
-        borderRadius: 22,
-        padding: 24
-    },
-
-    backButton: {
-        position: 'absolute',
-        left: 18,
-        top: 20,
-        zIndex: 2
-    },
-
-    header: {
-        textAlign: 'center',
-        fontSize: 16,
-        color: '#fff',
-        marginBottom: 30
+        marginTop: 40,
+        borderRadius: radius.lg,
+        paddingHorizontal: spacing.xl,
+        paddingTop: spacing.xxl,
+        paddingBottom: spacing.xl,
     },
 
     iconWrapper: {
         alignItems: 'center',
-        marginBottom: 16
+        marginBottom: spacing.md,
+    },
+
+    iconOuter: {
+        width: 88,
+        height: 88,
+        borderRadius: 44,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
 
     iconCircle: {
-        width: 70,
-        height: 70,
-        borderRadius: 40,
-        backgroundColor: '#20D25B',
+        width: 60,
+        height: 60,
+        borderRadius: 30,
         justifyContent: 'center',
-        alignItems: 'center'
+        alignItems: 'center',
     },
 
     successText: {
-        fontSize: 22,
+        fontSize: 26,
+        lineHeight: 32,
         textAlign: 'center',
-        color: '#fff',
-        marginTop: 10
+        marginTop: spacing.md,
     },
 
     subText: {
         textAlign: 'center',
-        color: '#B8D2C0',
-        fontSize: 13,
-        marginTop: 6,
-        marginBottom: 20
+        marginTop: spacing.sm,
+        marginBottom: spacing.lg,
     },
 
     divider: {
         height: 1,
-        backgroundColor: '#1E5732',
-        marginVertical: 18
+        marginVertical: spacing.lg,
     },
 
     label: {
-        fontSize: 11,
-        color: '#29D463',
-        letterSpacing: 1,
-        marginTop: 8
+        letterSpacing: 0.6,
+        marginTop: spacing.md,
     },
 
     value: {
-        fontSize: 14,
-        color: '#fff',
-        marginTop: 4
+        marginTop: 4,
     },
 
-    homeButton: {
-        backgroundColor: '#21D44B',
-        borderRadius: 14,
-        paddingVertical: 14,
-        marginTop: 28,
-        alignItems: 'center'
+    payBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderRadius: radius.md,
+        padding: spacing.md,
+        marginTop: spacing.lg,
     },
-
-    homeText: {
-        color: '#000',
-        fontSize: 15
-    }
 });

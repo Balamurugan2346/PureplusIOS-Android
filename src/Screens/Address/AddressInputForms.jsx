@@ -3,6 +3,8 @@ import Fonts from '../../../assets/fonts/Fonts';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import AppText from '../../Components/AppText';
+import { fontFamily, radius, spacing } from '../../Themes/Themes';
 import { useDispatch, useSelector } from 'react-redux';
 import { clearAddressState, getAddressList, saveAddress, updateAddress } from '../../Redux/Slices/AddressSlice';
 import AppLoading from '../../Components/AppLoading';
@@ -71,27 +73,29 @@ const AddressInputForm = ({ navigation, pickedAddress, onNavigate, isEdit = fals
         }
     };
 
-    const renderInput = (label, key, type = 'default', optional = false) => (
-        <View style={{ marginTop: 12 }}>
-            <Text style={[styles.label, { color: theme.text }]}>
-                {label} {optional && <Text style={{ color: theme.secondaryText }}>(Optional)</Text>}
+    const renderInput = (label, key, type = 'default', optional = false, required = false, placeholder) => (
+        <View style={{ marginTop: spacing.lg }}>
+            <Text style={[styles.label, { color: theme.inkMuted }]}>
+                {label}
+                {required && <Text style={{ color: theme.danger }}> *</Text>}
+                {optional && <Text style={{ color: theme.inkMuted }}> (Optional)</Text>}
             </Text>
             <TextInput
-                placeholder={label}
-                placeholderTextColor={theme.secondaryText}
+                placeholder={placeholder ?? label}
+                placeholderTextColor={theme.inkMuted}
                 value={formData[key] != null ? String(formData[key]) : ''}
                 keyboardType={type}
                 onChangeText={(text) => handleChange(key, text)}
                 style={[
                     styles.input,
                     {
-                        backgroundColor: theme.inputContainer,
-                        borderColor: errors[key] ? 'red' : theme.inputContainerBorder,
-                        color: theme.buttonText
+                        backgroundColor: theme.surfaceCard,
+                        borderColor: errors[key] ? theme.danger : theme.borderStrong,
+                        color: theme.ink
                     }
                 ]}
             />
-            {errors[key] ? <Text style={styles.error}>{errors[key]}</Text> : null}
+            {errors[key] ? <Text style={[styles.error, { color: theme.danger }]}>{errors[key]}</Text> : null}
         </View>
     );
 
@@ -245,65 +249,108 @@ const AddressInputForm = ({ navigation, pickedAddress, onNavigate, isEdit = fals
 
 
     return (
-        <View style={[styles.card, { backgroundColor: theme.card }]}>
-            <View style={{ flexDirection: "row" }}>
-                <View style={styles.iconContainer}>
-                    <View style={styles.iconInner}>
-                        <Ionicons name='location' color={"lightgreen"} size={20} />
-                    </View>
+        <View style={[styles.card, { backgroundColor: theme.surfaceCard }]}>
+            {/* Header */}
+            <View style={styles.headerRow}>
+                <View style={[styles.iconContainer, { backgroundColor: theme.successTint }]}>
+                    <Ionicons name='location' color={theme.success} size={22} />
                 </View>
 
-                <View>
-                    <Text style={[styles.headerText, { color: theme.buttonText }]}>Delivery Address</Text>
-                    <Text
-                        style={[styles.uneditableText, { color: theme.secondaryText, marginRight: 10 }]}
+                <View style={{ flex: 1 }}>
+                    <AppText variant="bodyStrong" color={theme.ink}>Delivery Address</AppText>
+                    <AppText
+                        variant="caption"
+                        color={theme.inkMuted}
                         numberOfLines={4}
-                        ellipsizeMode="tail"
+                        style={{ marginTop: 2 }}
                     >
                         {pickedAddress.formattedAddress ?? ""}
-                    </Text>
-
+                    </AppText>
                 </View>
             </View>
 
-            <Text style={[styles.label, { marginTop: 16, color: theme.buttonText }]}>Residence Type</Text>
+            <View style={[styles.divider, { backgroundColor: theme.borderSubtle }]} />
 
-            <View style={styles.radioGroup}>
-                {['Apartment', 'House'].map(option => (
-                    <TouchableOpacity
-                        key={option}
-                        style={[
-                            styles.radioButton,
-                            { backgroundColor: formData.addressType === option ? theme.primary : theme.inputContainer }
-                        ]}
-                        onPress={() => setFormData(prev => ({ ...prev, addressType: option }))}
-                    >
-                        <Text style={{ color: formData.addressType === option ? 'white' : theme.text }}>
-                            {option}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
-
+            {/* Residence type — segmented control */}
+            <Text style={[styles.label, { color: theme.inkMuted }]}>
+                Residence type<Text style={{ color: theme.danger }}> *</Text>
+            </Text>
+            <View style={[styles.segment, { backgroundColor: theme.surfaceSunken }]}>
+                {['Apartment', 'House'].map(option => {
+                    const active = formData.addressType === option;
+                    return (
+                        <TouchableOpacity
+                            key={option}
+                            style={[
+                                styles.segmentItem,
+                                active && { backgroundColor: theme.surfaceCard, borderColor: theme.primary, borderWidth: 1.5 },
+                            ]}
+                            onPress={() => setFormData(prev => ({ ...prev, addressType: option }))}
+                        >
+                            <AppText variant="bodyStrong" color={active ? theme.primary : theme.inkMuted}>
+                                {option}
+                            </AppText>
+                        </TouchableOpacity>
+                    );
+                })}
             </View>
             {errors.addressType && (
-                <Text style={{ color: "red", marginTop: 6 }}>
-                    {errors.addressType}
-                </Text>
+                <Text style={[styles.error, { color: theme.danger }]}>{errors.addressType}</Text>
             )}
-            {/* Inputs */}
-            {renderInput('Address Line 1', 'addressLine1')}
-            {renderInput('Address Line 2', 'addressLine2', 'default', true)}
-            {renderInput('City', 'city')}
-            {renderInput('FloorNo', 'FloorNo','numeric', true)}
-            {renderInput('State', 'state')}
-            {renderInput('Pincode', 'pinCode', 'numeric')}
-            {renderInput('Landmark', 'landmark')}
 
+            {/* Inputs */}
+            {renderInput('Address Line 1', 'addressLine1', 'default', false, true)}
+            {renderInput('Address Line 2', 'addressLine2', 'default', true, false, 'Building, block or flat')}
+
+            {/* City + Floor side by side */}
+            <View style={styles.twoCol}>
+                <View style={{ flex: 1 }}>
+                    {renderInput('City', 'city', 'default', false, true)}
+                </View>
+                <View style={{ flex: 1 }}>
+                    {renderInput('Floor no.', 'FloorNo', 'numeric', true)}
+                </View>
+            </View>
+
+            {renderInput('State', 'state', 'default', false, true)}
+
+            {/* Pincode highlighted panel */}
+            <View style={[styles.pinPanel, { backgroundColor: theme.primaryTint }]}>
+                <Text style={[styles.label, { color: theme.inkMuted }]}>
+                    Pincode<Text style={{ color: theme.danger }}> *</Text>
+                </Text>
+                <View style={[styles.pinInputRow, { backgroundColor: theme.surfaceCard, borderColor: errors.pinCode ? theme.danger : theme.borderStrong }]}>
+                    <Ionicons name="location-outline" size={18} color={theme.primary} style={{ marginRight: spacing.sm }} />
+                    <TextInput
+                        placeholder="600090"
+                        placeholderTextColor={theme.inkMuted}
+                        value={formData.pinCode != null ? String(formData.pinCode) : ''}
+                        keyboardType="numeric"
+                        onChangeText={(text) => handleChange('pinCode', text)}
+                        style={[styles.pinInput, { color: theme.ink }]}
+                    />
+                </View>
+                <AppText variant="caption" color={theme.ink} style={{ marginTop: spacing.sm }}>
+                    Your pincode decides which Pureplus store delivers to you. Please check it's correct.
+                </AppText>
+                {errors.pinCode ? <Text style={[styles.error, { color: theme.danger }]}>{errors.pinCode}</Text> : null}
+            </View>
+
+            {renderInput('Landmark', 'landmark', 'default', false, true, 'Near a temple, school or shop')}
+
+            {/* Has lift */}
             <View style={styles.switchRow}>
-                <Text style={[styles.label, { color: theme.buttonText, marginRight: 10 }]}>Has Lift?</Text>
+                <View style={{ flex: 1, marginRight: spacing.md }}>
+                    <AppText variant="bodyStrong" color={theme.ink}>Has lift?</AppText>
+                    <AppText variant="caption" color={theme.inkMuted} style={{ marginTop: 2 }}>
+                        Floor charges may apply without a lift
+                    </AppText>
+                </View>
                 <Switch
                     value={formData.hasLift}
                     onValueChange={(value) => handleChange('hasLift', value)}
+                    trackColor={{ true: theme.primary, false: theme.borderStrong }}
+                    thumbColor={theme.onPrimary}
                 />
             </View>
 
@@ -311,35 +358,41 @@ const AddressInputForm = ({ navigation, pickedAddress, onNavigate, isEdit = fals
                 <AppLoading isVisible={loading} />
             )}
 
-            <Text style={[styles.label, { marginTop: 16, color: theme.buttonText }]}>Address Tag</Text>
-
-            <View style={styles.radioGroup}>
-                {['Home', 'Work', 'Others'].map(option => (
-                    <TouchableOpacity
-                        key={option}
-                        style={[
-                            styles.radioButton,
-                            { backgroundColor: formData.tag === option ? theme.primary : theme.inputContainer }
-                        ]}
-                        onPress={() => setFormData(prev => ({ ...prev, tag: option }))}
-                    >
-                        <Text style={{ color: formData.tag === option ? 'white' : theme.text }}>{option}</Text>
-                    </TouchableOpacity>
-                ))}
+            {/* Address tag chips */}
+            <Text style={[styles.label, { marginTop: spacing.lg, color: theme.inkMuted }]}>Address tag</Text>
+            <View style={styles.chipRow}>
+                {['Home', 'Work', 'Others'].map(option => {
+                    const active = formData.tag === option;
+                    return (
+                        <TouchableOpacity
+                            key={option}
+                            style={[
+                                styles.chip,
+                                { backgroundColor: active ? theme.ink : theme.surfaceCard, borderColor: active ? theme.ink : theme.borderStrong },
+                            ]}
+                            onPress={() => setFormData(prev => ({ ...prev, tag: option }))}
+                        >
+                            <AppText variant="label" color={active ? theme.onInk : theme.ink}>{option}</AppText>
+                        </TouchableOpacity>
+                    );
+                })}
             </View>
 
             {formData.tag === 'Others' && (
-                <>
-                    {renderInput('Receiver Name', 'receiverName')}
-                    {renderInput('Receiver Phone Number', 'receiverNumber', 'phone-pad')}
-                </>
+                <View style={[styles.receiverPanel, { backgroundColor: theme.surfaceSunken }]}>
+                    <AppText variant="caption" color={theme.inkMuted}>
+                        Delivering to someone else? Tell us who will receive the cans.
+                    </AppText>
+                    {renderInput('Receiver name', 'receiverName', 'default', false, true)}
+                    {renderInput('Receiver phone number', 'receiverNumber', 'phone-pad', false, true)}
+                </View>
             )}
 
             <TouchableOpacity
                 onPress={() => handleAddressSubmit()}
                 style={[styles.saveBtn, { backgroundColor: theme.primary }]}
             >
-                <Text style={[styles.saveText, { color: theme.buttonText }]}>
+                <Text style={[styles.saveText, { color: theme.onPrimary }]}>
                     {loading ? 'Saving...' : isEdit ? 'Update Address' : 'Save Address'}
                 </Text>
             </TouchableOpacity>
@@ -351,79 +404,114 @@ export default AddressInputForm;
 
 const styles = StyleSheet.create({
     card: {
-        padding: 16,
-        borderRadius: 20,
-        marginVertical: 20,
-        elevation: 3,
+        padding: spacing.xl,
+        borderRadius: radius.lg,
+    },
+    headerRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md,
     },
     iconContainer: {
-        backgroundColor: "lightgreen",
-        borderRadius: 10,
-        width: 40,
-        height: 40,
+        borderRadius: radius.sm,
+        width: 44,
+        height: 44,
         alignItems: "center",
         justifyContent: "center",
-        marginRight: 10
     },
-    iconInner: {
-        backgroundColor: "white",
-        width: 25,
-        height: 25,
-        borderRadius: 30,
-        justifyContent: "center",
-        alignItems: "center"
-    },
-    headerText: {
-        fontFamily: Fonts.family.semiBold,
-        fontSize: Fonts.size.lg,
-    },
-    uneditableText: {
-        fontSize: Fonts.size.xs,
-        fontFamily: Fonts.family.regular,
-        marginBottom: 10,
+    divider: {
+        height: 1,
+        marginVertical: spacing.lg,
     },
     input: {
-        borderWidth: 1,
-        borderRadius: 10,
-        paddingHorizontal: 12,
-        paddingVertical: 10,
-        fontSize: Fonts.size.sm,
-        fontFamily: Fonts.family.medium,
+        borderWidth: 1.5,
+        borderRadius: radius.sm,
+        paddingHorizontal: spacing.md,
+        paddingVertical: 12,
+        fontSize: 13,
+        fontFamily: fontFamily.medium,
+        marginTop: 6,
     },
     label: {
-        fontSize: Fonts.size.sm,
-        fontFamily: Fonts.family.medium,
-        marginBottom: 5,
+        fontSize: 14,
+        fontFamily: fontFamily.medium,
+        marginBottom: 2,
     },
     error: {
-        color: 'red',
         fontSize: 12,
+        fontFamily: fontFamily.regular,
         marginTop: 4,
     },
-    radioGroup: {
+    segment: {
         flexDirection: 'row',
-        gap: 10,
-        marginTop: 8,
+        borderRadius: radius.sm,
+        padding: 4,
+        marginTop: 6,
+        gap: 4,
     },
-    radioButton: {
-        paddingVertical: 8,
-        paddingHorizontal: 14,
-        borderRadius: 20,
+    segmentItem: {
+        flex: 1,
+        paddingVertical: 10,
+        borderRadius: radius.sm,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1.5,
+        borderColor: 'transparent',
+    },
+    twoCol: {
+        flexDirection: 'row',
+        gap: spacing.md,
+    },
+    pinPanel: {
+        borderRadius: radius.md,
+        padding: spacing.lg,
+        marginTop: spacing.lg,
+    },
+    pinInputRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 1.5,
+        borderRadius: radius.sm,
+        paddingHorizontal: spacing.md,
+        marginTop: 6,
+    },
+    pinInput: {
+        flex: 1,
+        paddingVertical: 12,
+        fontSize: 15,
+        fontFamily: fontFamily.semibold,
+        letterSpacing: 1,
     },
     switchRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 12,
+        marginTop: spacing.lg,
+    },
+    chipRow: {
+        flexDirection: 'row',
+        gap: spacing.md,
+        marginTop: spacing.sm,
+    },
+    chip: {
+        paddingVertical: 10,
+        paddingHorizontal: spacing.lg,
+        borderRadius: radius.pill,
+        borderWidth: 1.5,
+    },
+    receiverPanel: {
+        borderRadius: radius.md,
+        padding: spacing.lg,
+        marginTop: spacing.lg,
     },
     saveBtn: {
-        paddingVertical: 12,
-        marginTop: 20,
-        borderRadius: 14,
+        paddingVertical: 15,
+        marginTop: spacing.xl,
+        borderRadius: radius.pill,
         alignItems: "center",
     },
     saveText: {
-        fontFamily: Fonts.family.semiBold,
-        fontSize: Fonts.size.lg,
+        fontFamily: fontFamily.semibold,
+        fontSize: 15,
     }
 });
 

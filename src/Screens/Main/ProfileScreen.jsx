@@ -1,79 +1,63 @@
 import React, { useEffect, useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Switch,
-  Alert,
 } from 'react-native';
 import AccountService from '../../API/modules/AccountService';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // You'll need to install this library: npm install react-native-vector-icons
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import TopAppBar from '../../Components/TopAppBar';
+import AppText from '../../Components/AppText';
+import AppButton from '../../Components/AppButton';
+import AppModal from '../../Components/AppModal';
+import ListRow from '../../Components/ListRow';
+import FirstLetterAvatar from '../../Components/Profile/FirstLetterAvatar';
+import { radius, spacing, floatShadow } from '../../Themes/Themes';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { clearDataBeforeLogout, removeData } from '../../OfflineStore/OfflineStore';
 import { useDispatch, useSelector } from 'react-redux';
 import { useToast } from '../../Components/Toast/ToastProvider';
 import { getSelectedAddressId } from '../../Utils/GetSelectedAddress'
-import { clearProfileState } from '../../Redux/Slices/ProfileSlice';
-import { clearBanners } from '../../Redux/Slices/BannerSlice';
-import { clearProducts } from '../../Redux/Slices/ProductsSlice';
-import { clearAddressState } from '../../Redux/Slices/AddressSlice';
-import { clearCurrentLocationFormattedAddres, clearDecodedAddress } from '../../Redux/Slices/LocationSlice';
-import { clearCart } from '../../Redux/Slices/CartSlice';
+import { useTheme } from '../../Context/ThemeContext';
 import { logout } from '../../Redux/LogoutActions';
 
 // --- Account / services list items (key = navigator route name) ---
 const ACCOUNT_ITEMS = [
-  { name: 'Wallet', icon: 'wallet-outline', color: '#4A90E2', key: 'Wallet' },
-  { name: 'My Cans', icon: 'water-outline', color: '#27ae60', key: 'MyCans' },
-  { name: 'Billing', icon: 'receipt-outline', color: '#e67e22', key: 'Billing' },
-  { name: 'My Subscriptions', icon: 'repeat-outline', color: '#6C63FF', key: 'ManageSubscription' },
-  { name: 'New Subscription', icon: 'add-circle-outline', color: '#6C63FF', key: 'CreateSubscription' },
-  { name: 'My Bulk Requests', icon: 'list-outline', color: '#8e44ad', key: 'BulkRequestStatus' },
-  { name: 'Quality & Certification', icon: 'shield-checkmark-outline', color: '#16a085', key: 'Certification' },
+  { name: 'Wallet', icon: 'wallet-outline', tone: 'primary', key: 'Wallet' },
+  { name: 'My Cans', icon: 'water-outline', tone: 'success', key: 'MyCans' },
+  { name: 'Billing', icon: 'receipt-outline', tone: 'warning', key: 'Billing' },
+  { name: 'My Subscriptions', icon: 'repeat-outline', tone: 'info', key: 'ManageSubscription' },
+  { name: 'New Subscription', icon: 'add-circle-outline', tone: 'info', key: 'CreateSubscription' },
+  { name: 'My Bulk Requests', icon: 'list-outline', tone: 'primary', key: 'BulkRequestStatus' },
+  { name: 'Quality & Certification', icon: 'shield-checkmark-outline', tone: 'success', key: 'Certification' },
 ];
 
-// --- Services & support (moved here from the Dashboard quick-actions to de-duplicate;
-//     these are help/account actions, not shopping actions). key = navigator route name. ---
+// --- Services & support (moved here from the Dashboard quick-actions to de-duplicate). ---
 const SUPPORT_ITEMS = [
-  { name: 'Service Requests', icon: 'construct-outline', color: '#e67e22', key: 'ServiceRequest' },
-  { name: 'Help & Support', icon: 'headset-outline', color: '#4A90E2', key: 'CustomerSupportScreen' },
+  { name: 'Service Requests', icon: 'construct-outline', tone: 'warning', key: 'ServiceRequest' },
+  { name: 'My Tickets', icon: 'receipt-outline', tone: 'info', key: 'MyServiceTickets' },
+  { name: 'Help & Support', icon: 'headset-outline', tone: 'primary', key: 'CustomerSupportScreen' },
 ];
 
-// --- Data Structure for the main list items ---
 const SETTINGS_ITEMS = [
-  // { name: 'Notification', icon: 'notifications', type: 'toggle', key: 'notification' },
-  // { name: 'Language Settings', icon: 'language', type: 'link', key: 'language' },
-  { name: 'Privacy Policy', icon: 'clipboard-outline', type: 'link', key: 'PrivacyPolicy' },
-  { name: 'Terms and Conditions', icon: 'document', type: 'link', key: 'Terms' },
+  { name: 'Privacy Policy', icon: 'document-text-outline', tone: 'neutral', key: 'PrivacyPolicy' },
+  { name: 'Terms and Conditions', icon: 'document-outline', tone: 'neutral', key: 'Terms' },
 ];
 
-/**
- * Reusable component for the profile list and actions,
- * excluding the main header/image section.
- */
 const ProfileScreen = ({ navigation }) => {
-  // State for the Notification Switch
-  const [isNotificationEnabled, setIsNotificationEnabled] = useState(true);
+  const { theme } = useTheme();
   const { showToast } = useToast()
   const [displayAddress, setDisplayAddress] = useState('')
-
 
   const dispatch = useDispatch()
 
   const { error: ProfileError, loading: profileLoading, isFetched: isProfileApiFetched, profileData } = useSelector((state) => state.profile)
   const { addressList, error, loading, isFetched: isAddressApiListFetched, selectedAddress } = useSelector((state) => state.address)
-  // Example handlers for actions
-
-
 
   const getAddressFromStateList = async () => {
     const id = await getSelectedAddressId();
     if (addressList) {
-      console.log("list", addressList)
       addressList.map((address, index) => {
         if (address.id == id) {
           setDisplayAddress(`${address.addressLine1} ${address.addressLine2}`)
@@ -97,24 +81,15 @@ const ProfileScreen = ({ navigation }) => {
   const handleLogout = async () => {
     await clearDataBeforeLogout()
     dispatch(logout());
-    // dispatch(clearProfileState())
-    // dispatch(clearBanners())
-    // dispatch(clearProducts())
-    // dispatch(clearDecodedAddress())
-    // dispatch(clearCart())
-    // dispatch(clearCurrentLocationFormattedAddres())
     navigation.reset({
       index: 0,
       routes: [{ name: "Login" }],
     });
-    // removeData('isLoggedIn')
-    // removeData('selectedAddress')
-
-
-    // Implement your actual logout logic (clear tokens, navigate to login)
   };
 
   const [isDeleting, setIsDeleting] = useState(false);
+  const [blockersModal, setBlockersModal] = useState({ visible: false, lines: '' });
+  const [closeModal, setCloseModal] = useState(false);
 
   // CUS-33: preview dues/blockers first; only offer to close when clear. The backend also
   // enforces this (DELETE returns 409 with blockers), so this never closes an account with dues.
@@ -129,32 +104,12 @@ const ProfileScreen = ({ navigation }) => {
       if (!canClose) {
         const lines = Array.isArray(blockers) && blockers.length
           ? blockers.map((b) => `• ${typeof b === 'string' ? b : b?.message ?? JSON.stringify(b)}`).join('\n')
-          : 'You still have outstanding dues, held cans, or active orders.';
-        Alert.alert('Can’t close account yet', `${lines}\n\nPlease settle these first.`);
+          : '• You still have outstanding dues, held cans, or active orders.';
+        setBlockersModal({ visible: true, lines });
         return;
       }
 
-      Alert.alert(
-        'Close account?',
-        'This deactivates your account and you won’t be able to log back in. Financial history is retained as required.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Close account',
-            style: 'destructive',
-            onPress: async () => {
-              try {
-                await AccountService.deleteAccount();
-                await clearDataBeforeLogout();
-                dispatch(logout());
-                navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
-              } catch (err) {
-                showToast(err?.message || 'Could not close the account. Please try again.', true);
-              }
-            },
-          },
-        ],
-      );
+      setCloseModal(true);
     } catch (err) {
       showToast(err?.message || 'Could not check account status. Please try again.', true);
     } finally {
@@ -162,313 +117,179 @@ const ProfileScreen = ({ navigation }) => {
     }
   };
 
-  // -----------------------------------------------
+  const confirmCloseAccount = async () => {
+    try {
+      await AccountService.deleteAccount();
+      await clearDataBeforeLogout();
+      dispatch(logout());
+      navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+    } catch (err) {
+      showToast(err?.message || 'Could not close the account. Please try again.', true);
+    }
+  };
 
   const insets = useSafeAreaInsets()
 
-  return (
-    <View style={[styles.container, { marginBottom: insets.bottom }]}>
-
-      {/* HEADER */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={[styles.backButton, {
-            backgroundColor: "#8fa6bf",
-            padding: 10,
-            borderRadius: 12,
-            marginRight: 12
-          }]}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="arrow-back" size={20} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Profile</Text>
+  const InfoRow = ({ icon, tone, label, value }) => {
+    const color = theme[tone] || theme.primary;
+    const tint = theme[`${tone}Tint`] || theme.primaryTint;
+    return (
+      <View style={styles.infoRow}>
+        <View style={[styles.infoWell, { backgroundColor: tint }]}>
+          <Ionicons name={icon} size={18} color={color} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <AppText variant="caption" color={theme.inkMuted}>{label}</AppText>
+          <AppText variant="bodyStrong" color={theme.ink} style={{ marginTop: 2 }}>{value}</AppText>
+        </View>
       </View>
+    );
+  };
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+  return (
+    <View style={[styles.container, { backgroundColor: theme.surface }]}>
+
+      <TopAppBar title="Profile" navigation={navigation} />
+
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollBody}>
 
         {/* PROFILE CARD */}
-
-        <View style={styles.card}>
-
+        <View style={[styles.card, { backgroundColor: theme.surfaceCard }]}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>PROFILE</Text>
-
+            <AppText variant="badge" color={theme.inkMuted} style={styles.sectionTitle}>PROFILE</AppText>
             <TouchableOpacity
-              style={styles.editButton}
+              style={[styles.editButton, { backgroundColor: theme.primaryTint }]}
               onPress={() => navigation.navigate("EditProfileScreen")}
             >
-              <Text style={styles.editText}>Edit profile</Text>
+              <AppText variant="label" color={theme.primary}>Edit profile</AppText>
             </TouchableOpacity>
-
           </View>
 
-          <View style={styles.profileRow}>
-            <View style={[styles.iconCircle, { backgroundColor: "#e9f2ff" }]}>
-              <Ionicons name="person" size={18} color="#4A90E2" />
-            </View>
-
-            <View>
-              <Text style={styles.label}>Full Name</Text>
-              <Text style={styles.value}>{profileData.fullName ?? "--"}</Text>
-            </View>
-          </View>
-
-
-          <View style={styles.profileRow}>
-            <View style={[styles.iconCircle, { backgroundColor: "#e6f7ef" }]}>
-              <Ionicons name="call" size={18} color="#27ae60" />
-            </View>
-
-            <View>
-              <Text style={styles.label}>Phone Number</Text>
-              <Text style={styles.value}>{profileData.mobileNumber ?? "--"}</Text>
+          {/* Identity */}
+          <View style={styles.identityRow}>
+            <FirstLetterAvatar width={56} height={56} fontSize={22} input={profileData?.fullName} />
+            <View style={{ flex: 1, marginLeft: spacing.md }}>
+              <AppText variant="display" color={theme.ink} style={styles.identityName} numberOfLines={1}>
+                {profileData?.fullName ?? '--'}
+              </AppText>
+              <AppText variant="caption" color={theme.inkMuted}>Pureplus customer</AppText>
             </View>
           </View>
 
-
-          <View style={styles.profileRow}>
-            <View style={[styles.iconCircle, { backgroundColor: "#fff1e6" }]}>
-              <Ionicons name="mail" size={18} color="#e67e22" />
-            </View>
-
-            <View>
-              <Text style={styles.label}>Email Address</Text>
-              <Text style={styles.value}>{profileData.email ?? "--"}</Text>
-            </View>
-          </View>
-
+          <InfoRow icon="person-outline" tone="primary" label="Full Name" value={profileData?.fullName ?? '--'} />
+          <InfoRow icon="call-outline" tone="success" label="Phone Number" value={profileData?.mobileNumber ?? '--'} />
+          <InfoRow icon="mail-outline" tone="warning" label="Email Address" value={profileData?.email ?? '--'} />
         </View>
-
 
         {/* MY ACCOUNT CARD */}
-
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>MY ACCOUNT</Text>
-
-          {ACCOUNT_ITEMS.map((item) => (
-            <TouchableOpacity
-              key={item.key}
-              style={styles.settingsRow}
-              onPress={() => navigation.navigate(item.key)}
-            >
-              <View style={styles.settingsLeft}>
-                <View style={[styles.iconCircle, { backgroundColor: `${item.color}1A` }]}>
-                  <Ionicons name={item.icon} size={18} color={item.color} />
-                </View>
-                <Text style={styles.settingsText}>{item.name}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color="#bbb" />
-            </TouchableOpacity>
+        <View style={[styles.card, styles.listCard, { backgroundColor: theme.surfaceCard }]}>
+          <AppText variant="badge" color={theme.inkMuted} style={styles.listCardTitle}>MY ACCOUNT</AppText>
+          {ACCOUNT_ITEMS.map((item, i) => (
+            <ListRow key={item.key} icon={item.icon} label={item.name} tone={item.tone} first={i === 0} onPress={() => navigation.navigate(item.key)} />
           ))}
         </View>
 
-
-        {/* SERVICES & SUPPORT CARD (moved from Dashboard to de-duplicate) */}
-
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>SERVICES & SUPPORT</Text>
-
-          {SUPPORT_ITEMS.map((item) => (
-            <TouchableOpacity
-              key={item.key}
-              style={styles.settingsRow}
-              onPress={() => navigation.navigate(item.key)}
-            >
-              <View style={styles.settingsLeft}>
-                <View style={[styles.iconCircle, { backgroundColor: `${item.color}1A` }]}>
-                  <Ionicons name={item.icon} size={18} color={item.color} />
-                </View>
-                <Text style={styles.settingsText}>{item.name}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color="#bbb" />
-            </TouchableOpacity>
+        {/* SERVICES & SUPPORT CARD */}
+        <View style={[styles.card, styles.listCard, { backgroundColor: theme.surfaceCard }]}>
+          <AppText variant="badge" color={theme.inkMuted} style={styles.listCardTitle}>SERVICES & SUPPORT</AppText>
+          {SUPPORT_ITEMS.map((item, i) => (
+            <ListRow key={item.key} icon={item.icon} label={item.name} tone={item.tone} first={i === 0} onPress={() => navigation.navigate(item.key)} />
           ))}
         </View>
-
 
         {/* SETTINGS CARD */}
-
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>SETTINGS</Text>
-
-          {SETTINGS_ITEMS.map((item) => (
-            <TouchableOpacity
-              key={item.key}
-              style={styles.settingsRow}
-              onPress={() => handleAction(item.key)}
-            >
-
-              <View style={styles.settingsLeft}>
-                <View style={[styles.iconCircle, { backgroundColor: "#eef2ff" }]}>
-                  <Ionicons name={item.icon} size={18} color="#6C63FF" />
-                </View>
-
-                <Text style={styles.settingsText}>{item.name}</Text>
-              </View>
-
-              <Ionicons name="chevron-forward" size={18} color="#bbb" />
-
-            </TouchableOpacity>
+        <View style={[styles.card, styles.listCard, { backgroundColor: theme.surfaceCard }]}>
+          <AppText variant="badge" color={theme.inkMuted} style={styles.listCardTitle}>SETTINGS</AppText>
+          {SETTINGS_ITEMS.map((item, i) => (
+            <ListRow key={item.key} icon={item.icon} label={item.name} tone={item.tone} first={i === 0} onPress={() => handleAction(item.key)} />
           ))}
-
         </View>
-
 
         {/* DELETE ACCOUNT */}
-
-        <View style={[styles.card, { borderColor: "#ffd6d6", borderWidth: 1, marginBottom: 20 }]}>
-          <TouchableOpacity
-            style={styles.deleteRow}
-            onPress={handleDeleteAccount}
-          >
-            <View style={[styles.iconCircle, { backgroundColor: "#ffeaea" }]}>
-              <Ionicons name="trash" size={18} color="#e74c3c" />
-            </View>
-
-            <Text style={styles.deleteText}>Delete Account</Text>
-          </TouchableOpacity>
+        <View style={[styles.card, styles.listCard, { backgroundColor: theme.surfaceCard, borderColor: theme.dangerTint, borderWidth: 1.5 ,marginBottom:20 }]}>
+          <ListRow icon="trash-outline" label="Delete Account" tone="danger" first onPress={handleDeleteAccount} labelColor={theme.danger} />
         </View>
-
-
-        <View style={{ height: 80 }} />
 
       </ScrollView>
 
-
-      {/* LOGOUT BUTTON */}
-
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={styles.logoutButton}
-          onPress={handleLogout}
-        >
-          <Ionicons name="log-out-outline" size={20} color="white" />
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
+      {/* LOGOUT */}
+      <View style={[styles.footer, { backgroundColor: theme.surfaceCard, paddingBottom: insets.bottom + 16 }, floatShadow]}>
+        <AppButton title="Logout" icon="log-out-outline" borderOnly onAction={handleLogout} />
       </View>
 
+      {/* Delete-account blockers */}
+      <AppModal
+        visible={blockersModal.visible}
+        setModalVisible={(v) => setBlockersModal((s) => ({ ...s, visible: v }))}
+        title="Can't close your account yet"
+        description={`Please sort these out first:\n${blockersModal.lines}`}
+        confirmText="OK"
+        hideCancel
+        onPositive={() => setBlockersModal({ visible: false, lines: '' })}
+      />
+
+      {/* Delete-account confirm */}
+      <AppModal
+        visible={closeModal}
+        setModalVisible={setCloseModal}
+        title="Close account?"
+        description="This deactivates your account and you won’t be able to log back in. Financial history is retained as required."
+        destructive
+        confirmText="Close account"
+        cancelText="Cancel"
+        onPositive={confirmCloseAccount}
+      />
     </View>
   );
-
 };
 
 const styles = StyleSheet.create({
-
-  container: {
-    flex: 1,
-    backgroundColor: "#F4F6FA"
-  },
-
-  header: {
-    backgroundColor: "#0C1C2C",
-    padding: 20,
-    paddingTop: 40,
-    flexDirection: "row",
-    alignItems: "center",
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30
-  },
-
-  headerTitle: {
-    color: "white",
-    fontSize: 18,
-    fontWeight: "600",
-    marginLeft: 10
-  },
+  container: { flex: 1 },
+  scrollBody: { paddingHorizontal: spacing.xl, paddingTop: spacing.sm, paddingBottom: 120, gap: spacing.lg },
 
   card: {
-    backgroundColor: "white",
-    marginHorizontal: 16,
-    marginTop: 20,
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 3
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+  },
+  listCard: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
   },
 
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 10
+    marginBottom: spacing.md,
   },
-
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#999"
-  },
+  sectionTitle: { letterSpacing: 0.6 },
+  listCardTitle: { letterSpacing: 0.6, marginTop: spacing.sm, marginBottom: spacing.xs },
 
   editButton: {
-    backgroundColor: "#e9f2ff",
-    paddingHorizontal: 12,
+    paddingHorizontal: spacing.md,
     paddingVertical: 6,
-    borderRadius: 12
+    borderRadius: radius.pill,
   },
 
-  editText: {
-    color: "#4A90E2",
-    fontSize: 12
-  },
-
-  profileRow: {
+  identityRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 12
+    marginBottom: spacing.lg,
   },
+  identityName: { fontSize: 20, lineHeight: 26 },
 
-  iconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    marginBottom: spacing.md,
+  },
+  infoWell: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
     justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12
-  },
-
-  label: {
-    fontSize: 11,
-    color: "#888"
-  },
-
-  value: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#333"
-  },
-
-  settingsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 14,
-    borderTopColor: "#f1f1f1"
-  },
-
-  settingsLeft: {
-    flexDirection: "row",
-    alignItems: "center"
-  },
-
-  settingsText: {
-    fontSize: 15,
-    color: "#333",
-    marginLeft: 10
-  },
-
-  deleteRow: {
-    flexDirection: "row",
-    alignItems: "center"
-  },
-
-  deleteText: {
-    color: "#e74c3c",
-    fontSize: 15,
-    marginLeft: 10,
-    fontWeight: "600"
   },
 
   footer: {
@@ -476,26 +297,9 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 16,
-    backgroundColor: "#fff"
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.lg,
   },
-
-  logoutButton: {
-    backgroundColor: "#3498db",
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 14,
-    borderRadius: 10
-  },
-
-  logoutText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
-    marginLeft: 8
-  }
-
 });
 
 export default ProfileScreen;

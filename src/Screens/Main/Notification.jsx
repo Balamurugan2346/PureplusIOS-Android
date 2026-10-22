@@ -47,44 +47,50 @@ const Notification = ({ navigation }) => {
     }
   };
 
+  const hasUnread = state.data.some((n) => !(n?.isRead ?? n?.read));
+
   return (
-    <NavScreen title="Notifications" navigation={navigation}>
-      {state.data.length > 0 && (
-        <TouchableOpacity onPress={markAllRead} hitSlop={8} style={{ alignSelf: 'flex-end', marginBottom: spacing.sm }}>
+    <NavScreen
+      title="Notifications"
+      navigation={navigation}
+      background={theme.surface}
+      right={hasUnread ? (
+        <TouchableOpacity onPress={markAllRead} hitSlop={8}>
           <AppText variant="label" color={theme.primary}>Mark all read</AppText>
         </TouchableOpacity>
-      )}
-
+      ) : null}
+    >
       <StateView loading={state.loading} error={state.error} empty={!state.data.length}
         onRetry={load} emptyText="You're all caught up">
         <FlatList
           data={state.data}
           keyExtractor={(item, i) => String(item?.id ?? i)}
+          contentContainerStyle={{ paddingBottom: 110 }}
           renderItem={({ item }) => {
             const unread = !(item?.isRead ?? item?.read);
             return (
               <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={() => openItem(item)}
-                style={[styles.row, { backgroundColor: theme.card, borderLeftColor: unread ? theme.primary : 'transparent' }]}
+                style={[styles.row, { backgroundColor: unread ? theme.primaryTint : theme.surfaceCard }]}
               >
-                <View style={[styles.iconWrap, { backgroundColor: `${theme.primary}1A` }]}>
-                  <Ionicons name="notifications" size={18} color={theme.primary} />
+                <View style={[styles.iconWrap, { backgroundColor: unread ? theme.surfaceCard : theme.primaryTint }]}>
+                  <Ionicons name="notifications-outline" size={20} color={theme.primary} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <AppText variant={unread ? 'bodyStrong' : 'body'} color={theme.highlightedText}>
+                  <AppText variant={unread ? 'bodyStrong' : 'body'} color={theme.ink}>
                     {item?.title ?? item?.heading ?? 'Notification'}
                   </AppText>
                   {!!(item?.body ?? item?.message) && (
-                    <AppText variant="caption" color={theme.secondaryText} style={{ marginTop: 2 }}>
+                    <AppText variant="caption" color={theme.inkMuted} style={{ marginTop: 2 }}>
                       {item?.body ?? item?.message}
                     </AppText>
                   )}
-                  <AppText variant="caption" color={theme.secondaryText} style={{ marginTop: 4 }}>
+                  <AppText variant="caption" color={theme.inkMuted} style={{ marginTop: 2 }}>
                     {item?.createdAt ?? item?.date ?? ''}
                   </AppText>
                 </View>
-                {unread && <View style={[styles.dot, { backgroundColor: theme.primary }]} />}
+                <View style={[styles.dot, { backgroundColor: unread ? theme.primary : 'transparent' }]} />
               </TouchableOpacity>
             );
           }}
@@ -99,10 +105,11 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.md },
   row: {
     flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md,
-    padding: spacing.md, borderRadius: radius.md, marginBottom: spacing.sm, borderLeftWidth: 3,
+    paddingVertical: spacing.md, paddingHorizontal: spacing.lg,
+    borderRadius: radius.md, marginBottom: spacing.sm,
   },
-  iconWrap: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  dot: { width: 8, height: 8, borderRadius: 4, marginTop: 6 },
+  iconWrap: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  dot: { width: 8, height: 8, borderRadius: 4, marginTop: 8 },
 });
 
 export default Notification;

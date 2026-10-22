@@ -1,22 +1,16 @@
-import Fonts from '../../../assets/fonts/Fonts';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, View } from 'react-native';
 import { useTheme } from '../../Context/ThemeContext';
+import AppText from '../AppText';
+import { radius, spacing } from '../../Themes/Themes';
 
+/**
+ * A single line item inside the Order Details "items" card (prompt 03 restyle).
+ * Data reads preserved: imageUrls, productName, orderedQuantity, uom, unitPrice,
+ * totalLineAmount, taxAmount, price.
+ */
 const OrderProdItem = ({ item }) => {
 
     const { theme } = useTheme()
-
-    const headerConfig = {
-        color: theme.greyText,
-        fontFamily: Fonts.family.semiBold,
-        fontSize: Fonts.size.sm
-    }
-
-    const paratextConfig = {
-        color: theme.secondaryText,
-        fontFamily: Fonts.family.medium,
-        fontSize: Fonts.size.xs
-    }
 
     const image =
         item?.imageUrls?.length > 0
@@ -25,64 +19,28 @@ const OrderProdItem = ({ item }) => {
 
     return (
         <View>
-
             <View style={styles.container}>
-
-                <View style={{ flexDirection: "row", flex: 1, alignItems: "center", justifyContent: "space-between", marginHorizontal: 10 }}>
-
-                    {/* LEFT SIDE */}
-                    <View style={{ flexDirection: "row" }}>
-                        <Image
-                            source={image}
-                            style={{ width: 40, height: 40, marginRight: 10 }}
-                        />
-
-                        <View>
-                            <Text style={headerConfig}>
-                                {item?.productName}
-                            </Text>
-
-                            <View style={{ flexDirection: "row" }}>
-                                <Text style={paratextConfig}>
-                                    {item?.orderedQuantity} {item?.uom}
-                                </Text>
-
-                                <Text style={[paratextConfig, { marginLeft: 5 }]}>
-                                    * {item?.unitPrice} Unit
-                                </Text>
-                            </View>
-                        </View>
-                    </View>
-
-                    {/* RIGHT SIDE */}
-                    <View>
-                        <Text style={[
-                            paratextConfig,
-                            {
-                                color: "black",
-                                fontSize: Fonts.size.base,
-                                fontFamily: Fonts.family.bold
-                            }
-                        ]}>
-                            ₹{item?.totalLineAmount}
-                        </Text>
-
-                        {item?.taxAmount > 0 && (
-                            <Text style={[
-                                paratextConfig,
-                                { textDecorationLine: "line-through", marginRight: 3 }
-                            ]}>
-                                ₹{item?.price}
-                            </Text>
-                        )}
-                    </View>
-
+                {/* LEFT */}
+                <Image source={image} style={[styles.thumb, { backgroundColor: theme.sky200 }]} resizeMode="contain" />
+                <View style={{ flex: 1 }}>
+                    <AppText variant="label" color={theme.ink} numberOfLines={2}>{item?.productName}</AppText>
+                    <AppText variant="caption" color={theme.inkMuted} style={{ marginTop: 2 }}>
+                        {`${item?.orderedQuantity} × ₹${item?.unitPrice} /unit`}
+                    </AppText>
                 </View>
 
+                {/* RIGHT */}
+                <View style={{ alignItems: 'flex-end' }}>
+                    <AppText variant="label" color={theme.ink}>₹{item?.totalLineAmount}</AppText>
+                    {item?.taxAmount > 0 && (
+                        <AppText variant="caption" color={theme.inkMuted} style={{ textDecorationLine: 'line-through', marginTop: 2 }}>
+                            ₹{item?.price}
+                        </AppText>
+                    )}
+                </View>
             </View>
 
-            <View style={{ backgroundColor: "grey", opacity: 0.12, width: "100%", height: 1 }} />
-
+            <View style={[styles.divider, { backgroundColor: theme.borderSubtle }]} />
         </View>
     );
 };
@@ -93,6 +51,16 @@ const styles = StyleSheet.create({
     container: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginVertical: 10,
+        gap: spacing.md,
+        marginVertical: spacing.md,
+    },
+    thumb: {
+        width: 44,
+        height: 44,
+        borderRadius: radius.sm,
+    },
+    divider: {
+        width: '100%',
+        height: 1,
     },
 });

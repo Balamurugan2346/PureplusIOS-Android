@@ -1,37 +1,34 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, ScrollView, StyleSheet, Alert } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import NavScreen from '../../Components/NavScreen';
 import AppText from '../../Components/AppText';
 import AppButton from '../../Components/AppButton';
+import AppModal from '../../Components/AppModal';
 import StateView from '../../Components/StateView';
 import StatusBadge from '../../Components/StatusBadge';
+import KeyValueRows from '../../Components/Money/KeyValueRows';
+import SectionLabel from '../../Components/Money/SectionLabel';
 import BulkService from '../../API/modules/BulkService';
 import formatCurrency from '../../Utils/formatCurrency';
-import { spacing, radius, lightSurface } from '../../Themes/Themes';
+import { spacing, radius } from '../../Themes/Themes';
 import { useTheme } from '../../Context/ThemeContext';
 
 /**
- * CUS-27 · Bulk request detail + lifecycle actions.
- *
- * Drives the customer side of the B2B / Event bulk-request lifecycle. Action buttons
- * are gated STRICTLY off the backend `status` (plus requestType / advance balance),
- * NOT off allowedTransitions:
+ * CUS-27 · Bulk request detail + lifecycle actions (prompt 05 restyle, pureLight).
+ * Action buttons are gated STRICTLY off the backend `status` (plus requestType / advance):
  *   - accept-counter : status === 'COUNTER_OFFERED'
- *   - pay-advance    : status === 'APPROVED' && requestType === 'EVENT' && advancePaid < advanceAmount
+ *   - pay-advance    : status === 'APPROVED' && EVENT && advancePaid < advanceAmount
  *   - confirm        : status === 'APPROVED' && (B2B OR EVENT advance fully paid)
  *   - cancel         : any non-terminal status
- *
- * Renders on a WHITE surface (lightSurface) inside the dark darkSea theme — same
- * convention as RefillScreen.
  */
 const BulkRequestDetailScreen = ({ navigation, route }) => {
   const { id } = route.params;
   const { theme } = useTheme();
-  // White surface palette; keep the brand primary, add a legible error red for white bg.
-  const s = { ...lightSurface, primary: theme.primary, error: '#D90202' };
 
   const [state, setState] = useState({ loading: true, error: null, data: null });
   const [busy, setBusy] = useState(false);
+  const [cancelVisible, setCancelVisible] = useState(false);
 
   const load = useCallback(async () => {
     setState((st) => ({ ...st, loading: true, error: null }));
@@ -59,7 +56,6 @@ const BulkRequestDetailScreen = ({ navigation, route }) => {
 
   const data = state.data;
 
-  // --- DERIVED GATING -------------------------------------------------------
   const status = data?.status;
   const isEvent = data?.requestType === 'EVENT';
   const advanceAmount = data?.advanceAmount || 0;
@@ -71,185 +67,177 @@ const BulkRequestDetailScreen = ({ navigation, route }) => {
 
   const canAcceptCounter = status === 'COUNTER_OFFERED';
   const canPayAdvance = status === 'APPROVED' && isEvent && advancePaid < advanceAmount;
-  // Confirm: APPROVED and (B2B OR an EVENT whose advance is fully paid).
   const canConfirm = status === 'APPROVED' && (!isEvent || advancePaid >= advanceAmount);
   const canCancel = !isTerminal && !!status;
 
-  const onCancel = () => {
-    let message = 'This will cancel your bulk request. This cannot be undone.';
-    if (isEvent && advancePaid > 0) {
-      message += ' Your advance may be forfeited if you cancel close to the event date.';
-    }
-    Alert.alert('Cancel request?', message, [
-      { text: 'Keep', style: 'cancel' },
-      {
-        text: 'Cancel request',
-        style: 'destructive',
-        onPress: () => doAction(() => BulkService.cancel(id)),
-      },
-    ]);
-  };
+  const cancelMessage = isEvent
+    ? 'Cancelling inside the event window forfeits any advance you have paid.'
+    : 'The store will stop preparing this order.';
 
   return (
-    <NavScreen title="Bulk Request" navigation={navigation} background={s.background}>
+    <NavScreen title="Bulk Request" navigation={navigation} background={theme.surface}>
       <StateView loading={state.loading} error={state.error} onRetry={load}>
         {data && (
-          <ScrollView showsVerticalScrollIndicator={false}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: spacing.md, paddingBottom: 40 }}>
 
-            {/* Header card — type + status */}
-            <View style={[styles.card, { backgroundColor: s.card }]}>
+            {/* Header card */}
+            <View style={[styles.card, { backgroundColor: theme.surfaceCard }]}>
               <View style={styles.headerRow}>
-                <AppText variant="h2" color={s.highlightedText}>
+                <AppText variant="display" color={theme.ink} style={styles.headTitle}>
                   {isEvent ? 'Event' : 'B2B'} request
                 </AppText>
                 <StatusBadge status={status} />
               </View>
-              <Row theme={s} label="Quantity" value={`${data.quantity ?? '-'} units`} />
-              <Row theme={s} label="Requested date" value={String(data.requestedDate ?? '-')} />
-              {data.estimatedAmount != null && (
-                <Row theme={s} label="Estimated amount" value={formatCurrency(data.estimatedAmount)} />
-              )}
+              <KeyValueRows
+                rows={[
+                  { label: 'Quantity', value: `${data.quantity ?? '-'} units` },
+                  { label: 'Requested date', value: String(data.requestedDate ?? '-') },
+                  data.estimatedAmount != null && { label: 'Estimated amount', value: formatCurrency(data.estimatedAmount) },
+                ]}
+              />
             </View>
 
-            {/* Advance card (EVENT only) */}
+            {/* Advance (EVENT only) */}
             {isEvent && (
-              <Section theme={s} label="Advance">
-                <View style={[styles.card, { backgroundColor: s.card }]}>
-                  <Row theme={s} label="Advance amount" value={formatCurrency(advanceAmount)} />
-                  <Row theme={s} label="Advance paid" value={formatCurrency(advancePaid)} />
-                  <Row theme={s} label="Outstanding" value={formatCurrency(Math.max(outstanding, 0))} />
-                  {data.advanceForfeited > 0 && (
-                    <Row theme={s} label="Forfeited" value={formatCurrency(data.advanceForfeited)} />
-                  )}
-                </View>
-              </Section>
+              <View style={[styles.card, { backgroundColor: theme.surfaceCard, gap: spacing.md }]}>
+                <SectionLabel>ADVANCE</SectionLabel>
+                <KeyValueRows
+                  rows={[
+                    { label: 'Advance amount', value: formatCurrency(advanceAmount) },
+                    { label: 'Advance paid', value: formatCurrency(advancePaid), valueColor: theme.success },
+                    { label: 'Outstanding', value: formatCurrency(Math.max(outstanding, 0)), valueColor: theme.warning },
+                    data.advanceForfeited > 0 && { label: 'Forfeited', value: formatCurrency(data.advanceForfeited), valueColor: theme.danger },
+                  ]}
+                />
+              </View>
             )}
 
-            {/* GSTIN (B2B only, when present) */}
+            {/* GSTIN (B2B only) */}
             {!isEvent && data.gstin ? (
-              <Section theme={s} label="GSTIN">
-                <View style={[styles.card, { backgroundColor: s.card }]}>
-                  <AppText variant="body" color={s.text}>{data.gstin}</AppText>
-                </View>
-              </Section>
+              <View style={[styles.card, { backgroundColor: theme.surfaceCard, gap: spacing.sm }]}>
+                <SectionLabel>GSTIN</SectionLabel>
+                <AppText variant="bodyStrong" color={theme.ink} style={{ letterSpacing: 0.5 }}>{data.gstin}</AppText>
+              </View>
             ) : null}
 
-            {/* Event details (when present) */}
+            {/* Event details */}
             {data.eventDetails ? (
-              <Section theme={s} label="Event details">
-                <View style={[styles.card, { backgroundColor: s.card }]}>
-                  <AppText variant="body" color={s.text}>{data.eventDetails}</AppText>
-                </View>
-              </Section>
+              <View style={[styles.card, { backgroundColor: theme.surfaceCard, gap: spacing.sm }]}>
+                <SectionLabel>EVENT DETAILS</SectionLabel>
+                <AppText variant="body" color={theme.ink}>{data.eventDetails}</AppText>
+              </View>
             ) : null}
 
-            {/* Counter-offer card — prominent when COUNTER_OFFERED */}
+            {/* Counter-offer */}
             {status === 'COUNTER_OFFERED' && (
-              <Section theme={s} label="Store counter-offer">
-                <View style={[styles.card, styles.counterCard, { backgroundColor: `${s.primary}11`, borderColor: s.primary }]}>
-                  {data.counterDate != null && (
-                    <Row theme={s} label="Proposed date" value={String(data.counterDate)} />
-                  )}
-                  {data.counterQuantity != null && (
-                    <Row theme={s} label="Proposed quantity" value={`${data.counterQuantity} units`} />
-                  )}
-                  {data.counterNote ? (
-                    <AppText variant="body" color={s.text} style={{ marginTop: spacing.sm }}>
-                      {data.counterNote}
-                    </AppText>
-                  ) : null}
+              <View style={[styles.card, { backgroundColor: theme.warningTint, borderColor: theme.warning, borderWidth: 1.5, gap: spacing.md }]}>
+                <View style={styles.counterHeader}>
+                  <Ionicons name="swap-horizontal-outline" size={20} color={theme.warning} style={{ marginRight: spacing.sm }} />
+                  <AppText variant="bodyStrong" color={theme.warning}>Store counter-offer</AppText>
                 </View>
-              </Section>
+                <KeyValueRows
+                  rows={[
+                    data.counterDate != null && { label: 'Proposed date', value: String(data.counterDate) },
+                    data.counterQuantity != null && { label: 'Proposed quantity', value: `${data.counterQuantity} units` },
+                  ]}
+                />
+                {data.counterNote ? (
+                  <AppText variant="body" color={theme.ink}>“{data.counterNote}”</AppText>
+                ) : null}
+              </View>
             )}
 
-            {/* Review note (when present) */}
+            {/* Store note */}
             {data.reviewNote ? (
-              <Section theme={s} label="Store note">
-                <View style={[styles.card, { backgroundColor: s.card }]}>
-                  <AppText variant="body" color={s.text}>{data.reviewNote}</AppText>
-                </View>
-              </Section>
+              <View style={[styles.card, { backgroundColor: theme.surfaceCard, gap: spacing.sm }]}>
+                <SectionLabel>STORE NOTE</SectionLabel>
+                <AppText variant="body" color={theme.ink}>{data.reviewNote}</AppText>
+              </View>
             ) : null}
 
-            {/* Scheduled delivery (when present) */}
+            {/* Scheduled delivery */}
             {data.scheduledDeliveryDate ? (
-              <Section theme={s} label="Scheduled delivery">
-                <View style={[styles.card, { backgroundColor: s.card }]}>
-                  <AppText variant="body" color={s.text}>{String(data.scheduledDeliveryDate)}</AppText>
+              <View style={[styles.card, styles.deliveryCard, { backgroundColor: theme.surfaceCard }]}>
+                <View style={[styles.well, { backgroundColor: theme.primaryTint }]}>
+                  <Ionicons name="car-outline" size={22} color={theme.primary} />
                 </View>
-              </Section>
+                <View style={{ flex: 1 }}>
+                  <SectionLabel>SCHEDULED DELIVERY</SectionLabel>
+                  <AppText variant="bodyStrong" color={theme.ink} style={{ marginTop: 2 }}>{String(data.scheduledDeliveryDate)}</AppText>
+                </View>
+              </View>
             ) : null}
 
-            <View style={{ height: spacing.lg }} />
+            {/* ACTIONS (gated off status) */}
+            <View style={{ gap: spacing.md, marginTop: spacing.xs }}>
+              {canAcceptCounter && (
+                <AppButton
+                  title="Accept counter-offer"
+                  isLoading={busy}
+                  onAction={busy ? undefined : () => doAction(() => BulkService.acceptCounter(id))}
+                />
+              )}
 
-            {/* --- ACTIONS (gated off status) --- */}
-            {canAcceptCounter && (
-              <AppButton
-                title="Accept counter-offer"
-                isLoading={busy}
-                onAction={busy ? undefined : () => doAction(() => BulkService.acceptCounter(id))}
-              />
-            )}
+              {canPayAdvance && (
+                <View style={{ gap: spacing.xs }}>
+                  <AppButton
+                    title={`Pay advance ${formatCurrency(outstanding)}`}
+                    isLoading={busy}
+                    onAction={busy ? undefined : () => doAction(() => BulkService.payAdvance(id, { amount: outstanding }))}
+                  />
+                  <AppText variant="caption" color={theme.inkMuted} style={{ textAlign: 'center' }}>
+                    This records your advance with the store. No online payment is taken in the app.
+                  </AppText>
+                </View>
+              )}
 
-            {canPayAdvance && (
-              <AppButton
-                title={`Pay advance ${formatCurrency(outstanding)}`}
-                isLoading={busy}
-                onAction={busy ? undefined : () => doAction(() => BulkService.payAdvance(id, { amount: outstanding }))}
-              />
-            )}
+              {canConfirm && (
+                <AppButton
+                  title="Confirm request"
+                  isLoading={busy}
+                  onAction={busy ? undefined : () => doAction(() => BulkService.confirm(id))}
+                />
+              )}
 
-            {canConfirm && (
-              <AppButton
-                title="Confirm request"
-                isLoading={busy}
-                onAction={busy ? undefined : () => doAction(() => BulkService.confirm(id))}
-              />
-            )}
-
-            {canCancel && (
-              <AppButton
-                title="Cancel request"
-                borderOnly
-                isLoading={busy}
-                onAction={busy ? undefined : onCancel}
-              />
-            )}
-
-            <View style={{ height: spacing.xxl }} />
+              {canCancel && (
+                <AppButton
+                  title="Cancel request"
+                  variant="dangerSoft"
+                  isLoading={busy}
+                  onAction={busy ? undefined : () => setCancelVisible(true)}
+                />
+              )}
+            </View>
           </ScrollView>
         )}
       </StateView>
+
+      <AppModal
+        visible={cancelVisible}
+        setModalVisible={setCancelVisible}
+        title="Cancel request?"
+        description={cancelMessage}
+        destructive
+        confirmText="Cancel request"
+        cancelText="Keep it"
+        onPositive={() => doAction(() => BulkService.cancel(id))}
+      />
     </NavScreen>
   );
 };
 
-const Section = ({ theme, label, children }) => (
-  <View style={{ marginBottom: spacing.lg }}>
-    <AppText variant="label" color={theme.secondaryText} style={{ marginBottom: spacing.sm }}>
-      {label}
-    </AppText>
-    {children}
-  </View>
-);
-
-const Row = ({ theme, label, value }) => (
-  <View style={styles.row}>
-    <AppText variant="body" color={theme.secondaryText}>{label}</AppText>
-    <AppText variant="bodyStrong" color={theme.text}>{value}</AppText>
-  </View>
-);
-
 const styles = StyleSheet.create({
-  card: { borderRadius: radius.md, padding: spacing.lg, marginBottom: spacing.md },
-  counterCard: { borderWidth: 1 },
+  card: { borderRadius: radius.lg, padding: spacing.lg },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
   },
-  row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: spacing.xs },
+  headTitle: { fontSize: 20, lineHeight: 26, flex: 1, marginRight: spacing.sm },
+  counterHeader: { flexDirection: 'row', alignItems: 'center' },
+  deliveryCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  well: { width: 44, height: 44, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center' },
 });
 
 export default BulkRequestDetailScreen;

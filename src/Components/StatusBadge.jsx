@@ -1,29 +1,33 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import AppText from './AppText';
-import { spacing, radius } from '../Themes/Themes';
+import { radius } from '../Themes/Themes';
 import { useTheme } from '../Context/ThemeContext';
 
 /**
- * Colored pill for order-lifecycle / postpaid / request statuses.
- * Maps common backend status strings to a semantic color.
+ * Colored pill for order-lifecycle / postpaid / request statuses (00-foundation).
+ * Maps a backend status string to a semantic tone: tone-tint fill, 1px tone
+ * border, tone text, badge type. Props preserved: `status`, `label`.
  */
-const COLOR_KEY = {
-  PLACED: 'info', ASSIGNED: 'warning', LOADED: 'warning', OUT_FOR_DELIVERY: 'warning',
-  DELIVERED: 'success', DELIVERED_PAYMENT_PENDING: 'warning', FAILED: 'error',
-  CANCELLED: 'disabled', DISPUTED: 'error',
-  PAID: 'success', OVERDUE: 'error', PENDING: 'warning',
-  APPROVED: 'success', REJECTED: 'error', CONFIRMED: 'success', SUBMITTED: 'info',
+const TONE_KEY = {
+  PLACED: 'info', SUBMITTED: 'info',
+  ASSIGNED: 'warning', LOADED: 'warning', OUT_FOR_DELIVERY: 'warning',
+  PENDING: 'warning', COUNTER_OFFERED: 'warning', DELIVERED_PAYMENT_PENDING: 'warning',
+  DELIVERED: 'success', PAID: 'success', APPROVED: 'success', CONFIRMED: 'success',
+  ACTIVE: 'success', RESOLVED: 'success',
+  FAILED: 'danger', OVERDUE: 'danger', REJECTED: 'danger', DISPUTED: 'danger',
+  CANCELLED: 'neutral', PAUSED: 'neutral',
 };
 
 const StatusBadge = ({ status, label }) => {
   const { theme } = useTheme();
-  const key = COLOR_KEY[String(status || '').toUpperCase()] || 'info';
-  const color = theme[key] || theme.info;
+  const tone = TONE_KEY[String(status || '').toUpperCase()] || 'info';
+  const color = theme[tone] || theme.info;
+  const tint = theme[`${tone}Tint`] || theme.infoTint;
   const text = label || String(status || '').replace(/_/g, ' ');
   return (
-    <View style={[styles.pill, { backgroundColor: `${color}22`, borderColor: color }]}>
-      <AppText variant="label" color={color}>{text}</AppText>
+    <View style={[styles.pill, { backgroundColor: tint, borderColor: color }]}>
+      <AppText variant="badge" color={color}>{text}</AppText>
     </View>
   );
 };
@@ -31,10 +35,12 @@ const StatusBadge = ({ status, label }) => {
 const styles = StyleSheet.create({
   pill: {
     alignSelf: 'flex-start',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
+    height: 22,
+    paddingHorizontal: 10,
     borderRadius: radius.pill,
     borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 

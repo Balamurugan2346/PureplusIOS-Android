@@ -1,16 +1,18 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, FlatList, StyleSheet } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import NavScreen from '../../Components/NavScreen';
 import AppText from '../../Components/AppText';
 import StateView from '../../Components/StateView';
+import HeroAmountCard from '../../Components/Money/HeroAmountCard';
 import formatCurrency from '../../Utils/formatCurrency';
 import WalletService from '../../API/modules/WalletService';
 import { spacing, radius } from '../../Themes/Themes';
 import { useTheme } from '../../Context/ThemeContext';
 
 /**
- * CUS-24 · Wallet. Holds credit issued from floor-charge overcharges (drivers
- * never hand back cash) + any Super-Admin dispute credit. Auto-applies to orders.
+ * CUS-24 · Wallet (prompt 05 restyle). Credit from floor-charge overcharges + dispute
+ * credit; auto-applies to orders. Read-only (no top-up).
  */
 const WalletScreen = ({ navigation }) => {
   const { theme } = useTheme();
@@ -32,21 +34,15 @@ const WalletScreen = ({ navigation }) => {
   const ledger = state.data?.ledger ?? state.data?.transactions ?? state.data?.history ?? [];
 
   return (
-    <NavScreen title="Wallet" navigation={navigation}>
+    <NavScreen title="Wallet" navigation={navigation} background={theme.surface}>
 
-      <View style={[styles.balanceCard, { backgroundColor: theme.primary }]}>
-        <AppText variant="caption" color={theme.buttonText}>Available balance</AppText>
-        <AppText variant="h1" color={theme.buttonText} style={{ marginTop: spacing.xs }}>
-          {formatCurrency(balance)}
-        </AppText>
-        <AppText variant="caption" color={theme.buttonText} style={{ marginTop: spacing.sm, opacity: 0.9 }}>
-          Credit auto-applies to your next order.
-        </AppText>
-      </View>
+      <HeroAmountCard
+        caption="AVAILABLE BALANCE"
+        amount={formatCurrency(balance)}
+        subLine="Credit auto-applies to your next order."
+      />
 
-      <AppText variant="h3" color={theme.highlightedText} style={{ marginVertical: spacing.md }}>
-        History
-      </AppText>
+      <AppText variant="title" color={theme.ink} style={{ marginVertical: spacing.lg }}>History</AppText>
 
       <StateView
         loading={state.loading}
@@ -55,40 +51,55 @@ const WalletScreen = ({ navigation }) => {
         onRetry={load}
         emptyText="No wallet activity yet"
       >
-        <FlatList
-          data={ledger}
-          keyExtractor={(item, i) => String(item?.id ?? i)}
-          renderItem={({ item }) => {
-            const amt = item?.amount ?? item?.value ?? 0;
-            const credit = amt >= 0;
-            return (
-              <View style={[styles.row, { backgroundColor: theme.card }]}>
-                <View style={{ flex: 1 }}>
-                  <AppText variant="body" color={theme.text}>
-                    {item?.reason ?? item?.source ?? item?.description ?? 'Adjustment'}
-                  </AppText>
-                  <AppText variant="caption" color={theme.secondaryText}>
-                    {item?.createdAt ?? item?.date ?? ''}
+        <View style={[styles.ledgerCard, { backgroundColor: theme.surfaceCard }]}>
+          <FlatList
+            data={ledger}
+            keyExtractor={(item, i) => String(item?.id ?? i)}
+            scrollEnabled={false}
+            renderItem={({ item, index }) => {
+              const amt = item?.amount ?? item?.value ?? 0;
+              const credit = amt >= 0;
+              return (
+                <View style={[styles.row, index > 0 && { borderTopWidth: 1, borderTopColor: theme.borderSubtle }]}>
+                  <View style={[styles.rowIcon, { backgroundColor: credit ? theme.successTint : theme.dangerTint }]}>
+                    <Ionicons name={credit ? 'add' : 'remove'} size={18} color={credit ? theme.success : theme.danger} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <AppText variant="bodyStrong" color={theme.ink}>
+                      {item?.reason ?? item?.source ?? item?.description ?? 'Adjustment'}
+                    </AppText>
+                    <AppText variant="caption" color={theme.inkMuted} style={{ marginTop: 2 }}>
+                      {item?.createdAt ?? item?.date ?? ''}
+                    </AppText>
+                  </View>
+                  <AppText variant="bodyStrong" color={credit ? theme.success : theme.danger}>
+                    {credit ? '+' : '-'}{formatCurrency(Math.abs(amt))}
                   </AppText>
                 </View>
-                <AppText variant="bodyStrong" color={credit ? theme.success : theme.error}>
-                  {credit ? '+' : '-'} {formatCurrency(Math.abs(amt))}
-                </AppText>
-              </View>
-            );
-          }}
-          showsVerticalScrollIndicator={false}
-        />
+              );
+            }}
+            showsVerticalScrollIndicator={false}
+          />
+        </View>
       </StateView>
     </NavScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  balanceCard: { borderRadius: radius.lg, padding: spacing.xl },
+  ledgerCard: { borderRadius: radius.lg, paddingHorizontal: spacing.lg },
   row: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    padding: spacing.md, borderRadius: radius.md, marginBottom: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    minHeight: 64,
+  },
+  rowIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 

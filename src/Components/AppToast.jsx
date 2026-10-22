@@ -1,7 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Animated, Image } from 'react-native';
+import { Text, StyleSheet, Animated } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import { useTheme } from '../Context/ThemeContext';
+import { fontFamily, radius, spacing, floatShadow } from '../Themes/Themes';
 
-const AppToast = ({ visible, message, onHide, duration = 3000 }) => {
+/**
+ * Floating toast (00-foundation): ink pill, tone icon + onInk text, floatShadow,
+ * centred above the tab bar. Props preserved: visible, message, onHide, duration.
+ * Added optional: `isError` (alert icon in danger vs check in success).
+ */
+const AppToast = ({ visible, message, onHide, duration = 3000, isError = false }) => {
+  const { theme } = useTheme();
   const [opacity] = useState(new Animated.Value(0));
 
   useEffect(() => {
@@ -27,42 +36,35 @@ const AppToast = ({ visible, message, onHide, duration = 3000 }) => {
   if (!visible) return null;
 
   return (
-    <Animated.View style={[styles.toastContainer, { opacity }]}>
-      <Image
-        source={require('../../assets/images/lock.png')} // 🔁 Replace with your app logo path
-        style={styles.logo}
-        resizeMode="contain"
+    <Animated.View style={[styles.toastContainer, { opacity, backgroundColor: theme.ink }, floatShadow]}>
+      <Ionicons
+        name={isError ? 'alert-circle' : 'checkmark-circle'}
+        size={18}
+        color={isError ? theme.danger : theme.success}
       />
-      <Text style={styles.message}>{message}</Text>
+      <Text style={[styles.message, { color: theme.onInk }]}>{message}</Text>
     </Animated.View>
   );
 };
 
-
 const styles = StyleSheet.create({
   toastContainer: {
     position: 'absolute',
-    bottom: 60,
+    bottom: 100,
     alignSelf: 'center',
-    backgroundColor: '#333',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radius.sm,
     flexDirection: 'row',
     alignItems: 'center',
-    elevation: 5,
+    gap: spacing.sm,
     zIndex: 9999,
   },
-  logo: {
-    width: 24,
-    height: 24,
-    marginRight: 10,
-  },
   message: {
-    color: '#fff',
+    fontFamily: fontFamily.medium,
     fontSize: 14,
+    lineHeight: 20,
   },
 });
-
 
 export default AppToast;

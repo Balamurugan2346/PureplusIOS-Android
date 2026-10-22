@@ -10,7 +10,8 @@ export const ThemeProvider = ({ children }) => {
 
   // const currentTheme = isDark ? themes.dark : themes.light;
 
-  const currentTheme = themes.darkSea
+  // 00-foundation: the redesign runs on the light `pureLight` theme (replaces darkSea / lightSurface).
+  const currentTheme = themes.pureLight
 
   return (
     <ThemeContext.Provider value={{ theme: currentTheme, isDark, toggleTheme }}>

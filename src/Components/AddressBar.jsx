@@ -1,94 +1,40 @@
-// import Fonts from '../../assets/fonts/Fonts';
-// import  Ionicons  from 'react-native-vector-icons/Ionicons';
-// import { StyleSheet, Text, TouchableOpacity } from 'react-native';
-// import { useTheme } from '../Context/ThemeContext';
-
-// const AddressBar = ({ address = "No Address found"  , onClick}) => {
-
-//     const {theme} = useTheme()
-
-//     const titleConfig = {
-//         color: theme.text,
-//         fontFamily: Fonts.family.semiBold,
-//         fontSize: Fonts.size.xs
-//     }
-
-//     return (
-//         <TouchableOpacity onPress={()=>onClick()} style={styles.container}>
-//             <Ionicons name="location" size={20} color="#007aff" style={styles.icon} />
-//             <Text numberOfLines={1} ellipsizeMode="tail" style={[styles.addressText,titleConfig]}>
-//                 {address}
-//             </Text>
-//         </TouchableOpacity>
-//     );
-// };
-
-// export default AddressBar;
-
-
-// const styles = StyleSheet.create({
-//     container: {
-//         flexDirection: 'row',
-//         alignItems: 'center',
-//         paddingHorizontal: 14,
-//         paddingVertical: 10,
-//         borderRadius: 30,
-//         backgroundColor: 'rgba(255,255,255,0.15)',
-//         shadowColor: '#000',
-//         shadowOpacity: 0.1,
-//         shadowRadius: 10,
-//         borderWidth: 1,
-//         borderColor: 'rgba(255,255,255,0.2)',
-//         marginTop: 10,
-//     },
-//     icon: {
-//         marginRight: 10,
-//     },
-//     addressText: {
-//         fontSize: 14,
-//         color: '#222',
-//         flex: 1,
-//         fontWeight: '500',
-//     },
-// });
-
-import Fonts from '../../assets/fonts/Fonts';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../Context/ThemeContext';
 import ShimmerPlaceholder from 'react-native-shimmer-placeholder';
+import { fontFamily, radius, spacing } from '../Themes/Themes';
 
-const AddressBar = ({ address = "No Address found", onClick, loading = false }) => {
+/**
+ * Dashboard address pill (00-foundation restyle). Props preserved: address
+ * (string), onClick, loading. Now a white address-bar card matching
+ * DeliveryAddressBar's look.
+ */
+const AddressBar = ({ address = 'No Address found', onClick, loading = false, style }) => {
   const { theme } = useTheme();
 
-  const titleConfig = {
-    color: theme.text,
-    fontFamily: Fonts.family.semiBold,
-    fontSize: Fonts.size.xs
-  };
-
   return (
-    <TouchableOpacity onPress={onClick} style={styles.container}>
-      <Ionicons name="location" size={20} color="#007aff" style={styles.icon} />
+    <TouchableOpacity activeOpacity={0.85} onPress={onClick} style={[styles.card, { backgroundColor: theme.surfaceCard }, style]}>
+      <View style={[styles.iconWell, { backgroundColor: theme.primaryTint }]}>
+        <Ionicons name="location-outline" size={22} color={theme.primary} />
+      </View>
 
-      {loading ? (
-        <ShimmerPlaceholder
-           shimmerColors={['#F3F3F980', '#ccd9e990', '#F3F3F980']}
-          shimmerStyle={{
-            height: 16,
-            width: '80%',
-            borderRadius: 6
-          }}
-        />
-      ) : (
-        <Text
-          numberOfLines={1}
-          ellipsizeMode="tail"
-          style={[styles.addressText, titleConfig]}
-        >
-          {address}
-        </Text>
-      )}
+      <View style={styles.body}>
+        <Text style={[styles.kicker, { color: theme.inkMuted }]}>Delivering to</Text>
+        {loading ? (
+          <ShimmerPlaceholder
+            shimmerColors={[theme.surfaceSunken, theme.surface, theme.surfaceSunken]}
+            shimmerStyle={{ height: 16, width: '80%', borderRadius: 6, marginTop: 2 }}
+          />
+        ) : (
+          <Text numberOfLines={1} ellipsizeMode="tail" style={[styles.address, { color: theme.ink }]}>
+            {address}
+          </Text>
+        )}
+      </View>
+
+      <View style={styles.caret}>
+        <Ionicons name="chevron-down" size={20} color={theme.inkMuted} />
+      </View>
     </TouchableOpacity>
   );
 };
@@ -96,28 +42,27 @@ const AddressBar = ({ address = "No Address found", onClick, loading = false }) 
 export default AddressBar;
 
 const styles = StyleSheet.create({
-  container: {
+  card: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 30,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
-    marginTop: 10
+    gap: spacing.md,
+    borderRadius: radius.md,
+    padding: spacing.md,
   },
-  icon: {
-    marginRight: 10
+  iconWell: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  addressText: {
-    fontSize: 14,
-    color: '#222',
-    flex: 1,
-    fontWeight: '500'
-  }
+  body: { flex: 1 },
+  kicker: { fontFamily: fontFamily.medium, fontSize: 12, lineHeight: 16 },
+  address: { fontFamily: fontFamily.semibold, fontSize: 14, lineHeight: 20, marginTop: 2 },
+  caret: {
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
-

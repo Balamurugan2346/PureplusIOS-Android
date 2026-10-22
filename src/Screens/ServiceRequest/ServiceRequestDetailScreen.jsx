@@ -1,19 +1,22 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, ScrollView, StyleSheet, Alert } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import NavScreen from '../../Components/NavScreen';
 import AppText from '../../Components/AppText';
 import AppButton from '../../Components/AppButton';
+import AppModal from '../../Components/AppModal';
 import StateView from '../../Components/StateView';
 import StatusBadge from '../../Components/StatusBadge';
+import KeyValueRows from '../../Components/Money/KeyValueRows';
+import SectionLabel from '../../Components/Money/SectionLabel';
 import ServiceRequestService from '../../API/modules/ServiceRequestService';
-import { spacing, radius, lightSurface } from '../../Themes/Themes';
+import { spacing, radius } from '../../Themes/Themes';
 import { useTheme } from '../../Context/ThemeContext';
 
 /**
- * CUS-31 · Service Request detail — wired to:
+ * CUS-31 · Service Request detail (prompt 05 restyle, pureLight).
  *   GET  service-requests/{id}         → ServiceRequestDto
- *   POST service-requests/{id}/cancel  → ServiceRequestDto (no body)
- * Rendered on a WHITE surface (lightSurface) to match the Refill screen; brand primary kept.
+ *   POST service-requests/{id}/cancel  → ServiceRequestDto
  * Cancel is gated off the backend's allowedTransitions (customer may cancel only while non-terminal).
  */
 
@@ -36,11 +39,10 @@ const formatDate = (v) => {
 const ServiceRequestDetailScreen = ({ navigation, route }) => {
   const { id } = route.params;
   const { theme } = useTheme();
-  // White surface palette; keep the brand primary + a legible error red for white bg.
-  const s = { ...lightSurface, primary: theme.primary, error: '#D90202' };
 
   const [state, setState] = useState({ loading: true, error: null, data: null });
   const [busy, setBusy] = useState(false);
+  const [cancelVisible, setCancelVisible] = useState(false);
 
   const load = useCallback(async () => {
     setState((p) => ({ ...p, loading: true, error: null }));
@@ -75,102 +77,109 @@ const ServiceRequestDetailScreen = ({ navigation, route }) => {
         : !TERMINAL.has(status))
     : false;
 
-  const onCancel = () => {
-    Alert.alert(
-      'Cancel request?',
-      'This withdraws your service request. You can raise a new one anytime.',
-      [
-        { text: 'Keep', style: 'cancel' },
-        {
-          text: 'Cancel request',
-          style: 'destructive',
-          onPress: () => doAction(() => ServiceRequestService.cancel(id)),
-        },
-      ],
-    );
-  };
-
   return (
-    <NavScreen title="Service Request" navigation={navigation} background={s.background}>
+    <NavScreen title="Service Request" navigation={navigation} background={theme.surface}>
       <StateView loading={state.loading} error={state.error} onRetry={load}>
         {data && (
-          <ScrollView showsVerticalScrollIndicator={false}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: spacing.md, paddingBottom: 40 }}>
 
             {/* Header */}
-            <View style={[styles.card, { backgroundColor: s.card }]}>
+            <View style={[styles.card, { backgroundColor: theme.surfaceCard, gap: spacing.md }]}>
               <View style={styles.headerRow}>
-                <AppText variant="h3" color={s.highlightedText}>
+                <AppText variant="title" color={theme.ink} style={{ flex: 1, marginRight: spacing.sm }}>
                   {CATEGORY_LABELS[data.category] ?? data.category ?? 'Request'}
                 </AppText>
                 <StatusBadge status={data.status} />
               </View>
-              <Row s={s} label="Request ID" value={`#${data.id}`} />
-              <Row s={s} label="Raised" value={formatDate(data.createdAt)} />
-              {data.slaDueAt ? <Row s={s} label="SLA due" value={formatDate(data.slaDueAt)} /> : null}
+              <KeyValueRows
+                rows={[
+                  { label: 'Request ID', value: `#${data.id}` },
+                  { label: 'Raised', value: formatDate(data.createdAt) },
+                  data.slaDueAt && { label: 'SLA due', value: formatDate(data.slaDueAt) },
+                ]}
+              />
               {data.slaBreached ? (
-                <AppText variant="caption" color={s.error} style={{ marginTop: spacing.xs }}>
-                  SLA breached — our team is on it.
-                </AppText>
+                <View style={[styles.banner, { backgroundColor: theme.dangerTint }]}>
+                  <Ionicons name="time-outline" size={18} color={theme.danger} style={{ marginRight: spacing.sm }} />
+                  <AppText variant="caption" color={theme.danger} style={{ flex: 1 }}>SLA breached — our team is on it.</AppText>
+                </View>
               ) : null}
             </View>
 
             {/* Issue */}
             {!!data.description && (
-              <View style={[styles.card, { backgroundColor: s.card, marginTop: spacing.md }]}>
-                <AppText variant="label" color={s.secondaryText} style={{ marginBottom: spacing.xs }}>Issue</AppText>
-                <AppText variant="body" color={s.text}>{data.description}</AppText>
+              <View style={[styles.card, { backgroundColor: theme.surfaceCard, gap: spacing.sm }]}>
+                <SectionLabel>ISSUE</SectionLabel>
+                <AppText variant="body" color={theme.ink}>{data.description}</AppText>
               </View>
             )}
 
-            {/* Visit / schedule */}
+            {/* Visit */}
             {(data.scheduledDate || data.scheduledSlot || data.scheduleNote) && (
-              <View style={[styles.card, { backgroundColor: s.card, marginTop: spacing.md }]}>
-                <AppText variant="label" color={s.secondaryText} style={{ marginBottom: spacing.xs }}>Visit</AppText>
-                {data.scheduledDate ? <Row s={s} label="Scheduled" value={formatDate(data.scheduledDate)} /> : null}
-                {data.scheduledSlot ? <Row s={s} label="Slot" value={data.scheduledSlot} /> : null}
-                {data.scheduleNote ? <Row s={s} label="Note" value={data.scheduleNote} /> : null}
+              <View style={[styles.card, { backgroundColor: theme.surfaceCard, gap: spacing.md }]}>
+                <SectionLabel>VISIT</SectionLabel>
+                <KeyValueRows
+                  rows={[
+                    data.scheduledDate && { label: 'Scheduled', value: formatDate(data.scheduledDate) },
+                    data.scheduledSlot && { label: 'Slot', value: data.scheduledSlot },
+                    data.scheduleNote && { label: 'Note', value: data.scheduleNote },
+                  ]}
+                />
               </View>
             )}
 
             {/* Resolution */}
             {(data.resolutionNote || data.resolvedAt || data.canSwapQty > 0) && (
-              <View style={[styles.card, { backgroundColor: s.card, marginTop: spacing.md }]}>
-                <AppText variant="label" color={s.secondaryText} style={{ marginBottom: spacing.xs }}>Resolution</AppText>
-                {data.resolvedAt ? <Row s={s} label="Resolved" value={formatDate(data.resolvedAt)} /> : null}
-                {data.canSwapQty > 0 ? <Row s={s} label="Cans swapped" value={String(data.canSwapQty)} /> : null}
-                {data.resolutionNote ? <Row s={s} label="Note" value={data.resolutionNote} /> : null}
+              <View style={[styles.card, { backgroundColor: theme.successTint, gap: spacing.md }]}>
+                <View style={styles.resolutionHeader}>
+                  <Ionicons name="checkmark" size={20} color={theme.success} style={{ marginRight: spacing.sm }} />
+                  <AppText variant="bodyStrong" color={theme.success}>Resolution</AppText>
+                </View>
+                <KeyValueRows
+                  rows={[
+                    data.resolvedAt && { label: 'Resolved', value: formatDate(data.resolvedAt) },
+                    data.canSwapQty > 0 && { label: 'Cans swapped', value: String(data.canSwapQty) },
+                    data.resolutionNote && { label: 'Note', value: data.resolutionNote },
+                  ]}
+                />
               </View>
             )}
 
-            <View style={{ height: spacing.xl }} />
-
             {canCancel && (
-              <AppButton title="Cancel request" borderOnly isLoading={busy} onAction={onCancel} />
+              <AppButton title="Cancel request" variant="dangerSoft" isLoading={busy} onAction={() => setCancelVisible(true)} />
             )}
-            <View style={{ height: spacing.xxl }} />
           </ScrollView>
         )}
       </StateView>
+
+      <AppModal
+        visible={cancelVisible}
+        setModalVisible={setCancelVisible}
+        title="Cancel request?"
+        description="This withdraws your service request. You can raise a new one anytime."
+        destructive
+        confirmText="Cancel it"
+        cancelText="Keep it"
+        onPositive={() => doAction(() => ServiceRequestService.cancel(id))}
+      />
     </NavScreen>
   );
 };
 
-const Row = ({ s, label, value }) => (
-  <View style={styles.row}>
-    <AppText variant="body" color={s.secondaryText}>{label}</AppText>
-    <AppText variant="bodyStrong" color={s.text}>{value}</AppText>
-  </View>
-);
-
 const styles = StyleSheet.create({
-  card: { borderRadius: radius.md, padding: spacing.lg },
+  card: { borderRadius: radius.lg, padding: spacing.lg },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.sm,
   },
-  row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: spacing.xs },
+  resolutionHeader: { flexDirection: 'row', alignItems: 'center' },
+  banner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: radius.sm,
+    padding: spacing.md,
+  },
 });
 
 export default ServiceRequestDetailScreen;

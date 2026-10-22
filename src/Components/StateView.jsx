@@ -1,18 +1,15 @@
 import React from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import AppText from './AppText';
 import AppButton from './AppButton';
 import { spacing } from '../Themes/Themes';
 import { useTheme } from '../Context/ThemeContext';
 
 /**
- * Standard async wrapper: loading -> error(retry) -> empty -> children.
- * Every data screen uses this so no screen ever shows a blank white void.
- *
- *   <StateView loading={loading} error={err} empty={items.length===0}
- *              onRetry={load} emptyText="No orders yet">
- *     ...content...
- *   </StateView>
+ * Standard async wrapper (00-foundation): loading -> error(retry) -> empty -> children.
+ * Props preserved: loading, error, empty, onRetry, emptyText, loadingText, children.
+ * Added optional: emptyIcon (Ionicons name), emptyDescription.
  */
 const StateView = ({
   loading,
@@ -20,6 +17,8 @@ const StateView = ({
   empty,
   onRetry,
   emptyText = 'Nothing here yet',
+  emptyDescription,
+  emptyIcon = 'cube-outline',
   loadingText,
   children,
 }) => {
@@ -28,11 +27,9 @@ const StateView = ({
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color={theme.primary} />
+        <ActivityIndicator size={32} color={theme.primary} />
         {!!loadingText && (
-          <AppText variant="caption" color={theme.secondaryText} style={{ marginTop: spacing.sm }}>
-            {loadingText}
-          </AppText>
+          <AppText variant="caption" color={theme.inkMuted}>{loadingText}</AppText>
         )}
       </View>
     );
@@ -42,8 +39,11 @@ const StateView = ({
     const msg = typeof error === 'string' ? error : error?.message || 'Something went wrong';
     return (
       <View style={styles.center}>
-        <AppText variant="bodyStrong" color={theme.error} style={styles.msg}>{msg}</AppText>
-        {!!onRetry && <AppButton title="Retry" onAction={onRetry} style={{ width: 160 }} />}
+        <View style={[styles.iconCircle, { backgroundColor: theme.dangerTint }]}>
+          <Ionicons name="alert-circle-outline" size={26} color={theme.danger} />
+        </View>
+        <AppText variant="caption" color={theme.inkMuted} style={styles.msg}>{msg}</AppText>
+        {!!onRetry && <AppButton title="Retry" borderOnly onAction={onRetry} style={styles.btn} />}
       </View>
     );
   }
@@ -51,8 +51,14 @@ const StateView = ({
   if (empty) {
     return (
       <View style={styles.center}>
-        <AppText variant="body" color={theme.secondaryText} style={styles.msg}>{emptyText}</AppText>
-        {!!onRetry && <AppButton title="Refresh" borderOnly onAction={onRetry} style={{ width: 160 }} />}
+        <View style={[styles.iconCircle, { backgroundColor: theme.primaryTint }]}>
+          <Ionicons name={emptyIcon} size={26} color={theme.primary} />
+        </View>
+        <AppText variant="title" color={theme.ink} style={styles.msg}>{emptyText}</AppText>
+        {!!emptyDescription && (
+          <AppText variant="caption" color={theme.inkMuted} style={styles.msg}>{emptyDescription}</AppText>
+        )}
+        {!!onRetry && <AppButton title="Refresh" borderOnly size="small" onAction={onRetry} style={styles.btnSmall} />}
       </View>
     );
   }
@@ -61,8 +67,11 @@ const StateView = ({
 };
 
 const styles = StyleSheet.create({
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
-  msg: { textAlign: 'center', marginBottom: spacing.md },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: spacing.xl, paddingHorizontal: spacing.lg, gap: spacing.md },
+  iconCircle: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
+  msg: { textAlign: 'center' },
+  btn: { width: 160 },
+  btnSmall: { width: 160 },
 });
 
 export default StateView;

@@ -1,19 +1,16 @@
-import { useAppContext } from '../../Context/AppContext';
 import { useTheme } from '../../Context/ThemeContext';
-import Fonts from '../../../assets/fonts/Fonts';
 import React, { useState } from 'react';
 import {
-    Image,
     LayoutAnimation,
     Platform,
     StyleSheet,
-    Text,
     TouchableOpacity,
     UIManager,
     View,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import AppButton from '../AppButton';
+import AppText from '../AppText';
+import { radius, spacing } from '../../Themes/Themes';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android') {
@@ -21,23 +18,15 @@ if (Platform.OS === 'android') {
         UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
+/**
+ * Cart delivery-address card (pureLight restyle). Props/behavior preserved:
+ * tapping the row toggles the expanded (full) address; the chevron-down icon
+ * opens the address bottom sheet (same handler the old Change button used).
+ * Borderless card; a missing address is signalled via danger-coloured text/icon only.
+ */
 const PayButtonWithAddressBar = ({ displayName, receiversDetails, navigation, showBottomSheet, address, isOrderForSelf }) => {
 
-    const { theme } = useTheme()
-
-
-    const headerConfig = {
-        color: '#333',
-        fontFamily: Fonts.family.medium,
-        fontSize: Fonts.size.sm
-    }
-
-    const paratextConfig = {
-        color: theme.secondaryText,
-        opacity: 0.6,
-        fontFamily: Fonts.family.medium,
-        fontSize: Fonts.size.xs
-    }
+    const { theme } = useTheme();
 
     const [expanded, setExpanded] = useState(false);
 
@@ -53,69 +42,43 @@ const PayButtonWithAddressBar = ({ displayName, receiversDetails, navigation, sh
             : usersAddress;
     };
 
-    const displayButtonText = address ? 'Change the address' : 'Add the address'
     return (
-        <View style={[styles.cardContainer, { backgroundColor: theme.cardContainer,borderColor:address ? 'white' : theme.error , borderWidth:2 }]}>
-            <TouchableOpacity
-                onPress={handleToggle}
-                style={[styles.row,{justifyContent:'space-around'}]}
-                activeOpacity={0.8}
-            >
-                {/* Location Icon */}
-                <View style={styles.iconOuter}>
-                    <View style={styles.iconInner}>
-                        <Ionicons name='location' color={"white"} size={25} />
-                    </View>
+        <View style={[
+            styles.card,
+            { backgroundColor: theme.surfaceCard },
+        ]}>
+            <TouchableOpacity onPress={handleToggle} style={styles.row} activeOpacity={0.8}>
+                <View style={[styles.iconWell, { backgroundColor: address ? theme.primaryTint : theme.dangerTint }]}>
+                    <Ionicons name="location" color={address ? theme.primary : theme.danger} size={22} />
                 </View>
 
-                {/* Address Text */}
                 {address ? (
                     <View style={styles.addressBlock}>
-                        <Text style={[headerConfig, {
-                            fontSize: Fonts.size.base,
-                            color: theme.greyText,
-                        }]}>
-                            {` Delivering To ${displayName}`}
-                        </Text>
-                        <Text style={[paratextConfig, { color: '#666' }]}>
+                        <AppText variant="caption" color={theme.inkMuted}>
+                            {`Delivering to ${displayName ?? ''}`.trim()}
+                        </AppText>
+                        <AppText variant="caption" color={theme.inkMuted} style={{ marginTop: 2 }}>
                             {displayTrimmedAddress(address)}
-                        </Text>
+                        </AppText>
                     </View>
                 ) : (
                     <View style={styles.addressBlock}>
-                        <Text style={[headerConfig, {
-                            fontSize: Fonts.size.base,
-                            color: theme.greyText,
-                        }]}>
-                            {`Address Required`}
-                        </Text>
-                        <Text style={[paratextConfig, { color: '#666' }]}>
-                            Please add address to proceed checkout
-                        </Text>
+                        <AppText variant="label" color={theme.danger}>Address required</AppText>
+                        <AppText variant="caption" color={theme.inkMuted} style={{ marginTop: 2 }}>
+                            Please add an address to proceed to checkout
+                        </AppText>
                     </View>
                 )}
 
-
-                {/* Chevron Icon */}
-                <Ionicons
-                    name={expanded ? 'chevron-up-outline' : 'chevron-down-outline'}
-                    size={22}
-                    color="#444"
-                />
+                <TouchableOpacity
+                    onPress={() => showBottomSheet()}
+                    style={styles.changeBtn}
+                    activeOpacity={0.8}
+                    hitSlop={8}
+                >
+                    <Ionicons name="chevron-down" color={theme.inkMuted} size={22} />
+                </TouchableOpacity>
             </TouchableOpacity>
-
-            <AppButton title={displayButtonText} borderOnly={true} onAction={() => {
-                showBottomSheet()
-            }} />
-            {/* <View style={styles.expandedSection}>
-                    <View style={{ justifyContent: "center" }}>
-                      
-                        // <TouchableOpacity style={{ flexDirection: "row" }} onPress={() => showBottomSheet()}  >
-                        //     <Text style={{ color: theme.primary, textDecorationLine: "underline" }}>Change the address?
-                        //     </Text>
-                        // </TouchableOpacity>
-                    </View>
-                </View> */}
         </View>
     );
 };
@@ -123,42 +86,31 @@ const PayButtonWithAddressBar = ({ displayName, receiversDetails, navigation, sh
 export default PayButtonWithAddressBar;
 
 const styles = StyleSheet.create({
-    cardContainer: {
-        borderRadius: 20,
-        padding: 16,
-        elevation: 3,
-        margin: 10,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
+    card: {
+        borderRadius: radius.md,
+        padding: spacing.lg,
+        marginHorizontal: spacing.lg,
+        marginTop: spacing.lg,
     },
     row: {
-        flexDirection: "row",
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md,
     },
-    iconOuter: {
-        backgroundColor: "#0000005a",
-        borderRadius: 10,
-        width: 40,
-        height: 40,
-        alignItems: "center",
-        justifyContent: "center"
-    },
-    iconInner: {
-        width: 25,
-        height: 25,
-        borderRadius: 30,
-        justifyContent: "center",
-        alignItems: "center"
+    iconWell: {
+        borderRadius: radius.sm,
+        width: 44,
+        height: 44,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     addressBlock: {
         flex: 1,
-        marginLeft: 10,
     },
-    expandedSection: {
-        marginTop: 10,
-        backgroundColor: '#f6f6f6',
-        padding: 10,
-        borderRadius: 12,
+    changeBtn: {
+        width: 36,
+        height: 36,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 });

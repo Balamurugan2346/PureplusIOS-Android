@@ -26,6 +26,8 @@ import {
 import { useDispatch, useSelector } from 'react-redux';
 import AddressBar from '../../Components/AddressBar';
 import AppAdvertiseMent from '../../Components/AppAdvertiseMent';
+import AppText from '../../Components/AppText';
+import IconButton from '../../Components/IconButton';
 import Banner from '../../Components/Banner';
 import ViewCartButton from '../../Components/Cart/ViewCartButton';
 import CustomDialog from '../../Components/CustomDialog';
@@ -52,6 +54,7 @@ import { getFcmToken } from '../../Utils/FirebaseUtils';
 import FirstLetterAvatar from '../../Components/Profile/FirstLetterAvatar';
 import { resolveServiceability } from '../../Redux/Slices/ServiceabilitySlice';
 import UnserviceableArea from '../../Components/UnserviceableArea';
+import { getGreeting } from '../../Utils/Greeting';
 
 // Placeholder Carousel Data
 const bannerData = [
@@ -323,29 +326,27 @@ const Dashboard = ({ navigation }) => {
 
   const dasboardLoading = loading || productsLoading || profileLoading || cartLoading || cartUpdateLoading || iscustomerSupportLoading
 
+  const greeting = getGreeting();
+  const firstName = profileData?.fullName ? String(profileData.fullName).trim().split(' ')[0] : null;
+
   return (
-    <View
-      style={[styles.container, { backgroundColor: theme.secondaryBackground }]}
-    >
+    <View style={[styles.container, { backgroundColor: theme.surface }]}>
 
       {dasboardLoading && (
         <AppLoading isVisible={dasboardLoading} />
       )}
 
-      {/* //show dialog after demo or remodel the dialog */}
-      {/* {isDialogVisible && <CustomDialog visible={isDialogVisible} setVisible={setIsDialogVisible} />} */}
-
       <StatusBar />
 
-      {/* === Header === */}
-      <ScrollView refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-      }>
-
-
-        <View style={[styles.header, { backgroundColor: theme.background, paddingTop: insets.top + 10 }, shadow]}>
-          <View style={styles.topAppBar}>
-            <TouchableOpacity style={{}} onPress={() => {
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 150 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+      >
+        {/* === Header === */}
+        <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
+          <View style={styles.topBar}>
+            <TouchableOpacity onPress={() => {
               if (profileData != null) {
                 navigation.navigate('ProfileScreen')
               } else {
@@ -359,55 +360,62 @@ const Dashboard = ({ navigation }) => {
                 });
               }
             }}>
-              {profileData && (
-                <FirstLetterAvatar
-                  width={30}
-                  fontSize={12}
-                  height={30}
-                  input={profileData?.fullName}
-                />
+              {profileData ? (
+                <FirstLetterAvatar width={44} height={44} fontSize={16} input={profileData?.fullName} />
+              ) : (
+                <View style={[styles.avatarFallback, { backgroundColor: theme.primaryTint }]}>
+                  <Ionicons name="person" size={20} color={theme.primary} />
+                </View>
               )}
-
             </TouchableOpacity>
 
-            <Text style={titleConfig}>Pure Plus</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Notifications')}>
-              <View>
-                <Ionicons name="notifications-outline" size={26} color="#000" style={{ color: theme.text }} />
-              </View>
-            </TouchableOpacity>
+            <View style={styles.logoRow}>
+              <Image source={require('../../../assets/images/logo_new.png')} resizeMode="contain" style={styles.logo} />
+              <AppText variant="h2" color={theme.ink}>Pureplus</AppText>
+            </View>
+
+            <IconButton
+              icon="notifications-outline"
+              onPress={() => navigation.navigate('Notifications')}
+              accessibilityLabel="Notifications"
+            />
           </View>
 
-          {/* <Text style={[headerConfig, { marginTop: 10 }]}>Delivery within <Text style={titleConfig}>5 mins</Text></Text> */}
+          {/* Greeting */}
+          <View style={styles.greeting}>
+            <AppText variant="displayLight" color={theme.ink} style={styles.greetLine}>{greeting}</AppText>
+            <AppText variant="display" color={theme.ink} style={styles.greetLine}>{firstName || 'Welcome'}</AppText>
+          </View>
 
           <AddressBar
+            loading={isAddressBarLoading}
             onClick={() => setShowAddressBottomSheet(true)}
             address={
               currentLocationFormattedAddress && currentLocationFormattedAddress.trim() !== ""
-                ? currentLocationFormattedAddress                      // ← saved display address ALWAYS wins
+                ? currentLocationFormattedAddress
                 : isAddressBarLoading
-                  ? "Loading..."                      // ← use loading only when no saved address
+                  ? "Loading..."
                   : display_name
-                    ? display_name                    // ← fallback: geocoder result
-                    : "Not fetched. Please refresh."  // ← last fallback
+                    ? display_name
+                    : "Not fetched. Please refresh."
             }
           />
         </View>
 
         {/* === Carousel === */}
         {list && list.length >= 1 && (
-          <View style={[styles.carouselContainer]}>
+          <View style={styles.carousel}>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
+              scrollEventThrottle={16}
+              contentContainerStyle={{ paddingLeft: 24, paddingRight: 12 }}
               onScroll={(e) => {
-                const index = Math.round(
-                  e.nativeEvent.contentOffset.x / ITEM_WIDTH
-                );
+                const index = Math.round(e.nativeEvent.contentOffset.x / 312);
                 setActiveIndex(index);
               }}
             >
-              {list && list.map((item, index) => (
+              {list.map((item, index) => (
                 <Banner
                   key={index}
                   description={item.bannerDescription}
@@ -416,22 +424,19 @@ const Dashboard = ({ navigation }) => {
                 />
               ))}
             </ScrollView>
-            {/* === Indicators === */}
-            <View style={styles.indicatorContainer}>
-              {list && list.map((_, index) => (
+            <View style={styles.dots}>
+              {list.map((_, index) => (
                 <View
                   key={index}
-                  style={[
-                    styles.indicatorDot,
-                    { backgroundColor: index === activeIndex ? '#007AFF' : '#ccc' },
-                  ]}
+                  style={index === activeIndex ? [styles.dotActive, { backgroundColor: theme.primary }] : [styles.dot, { backgroundColor: theme.borderStrong }]}
                 />
               ))}
             </View>
           </View>
         )}
-        {/* Quick actions: exactly 4 buttons spread equally across the full width. */}
-        <View style={{ flexDirection: 'row', paddingHorizontal: 8, paddingVertical: 4 }}>
+
+        {/* Quick actions */}
+        <View style={styles.tiles}>
           {TagData.map((item) => (
             <Tag key={item.id} icon={item.icon} title={item.title} badgeNeed={item.badgeNeed} onPress={() => {
               if (item.routeName) {
@@ -441,10 +446,6 @@ const Dashboard = ({ navigation }) => {
           ))}
         </View>
 
-
-
-
-
         {/* Unserviceable area: pincode has no serving store -> hide catalog, block ordering. */}
         {svcChecked && serviceable === false ? (
           <UnserviceableArea
@@ -453,99 +454,18 @@ const Dashboard = ({ navigation }) => {
             onChangeAddress={() => setShowAddressBottomSheet(true)}
           />
         ) : (
-          /* product section */
-          <View style={[styles.productSection]}>
-            <Text style={[textConfig, { paddingVertical: 5 }]}>
-              Our products{svcStoreName ? ` · ${svcStoreName}` : ''}
-            </Text>
-
-            {/* {productsLoading && (
-            <View style={{ flexDirection: "row" }}>
-
-
-              <ShimmerPlaceHolder
-                LinearGradient={LinearGradient}
-                shimmerColors={['#F3F3F980', '#ccd9e990', '#F3F3F980']} // smooth light shimmer
-                style={{
-                  height: 150,
-                  width: 100,
-                  borderRadius: 12,
-                  marginBottom: 12,
-                  marginHorizontal: 10,
-                  backgroundColor: '#F3F3F980'
-                }}
-              />
-
-              <ShimmerPlaceHolder
-                LinearGradient={LinearGradient}
-                shimmerColors={['#F3F3F980', '#ccd9e990', '#F3F3F980']}
-                style={{
-                  height: 150,
-                  width: 100,
-                  borderRadius: 12,
-                  marginHorizontal: 10,
-                  backgroundColor: '#F3F3F980'
-                }}
-              />
-
-              <ShimmerPlaceHolder
-                LinearGradient={LinearGradient}
-                shimmerColors={['#F3F3F980', '#ccd9e990', '#F3F3F980']}
-                style={{
-                  height: 150,
-                  width: 100,
-                  borderRadius: 12,
-                  marginHorizontal: 10,
-                  backgroundColor: '#F3F3F980'
-                }}
-              />
-
-              <ShimmerPlaceHolder
-                LinearGradient={LinearGradient}
-                shimmerColors={['#F3F3F980', '#ccd9e990', '#F3F3F980']}
-                style={{
-                  height: 150,
-                  width: 100,
-                  borderRadius: 12,
-                  marginHorizontal: 10,
-                  backgroundColor: '#F3F3F980'
-                }}
-              />
+          <View style={styles.productSection}>
+            <View style={styles.sectionHeader}>
+              <AppText variant="title" color={theme.ink}>Water cans</AppText>
+              <AppText variant="caption" color={theme.inkMuted}>Pay at delivery</AppText>
             </View>
-          )} */}
 
-            {/* {productError && !productsLoading && (
-            <View style={{ alignSelf: "center", }}>
-              <Text style={[headerConfig, { color: theme.error, fontFamily: Fonts.family.regular }]}>
-                Couldn’t load products
-              </Text>
-              <TouchableOpacity style={{ backgroundColor: theme.error, borderRadius: 10, padding: 10, alignSelf: "center", marginTop: 10 }} onPress={() => dispatch(loadProducts())}>
-                <Text style={[headerConfig, { color: theme.buttonText }]}>Retry</Text>
-              </TouchableOpacity>
-            </View>
-          )} */}
-            {/* 
-          {isProductsFetched && !productError && productList.length === 0 && (
-            <Text style={[headerConfig, { alignSelf: "center", margin: 10 }]}>
-              No Products Found
-            </Text>
-          )} */}
-
-            {/* {isProductsFetched && !productError && productList.length > 0 && ( */}
             <ScrollView
               showsHorizontalScrollIndicator={false}
               horizontal
-              style={styles.productGrid}
+              contentContainerStyle={{ paddingLeft: 24, paddingRight: 12 }}
             >
               {productList.data && productList.data.map((product, index) => (
-                // <ProductCardRect
-                //   key={index}
-                //   category="Soft Drink"
-                //   title="Sparkle Cola 300ml"
-                //   navigate={() => navigation.navigate("DetailedProductScreen", { product })}
-                //   price="$1.50"
-                //   onRefillQuantityChange={(q) => Alert.alert(`Cola quantity set to ${q}`)}
-                // />
                 <ProductCard1
                   key={index}
                   product={product}
@@ -553,9 +473,7 @@ const Dashboard = ({ navigation }) => {
                     if (userID != -1) {
                       navigation.navigate("DetailedProductScreen", { product, userID })
                     }
-                  }
-
-                  }
+                  }}
                   onInfoClick={() => {
                     setShowBottomSheet((prev) => !prev);
                     setBottomSheetProductDetailsData(product);
@@ -563,23 +481,15 @@ const Dashboard = ({ navigation }) => {
                 />
               ))}
             </ScrollView>
-            {/* )} */}
           </View>
         )}
 
-
-
-
         <AppAdvertiseMent />
-
-
       </ScrollView>
 
-      {console.log("cart", cartItems)}
       {!loading && cartIsFetched && cartItems.length > 0 && serviceable !== false && (
         <ViewCartButton navigation={navigation} cart={cartItems} />
       )}
-
 
       <BottomSheet
         visible={showAddressBottomSheet}
@@ -593,8 +503,6 @@ const Dashboard = ({ navigation }) => {
           }}
         />
       </BottomSheet>
-
-
     </View>
   );
 };
@@ -602,74 +510,19 @@ const Dashboard = ({ navigation }) => {
 export default Dashboard;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-  },
-  warehouseContainer: {
-
-  },
-  suggestedWareHouseContainer: {
-
-  },
-  header: {
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-    marginBottom: 20,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
-  },
-
-  productSection: {
-    margin: 10
-  },
-  topAppBar: {
-    flexDirection: "row",
-    justifyContent: 'space-between',
-    paddingVertical: 10
-
-  },
-
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#000',
-  },
-  carouselContainer: {
-    marginBottom: 20,
-  },
-  carouselImage: {
-    width: ITEM_WIDTH,
-    height: 160,
-    marginHorizontal: 10,
-    borderRadius: 20,
-  },
-  indicatorContainer: {
-    flexDirection: 'row',
-    alignSelf: "center",
-    marginTop: 10,
-  },
-  indicatorDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginHorizontal: 5,
-  },
-  productGrid: {
-    flexDirection: 'row',
-  },
-  productBox: {
-    width: (width - 48) / 3,
-    aspectRatio: 1,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    marginBottom: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
+  container: { flex: 1 },
+  header: { paddingHorizontal: 24, paddingBottom: 8 },
+  topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  avatarFallback: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  logoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  logo: { width: 28, height: 28 },
+  greeting: { marginTop: 16, marginBottom: 16 },
+  greetLine: { fontSize: 30, lineHeight: 36 },
+  carousel: { marginTop: 20 },
+  dots: { flexDirection: 'row', alignSelf: 'center', alignItems: 'center', gap: 6, marginTop: 12 },
+  dot: { width: 6, height: 6, borderRadius: 3 },
+  dotActive: { width: 20, height: 6, borderRadius: 3 },
+  tiles: { flexDirection: 'row', paddingHorizontal: 24, gap: 10, marginTop: 20 },
+  productSection: { marginTop: 24 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, marginBottom: 12 },
 });

@@ -3,6 +3,7 @@ import {
   View, StyleSheet, TouchableOpacity, FlatList,
   Platform, Alert, ScrollView,
 } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useDispatch, useSelector } from 'react-redux';
 import NavScreen from '../../Components/NavScreen';
@@ -11,20 +12,16 @@ import AppButton from '../../Components/AppButton';
 import StateView from '../../Components/StateView';
 import OrderService from '../../API/modules/OrderService';
 import { loadSheduleSlots } from '../../Redux/Slices/SheduleOrderSlice';
-import { spacing, radius, lightSurface } from '../../Themes/Themes';
+import { spacing, radius } from '../../Themes/Themes';
 import { useTheme } from '../../Context/ThemeContext';
 
 /**
- * CUS-19 · Modify Order. Only reachable while order.status === 'PLACED'.
- * Lets the customer pick a new delivery slot + date, then PUT /orders/{id}.
- *
- * Payload shape (verify against Swagger): { slotId, deliveryDate }
- * The backend enforces the ASSIGNED-lock — it will reject if already assigned.
+ * CUS-19 · Modify Order (prompt 03 restyle, pureLight). Only reachable while
+ * order.status === 'PLACED'. Lets the customer pick a new delivery slot + date, then
+ * PUT /orders/{id}. Backend enforces the ASSIGNED-lock — it rejects if already assigned.
  */
 const ModifyOrderScreen = ({ navigation, route }) => {
   const { theme } = useTheme();
-  // White surface (this screen renders on white, not the dark theme bg) — keep brand primary.
-  const s = { ...lightSurface, primary: theme.primary };
   const dispatch = useDispatch();
   const orderId = route?.params?.orderId;
 
@@ -41,7 +38,10 @@ const ModifyOrderScreen = ({ navigation, route }) => {
     ? slots
     : slots?.data ?? slots?.slots ?? [];
 
+  // ISO date for the payload (unchanged); friendly label for the field.
   const formatDate = (d) => d?.toISOString?.().slice(0, 10) ?? '';
+  const displayDate = (d) =>
+    d?.toLocaleDateString?.('en-IN', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' }) ?? '';
 
   const save = async () => {
     if (!selectedSlot) { Alert.alert('Pick a slot', 'Please choose a delivery slot.'); return; }
@@ -69,18 +69,22 @@ const ModifyOrderScreen = ({ navigation, route }) => {
   };
 
   return (
-    <NavScreen title="Modify Order" navigation={navigation} background={s.background}>
+    <NavScreen title="Modify Order" navigation={navigation} background={theme.surface}>
       <ScrollView showsVerticalScrollIndicator={false}>
 
         {/* Date picker */}
-        <AppText variant="label" color={s.secondaryText} style={{ marginBottom: spacing.sm }}>
+        <AppText variant="label" color={theme.ink} style={{ marginBottom: spacing.sm }}>
           Delivery date
         </AppText>
         <TouchableOpacity
           onPress={() => setShowPicker(true)}
-          style={[styles.datePill, { borderColor: s.divider, backgroundColor: s.card }]}
+          style={[styles.dateField, { borderColor: theme.borderStrong, backgroundColor: theme.surfaceCard }]}
         >
-          <AppText variant="bodyStrong" color={s.text}>{formatDate(selectedDate)}</AppText>
+          <Ionicons name="calendar-outline" size={20} color={theme.primary} />
+          <AppText variant="bodyStrong" color={theme.ink} style={{ flex: 1, marginLeft: spacing.md }}>
+            {displayDate(selectedDate)}
+          </AppText>
+          <Ionicons name="chevron-down" size={20} color={theme.inkMuted} />
         </TouchableOpacity>
 
         {showPicker && (
@@ -97,7 +101,7 @@ const ModifyOrderScreen = ({ navigation, route }) => {
         )}
 
         {/* Slot picker */}
-        <AppText variant="label" color={s.secondaryText} style={{ marginVertical: spacing.md }}>
+        <AppText variant="label" color={theme.ink} style={{ marginTop: spacing.xl, marginBottom: spacing.sm }}>
           Delivery slot
         </AppText>
 
@@ -119,16 +123,25 @@ const ModifyOrderScreen = ({ navigation, route }) => {
               return (
                 <TouchableOpacity
                   onPress={() => setSelectedSlot(item)}
+                  activeOpacity={0.85}
                   style={[styles.slotRow, {
-                    borderColor: active ? theme.primary : s.divider,
-                    backgroundColor: active ? `${theme.primary}18` : s.card,
+                    borderColor: active ? theme.primary : theme.borderSubtle,
+                    backgroundColor: active ? theme.primaryTint : theme.surfaceCard,
                   }]}
                 >
-                  <AppText variant="bodyStrong" color={active ? theme.primary : s.text}>
+                  <Ionicons
+                    name={active ? 'radio-button-on' : 'radio-button-off'}
+                    size={20}
+                    color={active ? theme.primary : theme.borderStrong}
+                    style={{ marginRight: spacing.md }}
+                  />
+                  <AppText variant="bodyStrong" color={theme.ink} style={{ flex: 1 }}>
                     {label}
                   </AppText>
                   {active && (
-                    <AppText variant="caption" color={theme.primary}>Selected</AppText>
+                    <View style={[styles.selectedBadge, { backgroundColor: theme.primary }]}>
+                      <AppText variant="badge" color={theme.onPrimary}>SELECTED</AppText>
+                    </View>
                   )}
                 </TouchableOpacity>
               );
@@ -136,14 +149,16 @@ const ModifyOrderScreen = ({ navigation, route }) => {
           />
         </StateView>
 
-        <View style={{ height: spacing.xl }} />
+        {/* Lock banner */}
+        <View style={[styles.lockBanner, { backgroundColor: theme.warningTint }]}>
+          <Ionicons name="lock-closed-outline" size={18} color={theme.warning} style={{ marginRight: spacing.sm }} />
+          <AppText variant="caption" color={theme.warning} style={{ flex: 1 }}>
+            Changes are only possible while your order is in PLACED status. Once a delivery partner
+            is assigned, this option locks.
+          </AppText>
+        </View>
 
-        <AppText variant="caption" color={s.secondaryText} style={{ marginBottom: spacing.md }}>
-          Changes are only possible while your order is in PLACED status. Once a delivery partner
-          is assigned, this option locks.
-        </AppText>
-
-        <AppButton title="Save changes" isLoading={saving} onAction={save} />
+        <AppButton title="Save changes" isLoading={saving} loadingText="Saving…" onAction={save} />
         <View style={{ height: spacing.xxl }} />
       </ScrollView>
     </NavScreen>
@@ -151,21 +166,36 @@ const ModifyOrderScreen = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
-  datePill: {
-    padding: spacing.md,
+  dateField: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 52,
+    paddingHorizontal: spacing.lg,
     borderRadius: radius.md,
     borderWidth: 1,
-    marginBottom: spacing.sm,
-    alignItems: 'center',
   },
   slotRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: spacing.md,
+    paddingHorizontal: spacing.lg,
     borderRadius: radius.md,
-    borderWidth: 1,
+    borderWidth: 1.5,
     marginBottom: spacing.sm,
+  },
+  selectedBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderRadius: radius.pill,
+  },
+  lockBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    borderRadius: radius.sm,
+    padding: spacing.md,
+    marginTop: spacing.lg,
+    marginBottom: spacing.lg,
   },
 });
 

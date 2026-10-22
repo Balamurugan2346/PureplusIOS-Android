@@ -4,8 +4,6 @@ import {
   Text,
   StyleSheet,
   TextInput,
-  TouchableOpacity,
-  Image,
   ScrollView
 } from 'react-native';
 
@@ -16,17 +14,22 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useToast } from '../../Components/Toast/ToastProvider';
 import { updateUserProfile, getUserProfile } from '../../Redux/Slices/ProfileSlice';
 import FirstLetterAvatar from '../../Components/Profile/FirstLetterAvatar'
+import TopAppBar from '../../Components/TopAppBar';
+import AppText from '../../Components/AppText';
+import AppButton from '../../Components/AppButton';
+import { fontFamily, radius, spacing } from '../../Themes/Themes';
+import { useTheme } from '../../Context/ThemeContext';
 
 const EditProfileScreen = ({ navigation }) => {
 
   const insets = useSafeAreaInsets();
   const dispatch = useDispatch();
   const { showToast } = useToast();
+  const { theme } = useTheme();
 
   const { profileData, loading } = useSelector((state) => state.profile);
 
   /* STATES */
-
   const [name, setName] = useState(profileData?.fullName || "");
   const [email, setEmail] = useState(profileData?.email || "");
   const [phone] = useState(profileData?.mobileNumber || "");
@@ -35,10 +38,8 @@ const EditProfileScreen = ({ navigation }) => {
   const [emailError, setEmailError] = useState("");
 
   /* VALIDATION */
-
   const validateName = (text) => {
     setName(text);
-
     if (text.length < 3) {
       setNameError("Name must be at least 3 characters");
     } else {
@@ -48,10 +49,7 @@ const EditProfileScreen = ({ navigation }) => {
 
   const validateEmail = (text) => {
     setEmail(text);
-
-    const emailRegex =
-      /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
-
+    const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
     if (!emailRegex.test(text)) {
       setEmailError("Invalid email address");
     } else {
@@ -60,9 +58,7 @@ const EditProfileScreen = ({ navigation }) => {
   };
 
   /* SAVE */
-
   const handleSave = () => {
-
     if (nameError || emailError) {
       showToast("Please fix errors", true);
       return;
@@ -86,112 +82,70 @@ const EditProfileScreen = ({ navigation }) => {
         showToast(err, true);
       }
     }));
-
   };
 
   return (
+    <View style={[styles.container, { backgroundColor: theme.surface }]}>
 
-    <View style={[styles.container, { paddingBottom: insets.bottom }]}>
+      <TopAppBar title="Edit Profile" navigation={navigation} />
 
-      {/* HEADER */}
-
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={[styles.backButton, {
-            backgroundColor: "#8fa6bf",
-            padding: 10,
-            borderRadius: 12,
-            marginRight: 12
-          }]}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="arrow-back" size={20} color="#fff" />
-        </TouchableOpacity>
-
-        <Text style={styles.headerTitle}>Edit Profile</Text>
-      </View>
-
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
         {/* AVATAR */}
-
         <View style={styles.avatarContainer}>
-
-          <FirstLetterAvatar
-            input={profileData.fullName}
-          />
-
-          {/* <View style={styles.editIcon}>
-            <Ionicons name="pencil" size={14} color="#fff" />
-          </View> */}
-
-          <Text style={styles.changePhoto}>Profile</Text>
-
+          <FirstLetterAvatar width={88} height={88} fontSize={36} input={profileData?.fullName} />
+          <AppText variant="caption" color={theme.inkMuted} style={{ marginTop: spacing.sm }}>Profile</AppText>
         </View>
 
-
         {/* NAME */}
-
-        <Text style={styles.label}>Name</Text>
-
-        <View style={styles.inputCard}>
-          <Ionicons name="person-outline" size={18} color="#888" />
+        <AppText variant="label" color={theme.ink} style={styles.label}>Name</AppText>
+        <View style={[styles.inputCard, { backgroundColor: theme.surfaceCard, borderColor: nameError ? theme.danger : theme.borderStrong }]}>
+          <Ionicons name="person-outline" size={18} color={theme.inkMuted} />
           <TextInput
-            style={styles.input}
+            style={[styles.input, { color: theme.ink }]}
+            placeholderTextColor={theme.inkMuted}
             value={name}
             onChangeText={validateName}
           />
         </View>
-
-        {nameError ? <Text style={styles.error}>{nameError}</Text> : null}
-
+        {nameError ? <Text style={[styles.error, { color: theme.danger }]}>{nameError}</Text> : null}
 
         {/* EMAIL */}
-
-        <Text style={styles.label}>Email</Text>
-
-        <View style={styles.inputCard}>
-          <Ionicons name="mail-outline" size={18} color="#888" />
+        <AppText variant="label" color={theme.ink} style={styles.label}>Email</AppText>
+        <View style={[styles.inputCard, { backgroundColor: theme.surfaceCard, borderColor: emailError ? theme.danger : theme.borderStrong }]}>
+          <Ionicons name="mail-outline" size={18} color={theme.inkMuted} />
           <TextInput
-            style={styles.input}
+            style={[styles.input, { color: theme.ink }]}
+            placeholderTextColor={theme.inkMuted}
+            keyboardType="email-address"
+            autoCapitalize="none"
             value={email}
             onChangeText={validateEmail}
           />
         </View>
+        {emailError ? <Text style={[styles.error, { color: theme.danger }]}>{emailError}</Text> : null}
 
-        {emailError ? <Text style={styles.error}>{emailError}</Text> : null}
-
-
-        {/* PHONE */}
-
-        <Text style={styles.label}>Phone Number</Text>
-
-        <View style={[styles.inputCard, { backgroundColor: "#f1f4f7" }]}>
-          <Ionicons name="call-outline" size={18} color="#888" />
+        {/* PHONE (disabled) */}
+        <AppText variant="label" color={theme.ink} style={styles.label}>Phone Number</AppText>
+        <View style={[styles.inputCard, styles.inputDisabled, { backgroundColor: theme.surfaceSunken }]}>
+          <Ionicons name="call-outline" size={18} color={theme.inkMuted} />
           <TextInput
-            style={styles.input}
+            style={[styles.input, { color: theme.inkMuted }]}
             value={phone}
             editable={false}
           />
+          <Ionicons name="lock-closed-outline" size={16} color={theme.inkMuted} />
         </View>
-
-        <Text style={styles.note}>
+        <AppText variant="caption" color={theme.inkMuted} style={styles.note}>
           Note: Number can't be changed
-        </Text>
-
-
-        {/* SAVE */}
-
-        <TouchableOpacity
-          style={styles.saveButton}
-          onPress={handleSave}
-        >
-          <Text style={styles.saveText}>
-            {loading ? "Saving..." : "Save Changes"}
-          </Text>
-        </TouchableOpacity>
+        </AppText>
 
       </ScrollView>
+
+      {/* SAVE */}
+      <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.xl }]}>
+        <AppButton title="Save Changes" isLoading={loading} loadingText="Saving…" onAction={handleSave} />
+      </View>
 
     </View>
   );
@@ -200,112 +154,47 @@ const EditProfileScreen = ({ navigation }) => {
 export default EditProfileScreen;
 
 const styles = StyleSheet.create({
-
-  container: {
-    flex: 1,
-    backgroundColor: "#f5f7fa"
-  },
-
-  header: {
-    backgroundColor: "#0c1c2c",
-    paddingTop: 40,
-    paddingBottom: 18,
-    paddingHorizontal: 20,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
-    flexDirection: "row",
-    alignItems: "center"
-  },
-
-  backButton: {
-
-  },
-
-  headerTitle: {
-    fontSize: 18,
-    color: "#fff",
-    fontWeight: "600"
-  },
-
-  content: {
-    padding: 20
-  },
+  container: { flex: 1 },
+  content: { paddingHorizontal: spacing.xl, paddingTop: spacing.sm, paddingBottom: 40 },
 
   avatarContainer: {
     alignItems: "center",
-    marginBottom: 20
+    marginVertical: spacing.lg,
   },
 
-  avatar: {
-    width: 110,
-    height: 110,
-    borderRadius: 60
-  },
-
-  editIcon: {
-    position: "absolute",
-    right: 110,
-    bottom: 30,
-    backgroundColor: "#ff6b00",
-    padding: 6,
-    borderRadius: 20
-  },
-
-  changePhoto: {
-    color: "black",
-    fontWeight: 500,
-    marginTop: 8,
-    fontSize: 13
-  },
-
-  label: {
-    fontSize: 13,
-    color: "#666",
-    marginBottom: 6,
-    marginTop: 10
-  },
+  label: { marginBottom: 6, marginTop: spacing.md },
 
   inputCard: {
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#d9e0e6",
-    paddingHorizontal: 12,
-    backgroundColor: "#fff"
+    borderRadius: radius.md,
+    borderWidth: 1.5,
+    paddingHorizontal: spacing.md,
   },
-
+  inputDisabled: {
+    borderWidth: 0,
+  },
   input: {
     flex: 1,
-    paddingVertical: 12,
-    marginLeft: 8
+    paddingVertical: 14,
+    marginLeft: spacing.sm,
+    fontFamily: fontFamily.medium,
+    fontSize: 15,
   },
 
   note: {
     textAlign: "center",
-    fontSize: 12,
-    color: "#8a9ba8",
-    marginTop: 8
-  },
-
-  saveButton: {
-    backgroundColor: "#1f95c9",
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: "center",
-    marginTop: 25
-  },
-
-  saveText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600"
+    marginTop: spacing.sm,
   },
 
   error: {
-    color: "red",
+    fontFamily: fontFamily.regular,
     fontSize: 12,
-    marginTop: 3
-  }
+    marginTop: 4,
+  },
 
+  footer: {
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.md,
+  },
 });

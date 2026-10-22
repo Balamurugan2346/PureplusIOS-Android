@@ -1,11 +1,12 @@
-import Fonts from '../../../assets/fonts/Fonts';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useAppContext } from '../../Context/AppContext';
 import { useTheme } from '../../Context/ThemeContext';
 import { clearCart, loadCartItems, addToCart, updateCart } from '../../Redux/Slices/CartSlice';
 import { useToast } from '../Toast/ToastProvider';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import AppText from '../AppText';
+import { radius, spacing } from '../../Themes/Themes';
 
 const CartItem = ({ cartItem }) => {
 
@@ -17,17 +18,25 @@ const CartItem = ({ cartItem }) => {
 
     const { theme } = useTheme()
 
-    const headerConfig = {
-        color: theme.greyText,
-        fontFamily: Fonts.family.regular,
-        fontSize: Fonts.size.sm
-    }
+    // The cart row carries only { id, productId, productName, price, quantity, uom,
+    // totalPrice, imageUrls } — it has NO basePrice/unitCount. Those live on the product
+    // catalog, so we look the product up by productId (same catalog `productList` the
+    // CartScreen uses for per-product tax). This gives us a genuine previous (MRP) price
+    // and the pack size — without fabricating either.
+    const { productList } = useSelector((state) => state.products)
+    // `productList` is `[]` before load, then the API envelope `{ data: [...] }` after —
+    // normalise to the catalog array so `.find` is always safe.
+    const catalogList = Array.isArray(productList) ? productList : (productList?.data ?? [])
+    const catalogProduct = catalogList.find((p) => p.productId === cartItem?.productId)
 
-    const paratextConfig = {
-        color: theme.secondaryText,
-        fontFamily: Fonts.family.medium,
-        fontSize: Fonts.size.xs
-    }
+    // Real per-unit price on the cart line is `price` (NOT `unitPrice`, which doesn't exist here).
+    const unitPrice = cartItem?.price
+    // Previous/MRP price from the catalog — only honoured when it's genuinely higher than the
+    // current price (backend sends basePrice == unitPrice when there's no discount).
+    const basePrice = catalogProduct?.basePrice
+    const hasPreviousPrice = basePrice != null && unitPrice != null && Number(basePrice) > Number(unitPrice)
+    // Cans-per-unit pack size, truthful per row (different lines may differ).
+    const unitCount = catalogProduct?.unitCount
 
     // Product image from the cart response's imageUrls (a product can carry several
     // images — like any e-commerce listing — so we show the first). Falls back to the
@@ -95,26 +104,33 @@ const CartItem = ({ cartItem }) => {
     return (
         <View>
             <View style={styles.container}>
-                <Image source={resolveProductImage()} style={{ width: 40, height: 40, marginRight: 10, borderRadius: 6 }} resizeMode="cover" />
+                <Image source={resolveProductImage()} style={[styles.thumb, { backgroundColor: theme.sky200 }]} resizeMode="cover" />
                 <View style={{ flex: 1 }}>
-                    <Text style={[headerConfig]}>{`${cartItem.productName}`}</Text>
-                    <View style={{ flexDirection: "row" }}>
-                        <Text style={[paratextConfig, { textDecorationLine: "line-through", marginRight: 3 }]}>{cartItem.unitPrice}</Text>
-                        <Text style={[paratextConfig, { color: "green" }]}>{cartItem.unitPrice}</Text>
+                    <AppText variant="bodyStrong" color={theme.ink} numberOfLines={2}>{`${cartItem.productName}`}</AppText>
+                    {unitCount != null && (
+                        <AppText variant="caption" color={theme.inkMuted} style={{ marginTop: 2 }}>
+                            {`1 unit = ${unitCount} ${unitCount === 1 ? 'can' : 'cans'}`}
+                        </AppText>
+                    )}
+                    <View style={styles.priceRow}>
+                        {hasPreviousPrice && (
+                            <AppText variant="caption" color={theme.inkMuted} style={{ textDecorationLine: 'line-through', marginRight: 6 }}>₹{basePrice}</AppText>
+                        )}
+                        <AppText variant="bodyStrong" color={theme.success}>₹{unitPrice}/unit</AppText>
                     </View>
                 </View>
 
-                <View style={styles.quantityContainer}>
-                    <TouchableOpacity onPress={()=>handleDecrease(cartItem)} style={styles.iconButton}>
-                        <Ionicons name="remove-circle-outline" size={24} color="red" />
+                <View style={[styles.quantityContainer, { backgroundColor: theme.surfaceSunken }]}>
+                    <TouchableOpacity onPress={() => handleDecrease(cartItem)} style={styles.iconButton}>
+                        <Ionicons name="remove" size={20} color={theme.primary} />
                     </TouchableOpacity>
-                    <Text style={styles.quantity}>{cartItem.quantity}</Text>
-                    <TouchableOpacity onPress={()=>handleIncrease(cartItem)} style={styles.iconButton}>
-                        <Ionicons name="add-circle-outline" size={24} color="green" />
+                    <Text style={[styles.quantity, { color: theme.ink }]}>{cartItem.quantity}</Text>
+                    <TouchableOpacity onPress={() => handleIncrease(cartItem)} style={styles.iconButton}>
+                        <Ionicons name="add" size={20} color={theme.primary} />
                     </TouchableOpacity>
                 </View>
             </View>
-            <View style={{ backgroundColor: "grey", opacity: 0.12, width: "100%", height: 1 }} />
+            <View style={[styles.divider, { backgroundColor: theme.borderSubtle }]} />
 
         </View>
 
@@ -127,30 +143,34 @@ const styles = StyleSheet.create({
     container: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginVertical: 10,
+        marginVertical: spacing.md,
+        gap: spacing.md,
     },
-    name: {
-        fontSize: 16,
-        fontWeight: 'bold',
+    thumb: {
+        width: 48,
+        height: 48,
+        borderRadius: radius.sm,
     },
-    price: {
-        fontSize: 14,
-        color: '#444',
+    priceRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
         marginTop: 4,
     },
     quantityContainer: {
-        // borderRadius: 30,
-        // borderColor: "#b75ef3ff",
-        // borderWidth: 0.8,
-        backgroundColor: "white",
+        borderRadius: radius.pill,
         flexDirection: 'row',
         alignItems: 'center',
+        paddingHorizontal: spacing.xs,
     },
     iconButton: {
-        paddingHorizontal: 4,
+        paddingHorizontal: spacing.sm,
+        paddingVertical: 6,
     },
     quantity: {
-        fontSize: 18,
-        marginHorizontal: 8,
+        fontSize: 16,
+        marginHorizontal: spacing.xs,
+        minWidth: 18,
+        textAlign: 'center',
     },
+    divider: { width: '100%', height: 1 },
 });

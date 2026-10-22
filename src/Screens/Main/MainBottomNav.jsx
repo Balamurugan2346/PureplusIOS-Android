@@ -2,27 +2,31 @@ import { useTabBarVisibility } from '../../Context/BottomBarContext';
 import { useTheme } from '../../Context/ThemeContext';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import React, { useEffect, useRef } from 'react';
-import { Animated, View } from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons'; // Use icons of your choice
+import { Animated, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import MyCart from '../../Screens/Product/CartScreen';
 import MyOrders from '../Product/Order/MyOrdersScreen';
 import Dashboard from './Dashboard';
 import Notification from './Notification';
-
+import { fontFamily, radius, spacing, floatShadow } from '../../Themes/Themes';
 
 const Tab = createBottomTabNavigator();
 
-
-
+const TAB_META = {
+  Dashboard: { icon: 'home', label: 'Home' },
+  CartScreen: { icon: 'cart', label: 'Cart' },
+  MyOrdersScreen: { icon: 'list', label: 'Orders' },
+  Notification: { icon: 'notifications', label: 'Alerts' },
+};
 
 export default function MainBottomNav() {
+  const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
 
-  const {theme}  = useTheme()
-
- const { isTabBarVisible } = useTabBarVisibility();
+  const { isTabBarVisible } = useTabBarVisibility();
   const animatedValue = useRef(new Animated.Value(1)).current;
 
-  console.log("v",isTabBarVisible)
   useEffect(() => {
     Animated.timing(animatedValue, {
       toValue: isTabBarVisible ? 1 : 0,
@@ -36,53 +40,39 @@ export default function MainBottomNav() {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarShowLabel: false,
-    
         tabBarStyle: {
-          bottom:"5%",
-          alignSelf:"center",
-          justifyContent:"center",
-          alignItems:"center",
-          borderRadius: 50,
-          height: 70,
-          elevation:9,
-          shadowColor:"black",
-          shadowOffset:{width:10,height:10},
-          shadowRadius:10,
-          backgroundColor: theme.background,
-               transform: [
+          position: 'absolute',
+          left: spacing.xl,
+          right: spacing.xl,
+          bottom: insets.bottom + spacing.lg,
+          height: 68,
+          borderRadius: radius.pill,
+          backgroundColor: theme.surfaceCard,
+          borderTopWidth: 0,
+          paddingHorizontal: spacing.sm,
+          ...floatShadow,
+          transform: [
             {
               translateY: animatedValue.interpolate({
                 inputRange: [0, 1],
-                outputRange: [100, 0],
+                outputRange: [120, 0],
               }),
             },
           ],
-          position: 'absolute',
         },
-
-        tabBarItemStyle : {
-          marginTop:13
-        },
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconName;
-          if (route.name === 'Dashboard') iconName = focused ? 'home' : 'home-outline';
-          else if (route.name === 'CartScreen') iconName = focused ? 'cart' : 'cart-outline';
-          else if (route.name === 'MyOrdersScreen') iconName = focused ? 'list' : 'list-outline';
-          else if (route.name === 'Notification') iconName = focused ? 'notifications' : 'notifications-outline';
-
+        tabBarItemStyle: { height: 68 },
+        tabBarIcon: ({ focused }) => {
+          const meta = TAB_META[route.name] || { icon: 'ellipse', label: route.name };
+          const iconName = focused ? meta.icon : `${meta.icon}-outline`;
+          const color = focused ? theme.primary : theme.inkMuted;
           return (
-            <View style={{ alignItems: 'center' }}>
-              <Ionicons name={iconName} size={28} color={focused ? '#4a90e2' : '#ccc'} />
+            <View style={{ alignItems: 'center', justifyContent: 'center', gap: 2, paddingTop: spacing.md }}>
+              <Ionicons name={iconName} size={24} color={color} />
+              <Text style={{ fontFamily: fontFamily.medium, fontSize: 11, lineHeight: 14, color }}>
+                {meta.label}
+              </Text>
               {focused && (
-                <View
-                  style={{
-                    width: 6,
-                    height: 6,
-                    backgroundColor: '#4a90e2',
-                    borderRadius: 3,
-                    marginTop: 4,
-                  }}
-                />
+                <View style={{ width: 6, height: 6, backgroundColor: theme.primary, borderRadius: 3, marginTop: 2 }} />
               )}
             </View>
           );
@@ -91,8 +81,8 @@ export default function MainBottomNav() {
     >
       <Tab.Screen name="Dashboard" component={Dashboard} />
       <Tab.Screen name="CartScreen" component={MyCart} />
-      <Tab.Screen name='MyOrdersScreen' component={MyOrders} />
-      <Tab.Screen name='Notification' component={Notification} />
+      <Tab.Screen name="MyOrdersScreen" component={MyOrders} />
+      <Tab.Screen name="Notification" component={Notification} />
     </Tab.Navigator>
   );
 }

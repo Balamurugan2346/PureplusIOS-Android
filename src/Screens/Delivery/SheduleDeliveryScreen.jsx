@@ -14,9 +14,11 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 
 import TopAppBar from '../../Components/TopAppBar';
 import AppButton from '../../Components/AppButton';
+import AppText from '../../Components/AppText';
 import { useToast } from '../../Components/Toast/ToastProvider';
 import { useTheme } from '../../Context/ThemeContext';
 import Fonts from '../../../assets/fonts/Fonts';
+import { fontFamily, radius, spacing } from '../../Themes/Themes';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { loadSheduleSlots, saveSelectedSlot } from '../../Redux/Slices/SheduleOrderSlice'
 import AppLoading from '../../Components/AppLoading';
@@ -153,90 +155,150 @@ const ScheduleDeliveryScreen = ({ navigation }) => {
     };
 
     /* ======================================================
+       DAY STRIP (today → +7), replaces the native date button
+    ====================================================== */
+    const dayList = useMemo(() => {
+        const out = [];
+        const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        for (let i = 0; i <= 7; i++) {
+            const d = new Date();
+            d.setDate(d.getDate() + i);
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            out.push({
+                value: `${year}-${month}-${day}`,
+                top: i === 0 ? 'Today' : weekdays[d.getDay()],
+                num: String(d.getDate()),
+            });
+        }
+        return out;
+    }, []);
+
+    const confirmLabel = (() => {
+        if (deliveryType === 'instant') return 'Confirm instant delivery';
+        if (selectedDate && selectedSlot) {
+            const d = dayList.find((x) => x.value === selectedDate);
+            const dayPart = d ? `${d.top} ${d.num}` : selectedDate;
+            return `Confirm · ${dayPart}, ${selectedSlot.slotName ?? ''}`.trim();
+        }
+        return 'Confirm';
+    })();
+
+    /* ======================================================
        UI
     ====================================================== */
     return (
-        <View style={[styles.container, { marginBottom: insets.bottom }]}>
+        <View style={[styles.container, { backgroundColor: theme.surface, marginBottom: insets.bottom }]}>
 
             <TopAppBar title="Schedule your order" navigation={navigation} />
 
-            {/* Shipment Info */}
-            <Text style={[styles.shipmentText, { fontFamily: Fonts.family.semiBold }]}>
-                Items  : {cartItems.length}
-            </Text>
+            <FlatList
+                data={deliveryType === 'schedule' ? slots : []}
+                numColumns={2}
+                keyExtractor={(item, idx) => (item.slotId ?? idx).toString()}
+                columnWrapperStyle={{ gap: spacing.md }}
+                contentContainerStyle={styles.scrollBody}
+                showsVerticalScrollIndicator={false}
+                ListHeaderComponent={
+                    <View>
+                        {/* Shipment Info */}
+                        <View style={styles.shipmentRow}>
+                            <AppText variant="label" color={theme.inkMuted}>Items: </AppText>
+                            <AppText variant="bodyStrong" color={theme.ink}>{cartItems.length}</AppText>
+                        </View>
 
-            {/* Delivery Type Buttons */}
-            <View style={styles.row}>
-                <DeliveryOption
-                    theme={theme}
-                    title="Instant Delivery"
-                    active={deliveryType === 'instant'}
-                    onPress={() => setDeliveryType('instant')}
-                />
-                <DeliveryOption
-                    theme={theme}
-                    title="Schedule Delivery"
-                    active={deliveryType === 'schedule'}
-                    onPress={() => setDeliveryType('schedule')}
-                />
-            </View>
-
-            {/* Schedule Section */}
-            {deliveryType === 'schedule' && (
-                <>
-                    {GetSlotLoading && (
-                        <AppLoading isVisible={GetSlotLoading} />
-                    )}
-                    {/* Date Picker Button */}
-                    <TouchableOpacity
-                        onPress={() => setShowCalendar(true)}
-                        style={styles.datePicker}
-                    >
-                        <Text style={styles.dateText}>
-                            {selectedDate ? selectedDate : 'Select delivery date'}
-                        </Text>
-                    </TouchableOpacity>
-
-                    {/* Time Slots */}
-                    <FlatList
-                        data={slots}
-                        numColumns={2}
-                        // keyExtractor={item => item.slotId.toString()} // need unique id
-                        contentContainerStyle={{ paddingHorizontal: 8 }}
-                        renderItem={({ item }) => (
-                            <SlotItem
-                                slot={item}
-                                selected={selectedSlot?.slotId === item.slotId}
-                                onPress={() => setSelectedSlot(item)}
+                        {/* Delivery Type cards */}
+                        <View style={styles.row}>
+                            <DeliveryOption
+                                theme={theme}
+                                icon="flash-outline"
+                                title="Instant delivery"
+                                subtitle="Within ~30 min"
+                                active={deliveryType === 'instant'}
+                                onPress={() => setDeliveryType('instant')}
                             />
-                        )}
-                    />
-                </>
-            )}
+                            <DeliveryOption
+                                theme={theme}
+                                icon="calendar-outline"
+                                title="Schedule delivery"
+                                subtitle="Pick a day & slot"
+                                active={deliveryType === 'schedule'}
+                                onPress={() => setDeliveryType('schedule')}
+                            />
+                        </View>
 
-            {/* Info Text */}
-            {deliveryType == 'schedule' && (
-                <Text style={[styles.infoText, { fontFamily: Fonts.family.medium }]}>
-                    You can cancel up to 30 minutes prior to delivery time
-                </Text>
-            )}
+                        {deliveryType === 'schedule' ? (
+                            <>
+                                {/* Delivery date strip */}
+                                <AppText variant="label" color={theme.ink} style={styles.sectionTitle}>Delivery date</AppText>
+                                <FlatList
+                                    data={dayList}
+                                    horizontal
+                                    showsHorizontalScrollIndicator={false}
+                                    keyExtractor={(d) => d.value}
+                                    contentContainerStyle={{ gap: spacing.md, paddingVertical: spacing.sm }}
+                                    renderItem={({ item: d }) => {
+                                        const active = selectedDate === d.value;
+                                        return (
+                                            <TouchableOpacity
+                                                onPress={() => setSelectedDate(d.value)}
+                                                style={[
+                                                    styles.dayTile,
+                                                    { backgroundColor: active ? theme.ink : theme.surfaceCard, borderColor: active ? theme.ink : theme.borderSubtle },
+                                                ]}
+                                            >
+                                                <AppText variant="caption" color={active ? theme.onInk : theme.inkMuted}>{d.top}</AppText>
+                                                <AppText variant="title" color={active ? theme.onInk : theme.ink} style={{ marginTop: 2 }}>{d.num}</AppText>
+                                            </TouchableOpacity>
+                                        );
+                                    }}
+                                />
+
+                                <AppText variant="label" color={theme.ink} style={styles.sectionTitle}>Time slot</AppText>
+                            </>
+                        ) : (
+                            /* Instant info card */
+                            <View style={[styles.instantCard, { backgroundColor: theme.surfaceCard }]}>
+                                <View style={[styles.instantIcon, { backgroundColor: theme.successTint }]}>
+                                    <Ionicons name="flash" size={22} color={theme.success} />
+                                </View>
+                                <AppText variant="bodyStrong" color={theme.ink} style={{ marginTop: spacing.md }}>We'll deliver right away</AppText>
+                                <AppText variant="caption" color={theme.inkMuted} style={{ marginTop: 2, textAlign: 'center' }}>
+                                    Any slot you picked earlier is cleared.
+                                </AppText>
+                            </View>
+                        )}
+
+                        {deliveryType === 'schedule' && GetSlotLoading && (
+                            <AppLoading isVisible={GetSlotLoading} />
+                        )}
+                    </View>
+                }
+                renderItem={({ item }) => (
+                    <SlotItem
+                        theme={theme}
+                        slot={item}
+                        selected={selectedSlot?.slotId === item.slotId}
+                        onPress={() => setSelectedSlot(item)}
+                    />
+                )}
+                ListFooterComponent={
+                    deliveryType === 'schedule' ? (
+                        <View style={[styles.infoBanner, { backgroundColor: theme.infoTint }]}>
+                            <Ionicons name="information-circle-outline" size={18} color={theme.info} />
+                            <AppText variant="caption" color={theme.info} style={{ marginLeft: spacing.sm, flex: 1 }}>
+                                You can cancel up to 30 minutes prior to delivery time
+                            </AppText>
+                        </View>
+                    ) : null
+                }
+            />
 
             {/* Confirm Button */}
-            <View style={styles.buttonContainer}>
-                <AppButton title="Confirm" onAction={handleConfirm} />
+            <View style={[styles.buttonContainer, { backgroundColor: theme.surface }]}>
+                <AppButton title={confirmLabel} onAction={handleConfirm} />
             </View>
-
-            {/* Calendar */}
-            {showCalendar && (
-                <DateTimePicker
-                    value={getPickerDate()}
-                    mode="date"
-                    minimumDate={minDate}
-                    maximumDate={maxDate}
-                    display={Platform.OS === 'ios' ? 'inline' : 'default'}
-                    onChange={onDateSelected}
-                />
-            )}
         </View>
     );
 };
@@ -246,30 +308,31 @@ export default ScheduleDeliveryScreen;
 /* ======================================================
    REUSABLE COMPONENTS
 ====================================================== */
-const DeliveryOption = ({ title, active, onPress, theme, shedule = false }) => (
+const DeliveryOption = ({ title, subtitle, icon, active, onPress, theme }) => (
     <TouchableOpacity
         onPress={onPress}
         style={[
             styles.deliveryOption,
-            active && styles.deliveryOptionActive
+            { backgroundColor: active ? theme.primaryTint : theme.surfaceCard, borderColor: active ? theme.primary : theme.borderSubtle },
         ]}
     >
-        {shedule && (
-            <Ionicons name="calendar-outline" size={26} color="#0a50e6ff" style={{ color: theme.text }} />
-        )}
-        <Text style={[styles.deliveryText, { fontFamily: Fonts.family.medium }]}>{title}</Text>
+        <View style={[styles.deliveryIconWell, { backgroundColor: active ? theme.surfaceCard : theme.surfaceSunken }]}>
+            <Ionicons name={icon} size={22} color={active ? theme.primary : theme.inkMuted} />
+        </View>
+        <AppText variant="bodyStrong" color={theme.ink} style={{ marginTop: spacing.md }}>{title}</AppText>
+        <AppText variant="caption" color={theme.inkMuted} style={{ marginTop: 2 }}>{subtitle}</AppText>
     </TouchableOpacity>
 );
 
-const SlotItem = ({ slot, selected, onPress }) => (
+const SlotItem = ({ slot, selected, onPress, theme }) => (
     <TouchableOpacity
         onPress={onPress}
         style={[
             styles.slotItem,
-            selected && styles.slotSelected
+            { backgroundColor: selected ? theme.ink : theme.surfaceCard, borderColor: selected ? theme.ink : theme.borderSubtle },
         ]}
     >
-        <Text style={styles.slotText}>{slot.slotName}</Text>
+        <AppText variant="bodyStrong" color={selected ? theme.onInk : theme.ink}>{slot.slotName}</AppText>
     </TouchableOpacity>
 );
 
@@ -279,64 +342,78 @@ const SlotItem = ({ slot, selected, onPress }) => (
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
     },
-    shipmentText: {
-        margin: 16,
-        fontSize: 14,
-        color: '#444',
+    scrollBody: {
+        paddingHorizontal: spacing.xl,
+        paddingBottom: 100,
+    },
+    shipmentRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginVertical: spacing.lg,
     },
     row: {
         flexDirection: 'row',
-        marginHorizontal: 16,
+        gap: spacing.md,
     },
     deliveryOption: {
         flex: 1,
-        padding: 12,
-        borderWidth: 1,
-        borderColor: '#ccc',
-        borderRadius: 12,
-        marginHorizontal: 4,
+        padding: spacing.lg,
+        borderWidth: 1.5,
+        borderRadius: radius.md,
+        alignItems: 'flex-start',
+    },
+    deliveryIconWell: {
+        width: 40,
+        height: 40,
+        borderRadius: radius.sm,
         alignItems: 'center',
+        justifyContent: 'center',
     },
-    deliveryOptionActive: {
-        borderColor: '#ff0055',
+    sectionTitle: {
+        marginTop: spacing.xl,
+        marginBottom: spacing.xs,
     },
-    deliveryText: {
-        fontSize: 14,
-    },
-    datePicker: {
-        margin: 16,
-        padding: 14,
-        borderWidth: 1,
-        borderRadius: 12,
-        borderColor: '#ccc',
-    },
-    dateText: {
-        fontSize: 14,
+    dayTile: {
+        width: 52,
+        height: 64,
+        borderRadius: radius.md,
+        borderWidth: 1.5,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     slotItem: {
         flex: 1,
-        margin: 8,
-        padding: 14,
-        borderWidth: 1,
-        borderRadius: 12,
-        borderColor: '#ccc',
+        marginTop: spacing.md,
+        height: 48,
+        borderWidth: 1.5,
+        borderRadius: radius.sm,
         alignItems: 'center',
+        justifyContent: 'center',
     },
-    slotSelected: {
-        borderColor: '#ff0055',
+    instantCard: {
+        borderRadius: radius.lg,
+        padding: spacing.xl,
+        alignItems: 'center',
+        marginTop: spacing.xl,
     },
-    slotText: {
-        fontSize: 13,
+    instantIcon: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
-    infoText: {
-        fontSize: 12,
-        marginTop: 12,
-        marginLeft: 12,
-        color: '#777',
+    infoBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderRadius: radius.md,
+        padding: spacing.md,
+        marginTop: spacing.xl,
     },
     buttonContainer: {
-        margin: 12
+        paddingHorizontal: spacing.xl,
+        paddingTop: spacing.md,
+        paddingBottom: spacing.xxl,
     },
 });

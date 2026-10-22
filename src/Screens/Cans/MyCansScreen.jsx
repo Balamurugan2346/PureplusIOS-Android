@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import NavScreen from '../../Components/NavScreen';
 import AppText from '../../Components/AppText';
 import AppButton from '../../Components/AppButton';
@@ -10,8 +11,8 @@ import { spacing, radius } from '../../Themes/Themes';
 import { useTheme } from '../../Context/ThemeContext';
 
 /**
- * CUS-25 · My Cans. The customer's reusable-can position + deposit liability.
- * Refund is full once all cans are returned (schedules a collection visit).
+ * CUS-25 · My Cans (prompt 05 restyle). The customer's reusable-can position + deposit
+ * liability. Refund is full once all cans are returned (schedules a collection visit).
  */
 const MyCansScreen = ({ navigation }) => {
 
@@ -21,7 +22,6 @@ const MyCansScreen = ({ navigation }) => {
   const load = useCallback(async () => {
     setState((s) => ({ ...s, loading: true, error: null }));
     try {
-      // CUS-25: dedicated /api/customer/cans (held cans per product + totals + deposits paid).
       const data = await canService.held();
       setState({ loading: false, error: null, data });
     } catch (e) {
@@ -31,7 +31,6 @@ const MyCansScreen = ({ navigation }) => {
 
   useEffect(() => { load(); }, [load]);
 
-  // Defensive reads — confirm exact field names on the first real-data pass.
   const lines = state.data?.heldCans ?? state.data?.cans ?? state.data?.lines ?? [];
   const held =
     state.data?.totalHeld ??
@@ -45,52 +44,73 @@ const MyCansScreen = ({ navigation }) => {
     (Array.isArray(lines) ? lines.reduce((sum, l) => sum + (l?.depositPaid ?? 0), 0) : 0);
 
   return (
-    <NavScreen title="My Cans" navigation={navigation}>
+    <NavScreen title="My Cans" navigation={navigation} background={theme.surface}>
       <StateView loading={state.loading} error={state.error} onRetry={load}>
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <View style={styles.statRow}>
-            <Stat theme={theme} label="Cans held" value={String(held)} />
-            <Stat theme={theme} label="Deposit paid" value={formatCurrency(depositPaid)} />
-          </View>
+        <View style={{ flex: 1 }}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: spacing.lg, paddingBottom: spacing.lg }}>
+            {/* Stat tiles */}
+            <View style={styles.statRow}>
+              <View style={[styles.tile, { backgroundColor: theme.sky200 }]}>
+                <Image source={require('../../../assets/images/watercan2.png')} style={styles.canImg} resizeMode="contain" />
+                <AppText variant="display" color={theme.primary} style={styles.bigNum}>{String(held)}</AppText>
+                <AppText variant="label" color={theme.ink}>Cans held</AppText>
+              </View>
 
-          <View style={[styles.info, { backgroundColor: theme.card }]}>
-            <AppText variant="bodyStrong" color={theme.highlightedText}>How it works</AppText>
-            <AppText variant="body" color={theme.secondaryText} style={{ marginTop: spacing.sm }}>
-              Each delivery swaps your empty can for a full one at the door. Your deposit is fully
-              refundable — return all held cans and close out, and we schedule a collection visit.
-            </AppText>
-          </View>
+              <View style={[styles.tile, { backgroundColor: theme.successTint }]}>
+                <View style={[styles.shieldWell, { backgroundColor: theme.surfaceCard }]}>
+                  <Ionicons name="shield-checkmark-outline" size={24} color={theme.success} />
+                </View>
+                <AppText variant="display" color={theme.success} style={styles.depositNum}>{formatCurrency(depositPaid)}</AppText>
+                <AppText variant="label" color={theme.ink}>Deposit paid · fully refundable</AppText>
+              </View>
+            </View>
 
-          <View style={[styles.info, { backgroundColor: theme.card, marginTop: spacing.md }]}>
-            <AppText variant="caption" color={theme.secondaryText}>
-              To request a deposit refund, return all held cans on your next delivery or raise a
-              service request. Refunds are full, with no restocking deduction.
-            </AppText>
-          </View>
+            {/* How it works */}
+            <View style={[styles.info, { backgroundColor: theme.surfaceCard }]}>
+              <AppText variant="title" color={theme.ink}>How it works</AppText>
+              <AppText variant="body" color={theme.inkMuted} style={{ marginTop: spacing.sm }}>
+                Each delivery swaps your empty can for a full one at the door. Your deposit is fully
+                refundable — return all held cans and close out, and we schedule a collection visit.
+              </AppText>
+            </View>
 
-          <View style={{ marginTop: spacing.xl }}>
-            <AppButton
-              title="Schedule refill"
-              onAction={() => navigation?.navigate?.('Refill')}
-            />
+            {/* Refund policy note with inline service-request link */}
+            <View style={[styles.note, { backgroundColor: theme.surfaceSunken }]}>
+              <AppText variant="caption" color={theme.ink}>
+                To request a deposit refund, return all held cans on your next delivery or{' '}
+                <AppText
+                  variant="caption"
+                  color={theme.primary}
+                  style={styles.link}
+                  onPress={() => navigation?.navigate?.('ServiceRequest')}
+                >
+                  raise a service request
+                </AppText>
+                . Refunds are full, with no restocking deduction.
+              </AppText>
+            </View>
+          </ScrollView>
+
+          <View style={styles.footer}>
+            <AppButton title="Schedule refill" onAction={() => navigation?.navigate?.('Refill')} />
           </View>
-        </ScrollView>
+        </View>
       </StateView>
     </NavScreen>
   );
 };
 
-const Stat = ({ theme, label, value }) => (
-  <View style={[styles.stat, { backgroundColor: theme.card }]}>
-    <AppText variant="h1" color={theme.primary}>{value}</AppText>
-    <AppText variant="caption" color={theme.secondaryText} style={{ marginTop: spacing.xs }}>{label}</AppText>
-  </View>
-);
-
 const styles = StyleSheet.create({
   statRow: { flexDirection: 'row', gap: spacing.md },
-  stat: { flex: 1, borderRadius: radius.lg, padding: spacing.lg, alignItems: 'center' },
-  info: { borderRadius: radius.md, padding: spacing.lg, marginTop: spacing.lg },
+  tile: { flex: 1, borderRadius: radius.lg, padding: spacing.lg, gap: 10 },
+  canImg: { width: 28, height: 36 },
+  bigNum: { fontSize: 40, lineHeight: 44 },
+  shieldWell: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
+  depositNum: { fontSize: 28, lineHeight: 34 },
+  info: { borderRadius: radius.lg, padding: spacing.lg },
+  note: { borderRadius: radius.md, padding: spacing.lg },
+  link: { textDecorationLine: 'underline' },
+  footer: { paddingTop: spacing.lg, paddingBottom: spacing.xl },
 });
 
 export default MyCansScreen;

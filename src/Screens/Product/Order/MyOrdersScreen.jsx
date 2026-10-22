@@ -1,5 +1,5 @@
 import { useTheme } from '../../../Context/ThemeContext';
-import Fonts from '../../../../assets/fonts/Fonts';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
   FlatList,
   RefreshControl,
@@ -12,6 +12,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import OrderItem from '../../../Components/OrderItem';
 import TopAppBar from '../../../Components/TopAppBar';
+import AppText from '../../../Components/AppText';
+import { radius, spacing, floatShadow } from '../../../Themes/Themes';
 import { useDispatch, useSelector } from 'react-redux';
 import { useEffect, useState } from 'react';
 import { getAllOrders } from '../../../Redux/Slices/OrderSlice';
@@ -125,7 +127,7 @@ const MyOrdersScreen = ({ navigation }) => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.secondaryBackground }]}>
+    <View style={[styles.container, { backgroundColor: theme.surface }]}>
 
       <TopAppBar navigation={navigation} title="My Orders" />
 
@@ -136,9 +138,12 @@ const MyOrdersScreen = ({ navigation }) => {
       {/* FILTER BAR */}
       <View style={styles.filterContainer}>
 
-        <Text style={styles.filterLabel}>
-          {getFilterLabel()}
-        </Text>
+        <View style={{ flex: 1 }}>
+          <AppText variant="title" color={theme.ink}>{getFilterLabel()}</AppText>
+          <AppText variant="caption" color={theme.inkMuted} style={{ marginTop: 2 }}>
+            Total Orders: {filteredOrders.length}
+          </AppText>
+        </View>
 
         {selectedMonth ? (
           <TouchableOpacity
@@ -148,34 +153,19 @@ const MyOrdersScreen = ({ navigation }) => {
               setSelectedYear(null);
             }}
           >
-            <Text style={styles.clearText}>Clear Filter</Text>
+            <AppText variant="label" color={theme.danger}>Clear Filter</AppText>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity
-            style={styles.changeButton}
+            style={[styles.changeButton, { backgroundColor: theme.primaryTint }]}
             onPress={() => setShowPicker(true)}
           >
-            <Text style={styles.changeText}>Change Month</Text>
+            <Ionicons name="calendar-outline" size={16} color={theme.primary} />
+            <AppText variant="label" color={theme.primary} style={{ marginLeft: 6 }}>Change Month</AppText>
           </TouchableOpacity>
         )}
 
-
-
-
       </View>
-
-      {/* TOTAL ORDERS */}
-      <Text
-        style={{
-          color: theme.greyText,
-          fontFamily: Fonts.family.regular,
-          fontSize: Fonts.size.base,
-          paddingLeft: 16,
-          marginBottom: 5
-        }}
-      >
-        Total Orders : {filteredOrders.length}
-      </Text>
 
       {/* ORDER LIST */}
 
@@ -192,7 +182,7 @@ const MyOrdersScreen = ({ navigation }) => {
             />
           }
           contentContainerStyle={{
-            paddingBottom: insets.bottom + 20
+            paddingBottom: insets.bottom + 110
           }}
         />
       ) : (
@@ -205,21 +195,22 @@ const MyOrdersScreen = ({ navigation }) => {
               colors={[theme.primary]}
             />
           }
+          contentContainerStyle={{ paddingHorizontal: spacing.xl, paddingTop: spacing.sm }}
           ListEmptyComponent={() => (
-            <View style={styles.emptyContainer}>
+            <View style={[styles.emptyCard, { backgroundColor: theme.surfaceCard }]}>
               <Image
                 source={require('../../../../assets/images/no_order.jpg')}
                 style={styles.emptyImage}
                 resizeMode="contain"
               />
 
-              <Text style={[styles.emptyTitle, { color: theme.greyText }]}>
+              <AppText variant="title" color={theme.ink} style={{ marginTop: spacing.md }}>
                 No Orders Yet
-              </Text>
+              </AppText>
 
-              <Text style={[styles.emptySubtitle, { color: theme.secondaryText }]}>
+              <AppText variant="caption" color={theme.inkMuted} style={styles.emptySubtitle}>
                 Your orders will appear here once you place one.
-              </Text>
+              </AppText>
             </View>
           )}
         />
@@ -229,38 +220,40 @@ const MyOrdersScreen = ({ navigation }) => {
         visible={showPicker}
         transparent
         animationType="slide"
+        onRequestClose={() => setShowPicker(false)}
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalCard}>
+        <TouchableOpacity activeOpacity={1} style={[styles.sheetOverlay, { backgroundColor: theme.scrim }]} onPress={() => setShowPicker(false)}>
+          <TouchableOpacity activeOpacity={1} style={[styles.sheet, { backgroundColor: theme.surfaceCard }, floatShadow]}>
 
-            <Text style={styles.modalTitle}>Select Month</Text>
+            <View style={[styles.grabHandle, { backgroundColor: theme.borderSubtle }]} />
 
-            <FlatList
-              data={months}
-              keyExtractor={(item) => item}
-              renderItem={({ item, index }) => (
+            <AppText variant="title" color={theme.ink} style={{ marginBottom: spacing.lg }}>Select Month</AppText>
+
+            <View style={styles.monthGrid}>
+              {months.map((item, index) => (
                 <TouchableOpacity
-                  style={styles.monthItem}
+                  key={item}
+                  style={[styles.monthChip, { backgroundColor: theme.surfaceCard, borderColor: theme.borderSubtle }]}
                   onPress={() => {
                     setSelectedMonth(index);
                     setSelectedYear(new Date().getFullYear());
                     setShowPicker(false);
                   }}
                 >
-                  <Text>{item}</Text>
+                  <AppText variant="label" color={theme.ink}>{item.slice(0, 3)}</AppText>
                 </TouchableOpacity>
-              )}
-            />
+              ))}
+            </View>
 
             <TouchableOpacity
-              style={styles.closeButton}
+              style={[styles.closeButton, { borderColor: theme.borderStrong }]}
               onPress={() => setShowPicker(false)}
             >
-              <Text>Close</Text>
+              <AppText variant="button" color={theme.ink}>Close</AppText>
             </TouchableOpacity>
 
-          </View>
-        </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
       </Modal>
 
     </View>
@@ -277,104 +270,87 @@ const styles = StyleSheet.create({
 
   filterContainer: {
     flexDirection: "row",
-    justifyContent: "space-around",
     alignItems: "center",
-    paddingVertical: 10,
-    marginHorizontal: 10
-  },
-
-  filterButton: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: "#eee"
-  },
-
-  activeFilter: {
-    backgroundColor: "#d7e7ff"
-  },
-
-  filterText: {
-    fontWeight: "600"
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    gap: spacing.md,
   },
 
   clearButton: {
-    paddingHorizontal: 14,
-    paddingVertical: 6
-  },
-
-  clearText: {
-    color: "red",
-    fontWeight: "600"
-  },
-  filterLabel: {
-    fontSize: 16,
-    fontWeight: "600"
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
   },
 
   changeButton: {
-    backgroundColor: "#3274CC",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.lg,
+    height: 36,
+    borderRadius: radius.pill,
   },
 
-  changeText: {
-    color: "#fff"
-  },
-
-  modalContainer: {
+  sheetOverlay: {
     flex: 1,
+    justifyContent: "flex-end",
+  },
+
+  sheet: {
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xl,
+  },
+
+  grabHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    alignSelf: "center",
+    marginBottom: spacing.lg,
+  },
+
+  monthGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.md,
+  },
+
+  monthChip: {
+    width: '30%',
+    height: 40,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(0,0,0,0.4)"
-  },
-
-  modalCard: {
-    backgroundColor: "#fff",
-    margin: 20,
-    borderRadius: 10,
-    padding: 20
-  },
-
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 10
-  },
-
-  monthItem: {
-    paddingVertical: 10
   },
 
   closeButton: {
-    marginTop: 10,
-    alignItems: "center"
-  },
-
-  emptyContainer: {
-    flex: 1,
+    marginTop: spacing.xl,
+    height: 52,
+    borderRadius: radius.pill,
+    borderWidth: 1.5,
     alignItems: "center",
     justifyContent: "center",
-    paddingTop: 120
+  },
+
+  emptyCard: {
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radius.lg,
+    paddingVertical: 40,
+    paddingHorizontal: spacing.xl,
+    marginTop: spacing.sm,
   },
 
   emptyImage: {
-    width: 180,
-    height: 180,
-    marginBottom: 10
-  },
-
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginTop: 10
+    width: 96,
+    height: 96,
   },
 
   emptySubtitle: {
-    fontSize: 13,
-    marginTop: 5,
+    marginTop: 4,
     textAlign: "center",
-    paddingHorizontal: 40
   }
 
 });

@@ -1,71 +1,55 @@
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import Fonts from '../../assets/fonts/Fonts';
 import { useTheme } from '../Context/ThemeContext';
+import { fontFamily, radius, spacing } from '../Themes/Themes';
 
-const Tag = ({ title, onClick, icon ,badgeNeed ,onPress }) => {
+/**
+ * Dashboard quick-action tile (redesign 02). White card, primaryTint icon well,
+ * caption, optional danger count badge. Props preserved: title, icon, badgeNeed, onPress.
+ */
+const Tag = ({ title, onClick, icon, badgeNeed, onPress }) => {
+  const { theme } = useTheme();
 
-    const { theme, toggleTheme, isDark } = useTheme();
+  return (
+    <TouchableOpacity style={styles.container} activeOpacity={0.8} onPress={onPress}>
+      <View style={[styles.card, { backgroundColor: theme.surfaceCard }]}>
+        <View style={[styles.iconWell, { backgroundColor: theme.primaryTint }]}>
+          <Image source={icon} style={{ width: 22, height: 22 }} tintColor={theme.primary} />
+        </View>
+        <Text numberOfLines={1} style={[styles.caption, { color: theme.inkMuted }]}>{title}</Text>
+        {badgeNeed && (
+          <View style={[styles.badge, { backgroundColor: theme.danger, borderColor: theme.surfaceCard }]}>
+            <Text style={[styles.badgeText, { color: theme.onInk }]}>1</Text>
+          </View>
+        )}
+      </View>
+    </TouchableOpacity>
+  );
+};
 
-    const paratextConfig = {
-        color: theme.background,
-        fontFamily: Fonts.family.medium,
-        fontSize: Fonts.size.xs
-    }
-
-    return (
-        <TouchableOpacity style={styles.container} onPress={onPress}>
-            <View style={[styles.cardContainer, { backgroundColor: theme.cardContainer }]}>
-                <Image source={icon} style={{ width: 25, height: 25 }} tintColor={theme.primary} />
-            </View>
-            <Text numberOfLines={1} style={[paratextConfig, { marginTop: 3, textAlign: 'center' }]}>{title}</Text>
-            {badgeNeed && (
-                <View style={styles.badge}>
-                    <Text style={styles.badgeText}>1</Text>
-                </View>
-            )}
-
-        </TouchableOpacity>
-
-    )
-}
-
-export default Tag
+export default Tag;
 
 const styles = StyleSheet.create({
-
-
-    container: {
-        flex: 1,
-        alignItems: "center",
-    },
-
-    cardContainer: {
-        alignSelf: "center",
-        overflow: 'hidden',
-        alignItems: "center",
-        marginHorizontal: 6,
-        borderRadius: 16,
-        justifyContent: "center",
-        padding: 12,
-        elevation: 3,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
-    },
-
-    badge: {
-        position: "absolute",
-        top: -5,
-        right: 5,
-        backgroundColor: "red",
-        borderRadius: 10,
-        paddingHorizontal: 5,
-        paddingVertical: 1,
-    },
-    badgeText: {
-        color: "#fff",
-        fontSize: 12,
-        fontWeight: "bold",
-    },
-})
+  container: { flex: 1 },
+  card: {
+    borderRadius: radius.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xs,
+    alignItems: 'center',
+    gap: 6,
+  },
+  iconWell: { width: 44, height: 44, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center' },
+  caption: { fontFamily: fontFamily.medium, fontSize: 12, lineHeight: 16 },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: 8,
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    paddingHorizontal: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: { fontFamily: fontFamily.semibold, fontSize: 11, lineHeight: 14 },
+});

@@ -1,23 +1,24 @@
-import React, { useRef } from "react";
-import { Animated, Dimensions, Pressable, StyleSheet, View } from "react-native";
+import React from "react";
+import { Pressable, StyleSheet, View } from "react-native";
+import { useTheme } from "../Context/ThemeContext";
+import { radius, spacing, floatShadow } from "../Themes/Themes";
 
-const { height: SCREEN_HEIGHT } = Dimensions.get("window");
-
+/**
+ * BottomSheet (00-foundation): scrim backdrop (tap closes); white sheet, top
+ * radius 32, floatShadow, 40×4 grab handle at the top. Props preserved:
+ * `visible`, `onClose`, `children`.
+ */
 const BottomSheet = ({ visible, onClose, children }) => {
-  const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+  const { theme } = useTheme();
 
   return (
     <View pointerEvents={visible ? "auto" : "none"} style={StyleSheet.absoluteFill}>
       {visible && (
         <>
-          {/* Dimmed background */}
-          <Pressable
-            onPress={onClose}
-            style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0,0,0,0.4)" }]}
-          />
+          <Pressable onPress={onClose} style={[StyleSheet.absoluteFill, { backgroundColor: theme.scrim }]} />
 
-          {/* Bottom sheet (always above the dim) */}
-          <View style={styles.sheet}>
+          <View style={[styles.sheet, { backgroundColor: theme.surfaceCard }, floatShadow]}>
+            <View style={[styles.handle, { backgroundColor: theme.borderSubtle }]} />
             {children}
           </View>
         </>
@@ -32,11 +33,20 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: "100%",
     height: "60%",
-    backgroundColor: "#fff",  // important: solid background so dim doesn’t bleed
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
     minHeight: 200,
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
+    paddingTop: spacing.md,
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.xl,
     zIndex: 99,
+  },
+  handle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    alignSelf: "center",
+    marginBottom: spacing.md,
   },
 });
 

@@ -5,7 +5,7 @@ export const TagData = [
     title: 'My Orders',
     icon: require('../../assets/images/clipboard.png'),
     routeName: 'MyOrdersScreen',
-    badgeNeed : true,
+    badgeNeed : false,
   },
   {
     id: '2',
@@ -24,7 +24,7 @@ export const TagData = [
   {
     id: '4',
     title: 'Bulk / Event',
-    icon: require('../../assets/images/canBusinessLogic.png'),
+    icon: require('../../assets/images/bulk-event.png'),
     routeName: 'BulkRequest',
     badgeNeed: false,
   },

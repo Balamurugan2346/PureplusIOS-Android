@@ -1,82 +1,70 @@
-import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React from 'react';
+import { StyleSheet, View } from 'react-native';
+import notifee from '@notifee/react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import AppButton from '../../Components/AppButton';
+import AppText from '../../Components/AppText';
+import BrandShape from '../../Components/BrandShape';
+import { useTheme } from '../../Context/ThemeContext';
+import { spacing, radius } from '../../Themes/Themes';
 
-export default function EnableNotificationsScreen() {
+/**
+ * Enable Notifications (redesign 01).
+ *
+ * NOTE (human-in-the-loop): this screen is currently an orphan — it is NOT
+ * registered in AppNavigator and nothing navigates to it. So the post-action
+ * destination is undefined. Enable requests the OS notification permission via
+ * the project's existing notifee lib; both buttons then fall back to goBack()
+ * if a navigation prop is present. **Confirm where this screen sits in the flow
+ * and where both buttons should go next before relying on it.**
+ */
+export default function EnableNotificationsScreen({ navigation }) {
+  const { theme } = useTheme();
+
+  const requestAndContinue = async () => {
+    try {
+      await notifee.requestPermission();
+    } catch (e) {
+      // permission request failed — continue regardless
+    }
+    navigation?.goBack?.(); // TODO: confirm real destination
+  };
+
+  const skip = () => {
+    navigation?.goBack?.(); // TODO: confirm real destination
+  };
+
   return (
-    <View style={styles.container}>
-      {/* Top text */}
-      <Text style={styles.title}>
-        Enable notifications to get{'\n'}
-        updates{'\n'}
-        about offers, order status{'\n'}
-        and more
-      </Text>
+    <View style={[styles.container, { backgroundColor: theme.surface }]}>
+      <AppText variant="title" color={theme.ink} style={styles.headline}>
+        Enable notifications to get updates about offers, order status and more
+      </AppText>
 
-      {/* Illustration */}
-      <Image
-        source={require('../../../assets/images/person.png')} // Add your image here
-        style={styles.image}
-        resizeMode="contain"
-      />
+      <View style={[styles.illustration, { backgroundColor: theme.sky200 }]}>
+        <View style={[styles.bell, { backgroundColor: theme.primary }]}>
+          <Ionicons name="notifications" size={34} color={theme.onPrimary} />
+        </View>
+        <BrandShape shape="leaf" size={110} color={theme.brandGreen} style={{ left: -24, bottom: -24 }} />
+      </View>
 
-      {/* Buttons */}
-      <TouchableOpacity style={styles.enableButton}>
-        <Text style={styles.enableText}>Enable Notifications</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.notNowButton}>
-        <Text style={styles.notNowText}>Not now</Text>
-      </TouchableOpacity>
+      <View style={styles.buttons}>
+        <AppButton title="Enable Notifications" onAction={requestAndContinue} />
+        <AppButton title="Not now" borderOnly onAction={skip} />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  container: { flex: 1, paddingTop: 64, paddingHorizontal: spacing.xl, paddingBottom: 48, gap: spacing.xxl },
+  headline: { textAlign: 'center' },
+  illustration: {
     flex: 1,
-    backgroundColor: '#fff',
+    borderRadius: radius.lg,
+    overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 20,
   },
-  title: {
-    fontSize: 18,
-    textAlign: 'center',
-    color: '#000',
-    marginBottom: 30,
-    lineHeight: 26,
-    fontWeight: '500',
-  },
-  image: {
-    width: '100%',
-    height: 250,
-    marginBottom: 40,
-  },
-  enableButton: {
-    backgroundColor: '#F05454',
-    paddingVertical: 15,
-    paddingHorizontal: 40,
-    borderRadius: 8,
-    width: '100%',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  enableText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  notNowButton: {
-    borderColor: '#F05454',
-    borderWidth: 1,
-    paddingVertical: 15,
-    paddingHorizontal: 40,
-    borderRadius: 8,
-    width: '100%',
-    alignItems: 'center',
-  },
-  notNowText: {
-    color: '#F05454',
-    fontSize: 16,
-    fontWeight: '600',
-  },
+  bell: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center' },
+  buttons: { gap: spacing.md },
 });

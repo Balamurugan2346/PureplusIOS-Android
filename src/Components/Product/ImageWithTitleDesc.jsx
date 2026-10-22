@@ -1,109 +1,41 @@
 import React from 'react';
-import { View, Text, ImageBackground, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import AppText from '../AppText';
+import BrandShape from '../BrandShape';
 import { useTheme } from '../../Context/ThemeContext';
-import Fonts from '../../../assets/fonts/Fonts';
-
-// --- Placeholder Image URI (Replace with your actual image import or URI) ---
-const BACKGROUND_IMAGE_URI = 'https://i.imgur.com/WbQvF1k.png'; 
-// Note: This placeholder is based on the image you provided.
-// You should replace it with your actual image path or import.
-// --------------------------------------------------------------------------
+import { radius, spacing } from '../../Themes/Themes';
 
 /**
- * Reusable component for an image card with a title and description overlay.
- * @param {object} props
- * @param {string} props.imageUrl - URI or require path for the background image.
- * @param {string} props.title - The main title text.
- * @param {string} props.description - The descriptive text below the title.
- * 
- * 
- * 
+ * Product hero card (redesign 02): brandBlue card with decorative shapes and ink
+ * text (never white on brandBlue). Props preserved: title, description.
  */
-
-  
-const ImageWithTitleDesc = ({ 
-  title = "Pure & Safe Hydration",
-  description = "Our commitment to your well-being.",
+const ImageWithTitleDesc = ({
+  title = 'Pure & Safe Hydration',
+  description = 'Our commitment to your well-being.',
 }) => {
-
-
-    const { theme } = useTheme()
-    const headerConfig = {
-    color: 'white',
-    fontFamily: Fonts.family.semiBold,
-    fontSize: Fonts.size.xxl
-  }
-
-  const paratextConfig = {
-    color: theme.text,
-    fontFamily: Fonts.family.medium,
-    fontSize: Fonts.size.sm
-  }
+  const { theme } = useTheme();
 
   return (
-    <View style={styles.cardContainer}>
-      <ImageBackground 
-        source={require('../../../assets/images/watercanprotectsunlight.png')} 
-        style={styles.imageBackground}
-        imageStyle={styles.imageStyle} // Apply border radius to the image itself
-      >
-        {/* Overlay to improve text readability */}
-        <View style={styles.overlay} /> 
-
-        {/* Text Content */}
-        <View style={styles.textContainer}>
-          <Text style={headerConfig}>{title}</Text>
-          <Text style={paratextConfig}>{description}</Text>
-        </View>
-      </ImageBackground>
+    <View style={[styles.card, { backgroundColor: theme.brandBlue }]}>
+      <BrandShape shape="drop" size={170} color={theme.brandBlueLight} style={{ right: -40, top: -30 }} />
+      <BrandShape shape="leaf" size={110} color={theme.brandGreen} style={{ right: 24, top: 10 }} />
+      <View style={styles.text}>
+        <AppText variant="price" color={theme.ink} style={styles.title}>{title}</AppText>
+        <AppText variant="caption" color={theme.ink}>{description}</AppText>
+      </View>
     </View>
   );
 };
 
-// --- Stylesheet for the component ---
 const styles = StyleSheet.create({
-  cardContainer: {
-    margin: 15, // Margin around the entire card
-    borderRadius: 16,
-    overflow: 'hidden', // Ensures content respects border radius, especially for ImageBackground
-    // Shadow for iOS
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    // Elevation for Android
-    elevation: 8,
+  card: {
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+    aspectRatio: 16 / 9,
+    justifyContent: 'flex-end',
   },
-  imageBackground: {
-    width: '100%',
-    aspectRatio: 16 / 9, // Maintain a consistent aspect ratio
-    justifyContent: 'flex-end', // Push content to the bottom
-  },
-  imageStyle: {
-    borderRadius: 16, // Apply border radius directly to the image
-  },
-  overlay: {
-    ...StyleSheet.absoluteFillObject, // Covers the entire image background
-    backgroundColor: 'rgba(0, 0, 0, 0.25)', // Semi-transparent dark overlay for text readability
-    borderRadius: 16, // Match card container
-  },
-  textContainer: {
-    padding: 20,
-    position: 'absolute', // Position text over the image
-    bottom: 0,
-    left: 0,
-    right: 0,
-  },
-  titleText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 5,
-  },
-  descriptionText: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.9)', // Slightly transparent white
-  },
+  text: { padding: spacing.xl, gap: 4 },
+  title: { fontSize: 20, lineHeight: 26, fontWeight: '700' },
 });
 
 export default ImageWithTitleDesc;

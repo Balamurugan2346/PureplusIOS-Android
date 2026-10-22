@@ -1,50 +1,60 @@
 import { Modal, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import { useTheme } from '../Context/ThemeContext';
+import { fontFamily, radius, spacing, floatShadow } from '../Themes/Themes';
 
-const AppModal = ({ 
-  title, 
-  description, 
-  onPositive, 
-  onNegative, 
-  visible, 
-  setModalVisible 
+/**
+ * Confirmation dialog (00-foundation). Props preserved: title, description,
+ * onPositive, onNegative, visible, setModalVisible. Added: `destructive`
+ * (Confirm becomes a danger button), `confirmText`, `cancelText`.
+ */
+const AppModal = ({
+  title,
+  description,
+  onPositive,
+  onNegative,
+  visible,
+  setModalVisible,
+  destructive = false,
+  confirmText = 'Confirm',
+  cancelText = 'Cancel',
+  hideCancel = false,
 }) => {
+  const { theme } = useTheme();
 
   const handleClose = () => {
     setModalVisible(false);
-    if (onNegative) onNegative(); // Treat close as cancel
+    if (onNegative) onNegative();
   };
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={handleClose}
-    >
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={handleClose}>
       <TouchableWithoutFeedback onPress={handleClose}>
-        <View style={styles.overlay}>
+        <View style={[styles.overlay, { backgroundColor: theme.scrim }]}>
           <TouchableWithoutFeedback>
-            <View style={styles.modalContainer}>
-              {title ? <Text style={styles.title}>{title}</Text> : null}
-              {description ? <Text style={styles.description}>{description}</Text> : null}
+            <View style={[styles.dialog, { backgroundColor: theme.surfaceCard }, floatShadow]}>
+              {title ? <Text style={[styles.title, { color: theme.ink }]}>{title}</Text> : null}
+              {description ? <Text style={[styles.description, { color: theme.inkMuted }]}>{description}</Text> : null}
 
-              {/* Buttons Row */}
               <View style={styles.buttonRow}>
-                <TouchableOpacity
-                  style={[styles.button, styles.cancelButton]}
-                  onPress={handleClose}
-                >
-                  <Text style={styles.cancelText}>Cancel</Text>
-                </TouchableOpacity>
+                {!hideCancel && (
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    style={[styles.button, { backgroundColor: theme.surfaceCard, borderColor: theme.borderStrong, borderWidth: 1.5 }]}
+                    onPress={handleClose}
+                  >
+                    <Text style={[styles.btnLabel, { color: theme.ink }]}>{cancelText}</Text>
+                  </TouchableOpacity>
+                )}
 
                 <TouchableOpacity
-                  style={[styles.button, styles.confirmButton]}
+                  activeOpacity={0.85}
+                  style={[styles.button, { backgroundColor: destructive ? theme.danger : theme.primary }]}
                   onPress={() => {
                     setModalVisible(false);
                     if (onPositive) onPositive();
                   }}
                 >
-                  <Text style={styles.confirmText}>Confirm</Text>
+                  <Text style={[styles.btnLabel, { color: theme.onPrimary }]}>{confirmText}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -55,58 +65,14 @@ const AppModal = ({
   );
 };
 
-
 export default AppModal;
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: '#00000088',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContainer: {
-    width: '80%',
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 15,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  description: {
-    fontSize: 15,
-    marginBottom: 20,
-    textAlign: 'center',
-    color: '#555',
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  button: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 5,
-    alignItems: 'center',
-  },
-  cancelButton: {
-    backgroundColor: '#ccc',
-    marginRight: 10,
-  },
-  confirmButton: {
-    backgroundColor: '#4CAF50',
-    marginLeft: 10,
-  },
-  cancelText: {
-    color: '#333',
-    fontWeight: 'bold',
-  },
-  confirmText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
+  overlay: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.xl },
+  dialog: { width: '100%', maxWidth: 320, borderRadius: radius.md, padding: spacing.xl },
+  title: { fontFamily: fontFamily.semibold, fontSize: 18, lineHeight: 24, marginBottom: spacing.sm, textAlign: 'center' },
+  description: { fontFamily: fontFamily.regular, fontSize: 14, lineHeight: 20, marginBottom: spacing.xl, textAlign: 'center' },
+  buttonRow: { flexDirection: 'row', gap: spacing.md },
+  button: { flex: 1, height: 44, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
+  btnLabel: { fontFamily: fontFamily.semibold, fontSize: 15, lineHeight: 20 },
 });

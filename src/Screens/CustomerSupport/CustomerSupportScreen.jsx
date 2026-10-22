@@ -1,23 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import {
     View,
-    Text,
     StyleSheet,
     ScrollView,
     TouchableOpacity,
     Linking,
-    Platform,
-    RefreshControl
-
+    RefreshControl,
 } from 'react-native';
 
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import TopAppBar from '../../Components/TopAppBar';
-import VectorBg from '../../Components/VectorBg';
+import AppText from '../../Components/AppText';
+import AppButton from '../../Components/AppButton';
 import { SUPPORT_CONFIG } from '../../Config/SupportConfig';
 import { useTheme } from '../../Context/ThemeContext';
-import Fonts from '../../../assets/fonts/Fonts';
+import { radius, spacing, floatShadow } from '../../Themes/Themes';
 import { clearCustomerSupportDetails, loadCustomerSupportDetails } from '../../Redux/Slices/BannerSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import AppLoading from '../../Components/AppLoading';
@@ -39,8 +37,7 @@ const CustomerSupportScreen = ({ navigation }) => {
         if (!isCustomerSupportFetched) {
             dispatch(loadCustomerSupportDetails());
         }
-    }, [dispatch, isCustomerSupportFetched]); // 🔹 only run on mount
-
+    }, [dispatch, isCustomerSupportFetched]);
 
     const handleRefresh = () => {
         dispatch(clearCustomerSupportDetails())
@@ -50,21 +47,7 @@ const CustomerSupportScreen = ({ navigation }) => {
         }, 2000);
     }
 
-
-    const headerConfig = {
-        color: theme.greyText,
-        fontFamily: Fonts.family.regular,
-        fontSize: Fonts.size.base
-    };
-
-    const paratextConfig = {
-        color: theme.secondaryText,
-        fontFamily: Fonts.family.medium,
-        fontSize: Fonts.size.xs
-    };
-
     /* ---------------- ACTION HANDLERS ---------------- */
-
     const openDialer = () => {
         if (!phone) return;
         Linking.openURL(`tel:${phone}`);
@@ -72,24 +55,19 @@ const CustomerSupportScreen = ({ navigation }) => {
 
     const openEmail = () => {
         if (!email) return;
-
         const subject = encodeURIComponent('Pure Plus Support');
         const body = encodeURIComponent(
             'Hi Pure Plus Support,\n\nI need help with my water delivery.\n\nThanks.'
         );
-
         Linking.openURL(`mailto:${email}?subject=${subject}&body=${body}`);
     };
 
     const openWhatsApp = async () => {
         if (!whatsapp) return;
-
         const phoneNumber = whatsapp.replace('+', '');
         const message = encodeURIComponent("Hi, I need help with my order");
-
         const whatsappURL = `whatsapp://send?phone=${phoneNumber}&text=${message}`;
         const webURL = `https://wa.me/${phoneNumber}?text=${message}`;
-
         try {
             await Linking.openURL(whatsappURL);
         } catch {
@@ -97,180 +75,161 @@ const CustomerSupportScreen = ({ navigation }) => {
         }
     };
 
-
-
     /* ---------------- UI ---------------- */
-
     return (
-        <View style={[styles.container, { backgroundColor: theme.secondaryBackground }]}>
+        <View style={[styles.container, { backgroundColor: theme.surface }]}>
             <TopAppBar title="Customer Support" navigation={navigation} />
 
             <ScrollView
-                contentContainerStyle={{
-                    padding: 16,
-                    paddingBottom: 120
-                }}
+                contentContainerStyle={styles.scrollBody}
                 refreshControl={
-                    <RefreshControl
-                        refreshing={refreshing}
-                        onRefresh={handleRefresh}
-                    />
+                    <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[theme.primary]} />
                 }
                 showsVerticalScrollIndicator={false}
             >
 
                 {customerSupportLoading && (
-                    <AppLoading isVisible={customerSupportLoading}/>
+                    <AppLoading isVisible={customerSupportLoading} />
                 )}
 
                 {/* HELP CARD */}
-                <View style={[styles.helpCard, { backgroundColor: theme.cardContainer }]}>
-                    <VectorBg icon="headset-outline" bgColor={theme.teritary} />
-                    <Text style={[headerConfig, styles.helpTitle]}>How can we help?</Text>
-                    <Text style={paratextConfig}>
-                        We are here to help you with your water delivery needs. Our team is available 9am - 9pm.
-                    </Text>
+                <View style={[styles.helpCard, { backgroundColor: theme.sky200 }]}>
+                    <View style={[styles.helpWell, { backgroundColor: theme.surfaceCard }]}>
+                        <Ionicons name="headset-outline" size={24} color={theme.primary} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                        <AppText variant="title" color={theme.ink}>How can we help?</AppText>
+                        <AppText variant="body" color={theme.ink} style={{ marginTop: 4 }}>
+                            We are here to help you with your water delivery needs. Our team is available 9am – 9pm.
+                        </AppText>
+                    </View>
                 </View>
 
                 {/* CONTACT OPTIONS */}
-                <View style={[styles.helpCard, { backgroundColor: theme.cardContainer }]}>
-                    <Text style={[headerConfig, styles.sectionTitle]}>Contact Us</Text>
+                <View style={[styles.card, { backgroundColor: theme.surfaceCard }]}>
+                    <AppText variant="title" color={theme.ink} style={{ marginBottom: spacing.sm }}>Contact Us</AppText>
 
-                    <SupportItem
-                        icon="call-outline"
-                        title="Phone Support"
-                        value={phone || 'Not Available'}
-                        onPress={openDialer}
-                        theme={theme}
-                    />
-
-                    <SupportItem
-                        icon="mail-outline"
-                        title="Email Support"
-                        value={email || 'Not Available'}
-                        onPress={openEmail}
-                        theme={theme}
-                    />
-
-                    <SupportItem
-                        icon="logo-whatsapp"
-                        title="WhatsApp Support"
-                        value={whatsapp || 'Not Available'}
-                        onPress={openWhatsApp}
-                        theme={theme}
-                    />
+                    <SupportItem theme={theme} first icon="call-outline" tone="primary" title="Phone Support" value={phone || 'Not Available'} onPress={openDialer} />
+                    <SupportItem theme={theme} icon="mail-outline" tone="warning" title="Email Support" value={email || 'Not Available'} onPress={openEmail} />
+                    <SupportItem theme={theme} icon="logo-whatsapp" tone="success" title="WhatsApp Support" value={whatsapp || 'Not Available'} onPress={openWhatsApp} />
                 </View>
 
-
                 {/* FAQ */}
-                <Text style={[headerConfig, styles.sectionTitle]}>Frequently Asked Questions</Text>
+                <AppText variant="title" color={theme.ink} style={{ marginBottom: spacing.sm }}>Frequently Asked Questions</AppText>
 
-                {SUPPORT_CONFIG.faq.map((item, index) => {
-                    const expanded = expandedIndex === index;
+                <View style={{ marginBottom: 20 }}>
+                    {SUPPORT_CONFIG.faq.map((item, index) => {
+                        const expanded = expandedIndex === index;
+                        return (
+                            <TouchableOpacity
+                                key={index}
+                                style={[styles.faqItem, { backgroundColor: theme.surfaceCard }]}
+                                onPress={() => setExpandedIndex(expanded ? null : index)}
+                                activeOpacity={0.8}
+                            >
+                                <View style={styles.faqHeader}>
+                                    <AppText variant="bodyStrong" color={theme.ink} style={{ flex: 1, marginRight: spacing.md }}>{item.question}</AppText>
+                                    <Ionicons
+                                        name={expanded ? 'chevron-up' : 'chevron-down'}
+                                        size={20}
+                                        color={theme.primary}
+                                    />
+                                </View>
+                                {expanded && (
+                                    <AppText variant="body" color={theme.inkMuted} style={{ marginTop: spacing.sm }}>
+                                        {item.answer}
+                                    </AppText>
+                                )}
+                            </TouchableOpacity>
+                        );
+                    })}
+                </View>
 
-                    return (
-                        <TouchableOpacity
-                            key={index}
-                            style={[styles.faqItem, { backgroundColor: theme.cardContainer }]}
-                            onPress={() => setExpandedIndex(expanded ? null : index)}
-                            activeOpacity={0.8}
-                        >
-                            <View style={styles.faqHeader}>
-                                <Text style={headerConfig}>{item.question}</Text>
-                                <Ionicons
-                                    name={expanded ? 'chevron-up-outline' : 'chevron-down-outline'}
-                                    size={Fonts.Iconsize.regular}
-                                    color={theme.greyText}
-                                />
-                            </View>
-
-                            {expanded && (
-                                <Text style={[paratextConfig, { marginTop: 8 }]}>
-                                    {item.answer}
-                                </Text>
-                            )}
-                        </TouchableOpacity>
-                    );
-                })}
             </ScrollView>
 
             {/* FIXED BOTTOM CTA */}
-            <View
-                style={[
-                    styles.bottomCTA,
-                    {
-                        paddingBottom: insets.bottom,
-                        backgroundColor: theme.cardContainer
-                    }
-                ]}
-            >
-                <TouchableOpacity
-                    style={[styles.callButton, { backgroundColor: theme.button }]}
-                    onPress={openDialer}
-                >
-                    <Ionicons name="call-outline" size={20} color="white" />
-                    <Text style={styles.callButtonText}>Call Support Now</Text>
-                </TouchableOpacity>
+            <View style={[styles.bottomCTA, { backgroundColor: theme.surfaceCard, paddingBottom: insets.bottom + spacing.lg }, floatShadow]}>
+                <AppButton title="Call Support Now" icon="call-outline" onAction={openDialer} />
             </View>
         </View>
     );
 };
 
 /* ---------------- SMALL COMPONENT ---------------- */
-
-const SupportItem = ({ icon, title, value, onPress, theme }) => (
-    <TouchableOpacity style={styles.supportItem} onPress={onPress}>
-        <VectorBg icon={icon} bgColor={theme.primary} iconTint={theme.primary} />
-        <View style={{ marginLeft: 12 }}>
-            <Text style={{ fontFamily: Fonts.family.medium, color: theme.greyText }}>
-                {title}
-            </Text>
-            <Text style={{ fontFamily: Fonts.family.light, color: theme.secondaryText, fontSize: Fonts.size.xs }}>
-                {value}
-            </Text>
-        </View>
-    </TouchableOpacity>
-);
+const SupportItem = ({ icon, title, value, onPress, theme, tone = 'primary', first = false }) => {
+    const color = theme[tone] || theme.primary;
+    const tint = theme[`${tone}Tint`] || theme.primaryTint;
+    const available = value !== 'Not Available';
+    return (
+        <TouchableOpacity
+            style={[styles.supportItem, !first && { borderTopWidth: 1, borderTopColor: theme.borderSubtle }]}
+            onPress={available ? onPress : undefined}
+            disabled={!available}
+            activeOpacity={0.8}
+        >
+            <View style={[styles.supportWell, { backgroundColor: tint }]}>
+                <Ionicons name={icon} size={20} color={color} />
+            </View>
+            <View style={{ flex: 1, marginLeft: spacing.md }}>
+                <AppText variant="bodyStrong" color={theme.ink}>{title}</AppText>
+                <AppText variant="caption" color={theme.inkMuted} style={{ marginTop: 2 }}>{value}</AppText>
+            </View>
+            {available && <Ionicons name="chevron-forward" size={18} color={theme.inkMuted} />}
+        </TouchableOpacity>
+    );
+};
 
 export default CustomerSupportScreen;
 
-
 const styles = StyleSheet.create({
-    container: {
-        flex: 1
-    },
+    container: { flex: 1 },
+    scrollBody: { paddingHorizontal: spacing.xl, paddingTop: spacing.sm, paddingBottom: 120, gap: spacing.lg },
 
     helpCard: {
-        padding: 16,
-        borderRadius: 12,
-        marginBottom: 24
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md,
+        padding: spacing.lg,
+        borderRadius: radius.lg,
+    },
+    helpWell: {
+        width: 48,
+        height: 48,
+        borderRadius: radius.sm,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 
-    helpTitle: {
-        marginTop: 12,
-        marginBottom: 6
-    },
-
-    sectionTitle: {
-        marginBottom: 12
+    card: {
+        borderRadius: radius.lg,
+        paddingVertical: spacing.sm,
+        paddingHorizontal: spacing.lg,
     },
 
     supportItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 14
+        minHeight: 64,
+    },
+    supportWell: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 
     faqItem: {
-        padding: 14,
-        borderRadius: 10,
-        marginBottom: 10
+        paddingHorizontal: spacing.lg,
+        paddingVertical: spacing.md,
+        borderRadius: radius.md,
+        marginBottom: spacing.md,
     },
-
     faqHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        minHeight: 32,
     },
 
     bottomCTA: {
@@ -278,22 +237,7 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         bottom: 0,
-        padding: 16,
-        borderTopWidth: 1,
-        borderColor: '#eee'
+        paddingHorizontal: spacing.xl,
+        paddingTop: spacing.lg,
     },
-
-    callButton: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingVertical: 14,
-        borderRadius: 10
-    },
-
-    callButtonText: {
-        color: 'white',
-        fontFamily: Fonts.family.semiBold,
-        marginLeft: 8
-    }
 });

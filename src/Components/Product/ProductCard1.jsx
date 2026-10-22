@@ -2,19 +2,13 @@ import React from 'react';
 import { View, Text, StyleSheet, Image, Pressable, TouchableOpacity } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useSelector } from 'react-redux';
-import Fonts from '../../../assets/fonts/Fonts';
 import { useTheme } from '../../Context/ThemeContext';
+import { fontFamily, radius, spacing } from '../../Themes/Themes';
 
 /**
- * Product list-item card for the dashboard rail (CUS-10).
- * Redesigned 2026-10-10 (layout + info hierarchy only — theme colors unchanged):
- *   • taller, cleaner image well with overlay chips (info + in-cart)
- *   • 2-line title with reserved height so cards align in the rail
- *   • a single clear "pack" info chip (1 unit = N cans)
- *   • a price block with a prominent per-unit price + quiet per-can secondary
- *   • a full "ADD" pill (tappable target) that flips to an in-cart state
- * Props: product, onPress (open detail / add), onInfoClick (optional quick-view).
- * Behaviour is unchanged — onPress still opens the detail screen where qty is chosen.
+ * Product list-item card for the dashboard rail (CUS-10, redesign 02).
+ * Behaviour unchanged — onPress opens the detail screen where qty is chosen.
+ * Props preserved: product, onPress, onInfoClick.
  */
 export default function ProductCard1({ product, onPress, onInfoClick }) {
   const { theme } = useTheme();
@@ -40,77 +34,67 @@ export default function ProductCard1({ product, onPress, onInfoClick }) {
       style={({ pressed }) => [
         styles.card,
         {
-          backgroundColor: theme.card,
+          backgroundColor: theme.surfaceCard,
           borderColor: inCart ? theme.primary : 'transparent',
+          borderWidth: inCart ? 1.5 : 0,
           opacity: pressed ? 0.92 : 1,
         },
       ]}
     >
       {/* IMAGE WELL */}
-      <View style={styles.imageWrapper}>
-        <Image source={image} style={styles.image} resizeMode="cover" />
+      <View style={[styles.imageWell, { backgroundColor: theme.sky200 }]}>
+        <Image source={image} style={styles.image} resizeMode="contain" />
 
         {onInfoClick && (
-          <TouchableOpacity style={styles.infoBtn} onPress={onInfoClick} hitSlop={8}>
-            <Ionicons name="information-circle" size={20} color={theme.primary} />
+          <TouchableOpacity style={[styles.infoBtn, { backgroundColor: theme.surfaceCard }]} onPress={onInfoClick} hitSlop={8}>
+            <Ionicons name="information-circle-outline" size={18} color={theme.ink} />
           </TouchableOpacity>
         )}
 
         {inCart && (
           <View style={[styles.cartBadge, { backgroundColor: theme.primary }]}>
-            <Ionicons name="cart" size={11} color={theme.buttonText} />
-            <Text style={[styles.cartBadgeText, { color: theme.buttonText }]}>{quantity}</Text>
+            <Ionicons name="cart" size={14} color={theme.onPrimary} />
+            <Text style={[styles.cartBadgeText, { color: theme.onPrimary }]}>{quantity}</Text>
           </View>
         )}
       </View>
 
-      {/* NAME */}
-      <Text style={[styles.title, { color: theme.highlightedText }]} numberOfLines={2}>
-        {name}
-      </Text>
+      <View style={styles.body}>
+        {/* NAME */}
+        <Text style={[styles.title, { color: theme.ink }]} numberOfLines={2}>{name}</Text>
 
-      {/* PACK INFO CHIP */}
-      {unitCount != null && (
-        <View style={[styles.unitBox, { backgroundColor: `${theme.primary}14` }]}>
-          <Ionicons name="cube-outline" size={12} color={theme.primary} />
-          <Text style={[styles.unitText, { color: theme.primary }]} numberOfLines={1}>
-            1 unit = {unitCount} cans
-          </Text>
-        </View>
-      )}
+        {/* PACK INFO CHIP */}
+        {unitCount != null && (
+          <View style={[styles.unitChip, { backgroundColor: theme.primaryTint }]}>
+            <Ionicons name="cube-outline" size={14} color={theme.primary} />
+            <Text style={[styles.unitText, { color: theme.primary }]} numberOfLines={1}>1 unit = {unitCount} cans</Text>
+          </View>
+        )}
 
-      {/* PRICE + ADD */}
-      <View style={styles.footer}>
-        <View style={styles.priceCol}>
+        {/* PRICE */}
+        <View>
           <View style={styles.priceRow}>
-            <Text style={[styles.price, { color: theme.highlightedText }]}>₹{unitPrice}</Text>
-            <Text style={[styles.perUnit, { color: theme.secondaryText }]}> /unit</Text>
+            <Text style={[styles.price, { color: theme.ink }]}>₹{unitPrice}</Text>
+            <Text style={[styles.perUnit, { color: theme.inkMuted }]}> /unit</Text>
           </View>
           {basePrice != null && (
-            <Text style={[styles.perCan, { color: theme.secondaryText }]}>₹{basePrice} / can</Text>
+            <Text style={[styles.perCan, { color: theme.inkMuted }]}>₹{basePrice} / can</Text>
           )}
         </View>
 
+        {/* ADD PILL */}
         <TouchableOpacity
           style={[
             styles.addBtn,
             inCart
-              ? { backgroundColor: `${theme.primary}1A`, borderColor: theme.primary, borderWidth: 1 }
+              ? { backgroundColor: theme.surfaceCard, borderColor: theme.primary, borderWidth: 1.5 }
               : { backgroundColor: theme.primary },
           ]}
           onPress={onPress}
           activeOpacity={0.85}
         >
-          <Ionicons
-            name={inCart ? 'checkmark' : 'add'}
-            size={16}
-            color={inCart ? theme.primary : theme.buttonText}
-          />
-          <Text
-            style={[styles.addText, { color: inCart ? theme.primary : theme.buttonText }]}
-          >
-            {inCart ? 'Added' : 'Add'}
-          </Text>
+          <Ionicons name={inCart ? 'checkmark' : 'add'} size={16} color={inCart ? theme.primary : theme.onPrimary} />
+          <Text style={[styles.addText, { color: inCart ? theme.primary : theme.onPrimary }]}>{inCart ? 'Added' : 'Add'}</Text>
         </TouchableOpacity>
       </View>
     </Pressable>
@@ -118,82 +102,30 @@ export default function ProductCard1({ product, onPress, onInfoClick }) {
 }
 
 const styles = StyleSheet.create({
-  card: {
-    width: 176,
-    borderRadius: 20,
-    padding: 12,
-    marginHorizontal: 8,
-    marginVertical: 10,
-    borderWidth: 1.5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  imageWrapper: {
-    backgroundColor: '#EEF3F9',
-    borderRadius: 16,
-    height: 118,
-    marginBottom: 10,
-    overflow: 'hidden',
-  },
-  image: { width: '100%', height: '100%' },
-  infoBtn: {
-    position: 'absolute',
-    top: 6,
-    left: 6,
-    backgroundColor: 'rgba(255,255,255,0.92)',
-    borderRadius: 12,
-  },
+  card: { width: 184, borderRadius: radius.lg, padding: spacing.sm, marginRight: spacing.md, marginVertical: spacing.sm },
+  imageWell: { height: 128, borderRadius: radius.md + 4, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
+  image: { width: '82%', height: '82%' },
+  infoBtn: { position: 'absolute', top: 8, left: 8, borderRadius: radius.sm, padding: 4 },
   cartBadge: {
     position: 'absolute',
-    top: 6,
-    right: 6,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 20,
-  },
-  cartBadgeText: { fontSize: 10, fontFamily: Fonts.family.semiBold },
-  title: {
-    fontSize: 14,
-    fontFamily: Fonts.family.semiBold,
-    lineHeight: 18,
-    marginBottom: 8,
-    minHeight: 36,
-  },
-  unitBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 8,
-    alignSelf: 'flex-start',
-    marginBottom: 12,
-  },
-  unitText: { fontSize: 11, fontFamily: Fonts.family.medium },
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-  },
-  priceCol: { flexShrink: 1, marginRight: 6 },
-  priceRow: { flexDirection: 'row', alignItems: 'flex-end' },
-  price: { fontSize: 19, fontFamily: Fonts.family.bold },
-  perUnit: { fontSize: 12, marginBottom: 2 },
-  perCan: { fontSize: 11, marginTop: 2, fontFamily: Fonts.family.regular },
-  addBtn: {
+    top: 8,
+    right: 8,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    paddingHorizontal: 12,
-    height: 36,
-    borderRadius: 12,
-    justifyContent: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.pill,
   },
-  addText: { fontSize: 13, fontFamily: Fonts.family.semiBold },
+  cartBadgeText: { fontSize: 12, lineHeight: 16, fontFamily: fontFamily.semibold },
+  body: { paddingHorizontal: spacing.sm, paddingTop: spacing.md, paddingBottom: spacing.xs, gap: spacing.sm },
+  title: { fontSize: 15, lineHeight: 22, fontFamily: fontFamily.semibold, minHeight: 44 },
+  unitChip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 4, paddingHorizontal: 10, borderRadius: radius.pill, alignSelf: 'flex-start' },
+  unitText: { fontSize: 12, lineHeight: 16, fontFamily: fontFamily.medium },
+  priceRow: { flexDirection: 'row', alignItems: 'flex-end' },
+  price: { fontSize: 16, lineHeight: 22, fontFamily: fontFamily.bold },
+  perUnit: { fontSize: 12, marginBottom: 2 },
+  perCan: { fontSize: 12, lineHeight: 16, marginTop: 2, fontFamily: fontFamily.regular },
+  addBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, height: 34, borderRadius: radius.pill },
+  addText: { fontSize: 13, fontFamily: fontFamily.semibold },
 });

@@ -8,9 +8,7 @@ import PrivacyPolicy from '../Screens/Authentication/Documents/PrivacyPolicy';
 import Login from "../Screens/Authentication/Login";
 import LoginOrRegister from '../Screens/Authentication/LoginOrRegister';
 import OtpVerficationScreen from '../Screens/Authentication/OtpVerificationScreen';
-import Signup from "../Screens/Authentication/Signup";
 import EmailScreen from '../Screens/Authentication/UserProfile/EmainScreen';
-import LocationScreen from '../Screens/Authentication/UserProfile/LocationScreen';
 import Username from '../Screens/Authentication/UserProfile/UserName';
 import GetStarted from '../Screens/GetStarted/GetStarted';
 import Dashboard from '../Screens/Main/Dashboard';
@@ -34,6 +32,7 @@ import WalletScreen from '../Screens/Wallet/WalletScreen'
 import MyCansScreen from '../Screens/Cans/MyCansScreen'
 import BillingScreen from '../Screens/Billing/BillingScreen'
 import ServiceRequestScreen from '../Screens/ServiceRequest/ServiceRequestScreen'
+import MyServiceTicketsScreen from '../Screens/ServiceRequest/MyServiceTicketsScreen'
 import ServiceRequestDetailScreen from '../Screens/ServiceRequest/ServiceRequestDetailScreen'
 import BulkRequestScreen from '../Screens/Bulk/BulkRequestScreen'
 import BulkRequestStatusScreen from '../Screens/Bulk/BulkRequestStatusScreen'
@@ -72,12 +71,10 @@ export default function AppNavigator() {
         {/* Authentication and  onbaord */}
         <Stack.Screen name="GetStarted" component={GetStarted} />
         {/* <Stack.Screen name='AddressScreen' component={AddressScreen}/> */}
-        <Stack.Screen name="Signup" component={Signup} />
         <Stack.Screen name="Login" component={Login} />
         <Stack.Screen name='Username' component={Username} />
         <Stack.Screen name='Profile' component={Profile} />
         <Stack.Screen name='EmailScreen' component={EmailScreen} />
-        <Stack.Screen name='LocationScreen' component={LocationScreen} />
         <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicy} />
         <Stack.Screen name='LoginOrRegister' component={LoginOrRegister} />
         <Stack.Screen name='OtpVerification' component={OtpVerficationScreen} />
@@ -133,6 +130,7 @@ export default function AppNavigator() {
 
         {/* Support & trust */}
         <Stack.Screen name='ServiceRequest' component={ServiceRequestScreen} />
+        <Stack.Screen name='MyServiceTickets' component={MyServiceTicketsScreen} />
         <Stack.Screen name='ServiceRequestDetail' component={ServiceRequestDetailScreen} />
         <Stack.Screen name='Certification' component={CertificationScreen} />
 

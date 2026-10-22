@@ -1,8 +1,13 @@
-import Fonts from '../../assets/fonts/Fonts';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../Context/ThemeContext';
+import AppText from './AppText';
+import { radius, spacing } from '../Themes/Themes';
 
+/**
+ * Order history list card (prompt 03 restyle). Props preserved:
+ * onItemClick, status ('C' | 'P' | 'CO'), amount, date, images.
+ */
 const OrderItem = ({ onItemClick, status = "P", amount, date, images = [] }) => {
 
     const { theme } = useTheme();
@@ -11,18 +16,6 @@ const OrderItem = ({ onItemClick, status = "P", amount, date, images = [] }) => 
         images && images.length > 0
             ? images.map(url => ({ uri: url }))
             : [require('../../assets/images/30L.png')];
-
-    const headerConfig = {
-        color: theme.greyText,
-        fontFamily: Fonts.family.semiBold,
-        fontSize: Fonts.size.base
-    };
-
-    const paratextConfig = {
-        color: theme.secondaryText,
-        fontFamily: Fonts.family.medium,
-        fontSize: Fonts.size.xs
-    };
 
     const displayStatus =
         status === "C"
@@ -33,24 +26,24 @@ const OrderItem = ({ onItemClick, status = "P", amount, date, images = [] }) => 
 
     const color =
         status === "C"
-            ? theme.error
+            ? theme.danger
             : status === "P"
                 ? theme.primary
-                : "green";
+                : theme.success;
 
     const icon =
         status === "C"
-            ? "close-circle"
+            ? "close-circle-outline"
             : status === "P"
-                ? "time"
-                : "cloud-done";
+                ? "time-outline"
+                : "checkmark-circle-outline";
 
     const formattedDate = date
         ? new Date(date).toLocaleString()
         : "";
 
     return (
-        <TouchableOpacity onPress={onItemClick} style={styles.card}>
+        <TouchableOpacity onPress={onItemClick} activeOpacity={0.85} style={[styles.card, { backgroundColor: theme.surfaceCard }]}>
 
             {/* IMAGES SCROLL */}
             <ScrollView
@@ -59,7 +52,7 @@ const OrderItem = ({ onItemClick, status = "P", amount, date, images = [] }) => 
                 contentContainerStyle={styles.imageRow}
             >
                 {imageList.map((img, index) => (
-                    <Image key={index} source={img} style={styles.productImage} />
+                    <Image key={index} source={img} style={[styles.productImage, { backgroundColor: theme.sky200 }]} resizeMode="contain" />
                 ))}
             </ScrollView>
 
@@ -68,26 +61,20 @@ const OrderItem = ({ onItemClick, status = "P", amount, date, images = [] }) => 
 
                 <View style={{ flex: 1 }}>
                     <View style={styles.statusRow}>
-                        <Text style={[headerConfig, { color, opacity: 0.8 }]}>
+                        <Ionicons name={icon} size={18} color={color} style={{ marginRight: 6 }} />
+                        <AppText variant="bodyStrong" color={color}>
                             {displayStatus}
-                        </Text>
-
-                        <Ionicons
-                            name={icon}
-                            size={18}
-                            color={color}
-                            style={{ marginLeft: 4 }}
-                        />
+                        </AppText>
                     </View>
 
-                    <Text style={paratextConfig}>
+                    <AppText variant="caption" color={theme.inkMuted} style={{ marginTop: 4 }}>
                         Placed at {formattedDate}
-                    </Text>
+                    </AppText>
                 </View>
 
                 <View style={styles.amountBox}>
-                    <Text style={styles.amount}>₹{amount}</Text>
-                    <Ionicons name="chevron-forward" size={18} color="#333" />
+                    <AppText variant="price" color={theme.ink}>₹{amount}</AppText>
+                    <Ionicons name="chevron-forward" size={18} color={theme.inkMuted} />
                 </View>
 
             </View>
@@ -100,29 +87,22 @@ export default OrderItem;
 
 const styles = StyleSheet.create({
     card: {
-        backgroundColor: '#fdfdfd',
-        borderRadius: 12,
-        padding: 12,
-        marginVertical: 8,
-        marginHorizontal: 16,
-        elevation: 3,
-        shadowColor: '#000',
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        shadowOffset: { width: 0, height: 2 },
+        borderRadius: radius.lg,
+        padding: spacing.lg,
+        marginVertical: 6,
+        marginHorizontal: spacing.xl,
     },
 
     imageRow: {
         flexDirection: 'row',
-        gap: 10,
-        paddingBottom: 8,
+        gap: spacing.sm,
+        paddingBottom: spacing.md,
     },
 
     productImage: {
         width: 52,
         height: 52,
-        borderRadius: 8,
-        backgroundColor: '#eee',
+        borderRadius: radius.sm,
     },
 
     infoRow: {
@@ -140,11 +120,5 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 4,
-    },
-
-    amount: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#111',
     },
 });

@@ -1,20 +1,26 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { Animated, Text, StyleSheet, Dimensions, View } from 'react-native';
-import Fonts from '../../../assets/fonts/Fonts';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import { themes, fontFamily, radius, spacing, floatShadow } from '../../Themes/Themes';
 
 const ToastContext = createContext();
 const { width } = Dimensions.get('window');
+
+// This provider renders ABOVE ThemeProvider in the tree, so it can't call
+// useTheme(). Pull the token values straight from the active (pureLight) theme
+// — keeps all hex literals inside Themes.js.
+const t = themes.pureLight;
 
 export const ToastProvider = ({ children }) => {
   const [message, setMessage] = useState('');
   const [visible, setVisible] = useState(false);
   const [alignTop, setAlignTop] = useState(false);
-  const [isError,setIsError] = useState()
+  const [isError, setIsError] = useState();
 
   const opacity = new Animated.Value(100);
 
   const showToast = useCallback((msg, isError = false, options = {}) => {
-    setIsError(isError)
+    setIsError(isError);
     setMessage(msg);
     setAlignTop(options.alignTop || false);
     setVisible(true);
@@ -35,19 +41,21 @@ export const ToastProvider = ({ children }) => {
   }, []);
 
   return (
-    <ToastContext.Provider value={{ showToast  , isError , setIsError}}>
+    <ToastContext.Provider value={{ showToast, isError, setIsError }}>
       {children}
 
       {visible && (
         <View
           pointerEvents="none"
-          style={[
-            styles.container,
-            alignTop ? { top: 60 } : { bottom: 60 }
-          ]}
+          style={[styles.container, alignTop ? { top: 60 } : { bottom: 100 }]}
         >
-          <Animated.View style={[styles.toast, { opacity,backgroundColor: isError ? '#FF4C4C' : '#6BA96E' }]}>
-            <Text style={{fontFamily:Fonts.family.regular,fontSize:14,color:'white'}}>{message}</Text>
+          <Animated.View style={[styles.toast, floatShadow, { opacity }]}>
+            <Ionicons
+              name={isError ? 'alert-circle' : 'checkmark-circle'}
+              size={18}
+              color={isError ? t.danger : t.success}
+            />
+            <Text style={styles.text}>{message}</Text>
           </Animated.View>
         </View>
       )}
@@ -67,14 +75,19 @@ const styles = StyleSheet.create({
     zIndex: 999,
   },
   toast: {
-    backgroundColor: '#333',
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: t.ink,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radius.sm,
     maxWidth: width * 0.9,
   },
   text: {
-    color: '#fff',
+    color: t.onInk,
+    fontFamily: fontFamily.medium,
     fontSize: 14,
+    lineHeight: 20,
   },
 });

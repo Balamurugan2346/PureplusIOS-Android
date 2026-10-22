@@ -6,6 +6,7 @@ import { ThemeProvider } from './src/Context/ThemeContext';
 import { store } from './src/Redux/Store';
 import { NavigationContainer } from '@react-navigation/native';
 import { Text } from 'react-native';
+import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 import { ToastProvider } from './src/Components/Toast/ToastProvider'
 import {
   // listenForegroundNotifications,
@@ -31,19 +32,21 @@ function App() {
     // };
   }, []);
   return (
-    <NavigationContainer>
-      <ToastProvider>
-        <AppContextProvider>
-          <ThemeProvider>
-            <TabBarVisibilityProvider>
-              <Provider store={store}>
-                <AppNavigator />
-              </Provider>
-            </TabBarVisibilityProvider>
-          </ThemeProvider>
-        </AppContextProvider>
-      </ToastProvider>
-    </NavigationContainer>
+    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+      <NavigationContainer>
+        <ToastProvider>
+          <AppContextProvider>
+            <ThemeProvider>
+              <TabBarVisibilityProvider>
+                <Provider store={store}>
+                  <AppNavigator />
+                </Provider>
+              </TabBarVisibilityProvider>
+            </ThemeProvider>
+          </AppContextProvider>
+        </ToastProvider>
+      </NavigationContainer>
+    </SafeAreaProvider>
   );
 }
 

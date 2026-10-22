@@ -26,10 +26,10 @@ export default function EstimateSummary({ estimate, loading, error, isFirstOrder
   const Row = ({ label, value, strong, hint, valueColor }) => (
     <View style={styles.row}>
       <View style={{ flex: 1, marginRight: 8 }}>
-        <Text style={[strong ? paraConfig : headerConfig, strong && { fontSize: Fonts.size.base, color: theme.greyText }]}>{label}</Text>
-        {hint ? <Text style={[paraConfig, { fontSize: 10, marginTop: 2 }]}>{hint}</Text> : null}
+        <Text style={[strong ? paraConfig : headerConfig, { fontSize: strong ? Fonts.size.lg : Fonts.size.sm }, strong && { color: theme.greyText }]}>{label}</Text>
+        {hint ? <Text style={[paraConfig, { fontSize: 12, marginTop: 2 }]}>{hint}</Text> : null}
       </View>
-      <Text style={[paraConfig, strong && { fontSize: Fonts.size.base, fontWeight: 'bold' }, valueColor && { color: valueColor }]}>
+      <Text style={[paraConfig, strong && { fontSize: Fonts.size.lg, fontWeight: 'bold' }, valueColor && { color: valueColor }]}>
         {value}
       </Text>
     </View>
@@ -45,9 +45,9 @@ export default function EstimateSummary({ estimate, loading, error, isFirstOrder
 
       {/* First-order complimentary-can banner (shown as soon as we know it's a first order) */}
       {isFirstOrder && (
-        <View style={[styles.banner, { backgroundColor: '#E8F7EC' }]}>
-          <Ionicons name="gift" size={18} color="green" />
-          <Text style={[paraConfig, { color: 'green', marginLeft: 8, flex: 1 }]}>
+        <View style={[styles.banner, { backgroundColor: theme.successTint }]}>
+          <Ionicons name="gift" size={18} color={theme.success} />
+          <Text style={[paraConfig, { color: theme.success, marginLeft: 8, flex: 1 }]}>
             First-order gift: we add {freeCans > 0 ? freeCans : 1} complimentary can of the same product, on us.
           </Text>
         </View>
@@ -72,7 +72,7 @@ export default function EstimateSummary({ estimate, loading, error, isFirstOrder
         </View>
       ) : error ? (
         <View style={styles.center}>
-          <Text style={[headerConfig, { color: 'crimson', textAlign: 'center' }]}>{error}</Text>
+          <Text style={[headerConfig, { color: theme.danger, textAlign: 'center' }]}>{error}</Text>
         </View>
       ) : estimate ? (
         <>
@@ -89,7 +89,7 @@ export default function EstimateSummary({ estimate, loading, error, isFirstOrder
           <Row
             label="Delivery charges"
             value={estimate.freeDeliveryApplied ? 'FREE' : money(estimate.deliveryCharge)}
-            valueColor={estimate.freeDeliveryApplied ? 'green' : undefined}
+            valueColor={estimate.freeDeliveryApplied ? theme.success : undefined}
           />
           <Row label="Handling charges" value={money(estimate.convenienceFee)} />
           <Row
@@ -98,16 +98,16 @@ export default function EstimateSummary({ estimate, loading, error, isFirstOrder
             value={money(estimate.totalDeposit)}
           />
 
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: theme.borderSubtle }]} />
 
           <Row label="Order amount" hint="Excl. refundable deposit" value={money(estimate.payable)} />
           <Row label="To Pay at door" hint="Incl. all taxes, charges & deposit" value={money(estimate.grandTotal)} strong />
 
           {/* min-order not met => block checkout (parent also guards on allMinimumsMet) */}
           {shortfalls.length > 0 && (
-            <View style={[styles.banner, { backgroundColor: '#FDECEA', marginTop: 12 }]}>
-              <Ionicons name="alert-circle" size={18} color="crimson" />
-              <Text style={[paraConfig, { color: 'crimson', marginLeft: 8, flex: 1 }]}>
+            <View style={[styles.banner, { backgroundColor: theme.dangerTint, marginTop: 12 }]}>
+              <Ionicons name="alert-circle" size={18} color={theme.danger} />
+              <Text style={[paraConfig, { color: theme.danger, marginLeft: 8, flex: 1 }]}>
                 {shortfalls
                   .map((i) => `Product ${i.productId}: add ${i.shortfall} more can(s) (min ${i.applicableMin}).`)
                   .join(' ')}
@@ -122,22 +122,17 @@ export default function EstimateSummary({ estimate, loading, error, isFirstOrder
 
 const styles = StyleSheet.create({
   cardContainer: {
-    borderRadius: 20,
+    borderRadius: 32,
     padding: 16,
-    elevation: 3,
     margin: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
   },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 9,
+    paddingVertical: 6,
   },
-  divider: { backgroundColor: 'grey', opacity: 0.12, width: '100%', height: 1, marginVertical: 8 },
+  divider: { width: '100%', height: 1, marginVertical: 8 },
   center: { alignItems: 'center', justifyContent: 'center', paddingVertical: 18 },
   banner: {
     flexDirection: 'row',

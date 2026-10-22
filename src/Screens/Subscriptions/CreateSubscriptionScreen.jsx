@@ -1,21 +1,25 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View, StyleSheet, TextInput, ScrollView,
-  TouchableOpacity, Alert,
+  TouchableOpacity, Platform,
 } from 'react-native';
-import { useSelector } from 'react-redux';
-import NavScreen from '../../Components/NavScreen';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { useDispatch, useSelector } from 'react-redux';
+import TopAppBar from '../../Components/TopAppBar';
 import AppText from '../../Components/AppText';
 import AppButton from '../../Components/AppButton';
-import StatusBadge from '../../Components/StatusBadge';
+import AppModal from '../../Components/AppModal';
+import AddressBar from '../../Components/AddressBar';
+import BottomSheet from '../../Components/BottomSheet';
+import AddressScreen from '../Address/AddressScreen';
 import SubscriptionService from '../../API/modules/SubscriptionService';
+import { getAddressList } from '../../Redux/Slices/AddressSlice';
 import { getSelectedAddressId } from '../../Utils/GetSelectedAddress';
-import { spacing, radius } from '../../Themes/Themes';
+import { fontFamily, spacing, radius } from '../../Themes/Themes';
 import { useTheme } from '../../Context/ThemeContext';
 
-// Backend: POST /api/customer/subscription
-// Payload: { productId, addressId, quantity, frequency, startDate }
-// frequency values match backend enum — verify against Swagger if rejected.
+// Backend: POST /api/customer/subscription — { productId, addressId, quantity, frequency, startDate }
 const FREQUENCIES = [
   { label: 'Daily', value: 'DAILY' },
   { label: 'Alternate days', value: 'ALTERNATE_DAY' },
@@ -24,31 +28,66 @@ const FREQUENCIES = [
 
 const CreateSubscriptionScreen = ({ navigation }) => {
   const { theme } = useTheme();
-  const products = useSelector((state) => state.products.productList ?? []);
+  const dispatch = useDispatch();
+  // productList is `[]` before load then the `{ data: [...] }` envelope — normalise to the array.
+  const productListRaw = useSelector((state) => state.products.productList);
+  const products = Array.isArray(productListRaw) ? productListRaw : (productListRaw?.data ?? []);
   const addressList = useSelector((state) => state.address.addressList ?? []);
 
   const [form, setForm] = useState({
     productId: '',
-    addressId: '',
     quantity: '1',
     frequency: 'DAILY',
     startDate: '',
   });
+  const [showPicker, setShowPicker] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // Delivery address — the selected address (like the Dashboard address bar), not an inline list.
+  const [showAddressSheet, setShowAddressSheet] = useState(false);
+  const [selectedAddressObj, setSelectedAddressObj] = useState(null);
 
   const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
 
-  const todayISO = () => {
-    const d = new Date();
-    return d.toISOString().slice(0, 10);
+  // Reusable app dialog (replaces OS Alerts). onOk runs after the user taps OK.
+  const [dialog, setDialog] = useState({ visible: false, title: '', message: '', onOk: null });
+  const showDialog = (title, message = '', onOk = null) => setDialog({ visible: true, title, message, onOk });
+  const closeDialog = () => setDialog((d) => ({ ...d, visible: false }));
+
+  // Resolve the currently selected delivery address for display.
+  const resolveSelectedAddress = async () => {
+    const id = await getSelectedAddressId();
+    const match = (addressList || []).find((a) => String(a?.id) === String(id));
+    setSelectedAddressObj(match ?? null);
+  };
+
+  useEffect(() => { dispatch(getAddressList()); }, [dispatch]);
+  useEffect(() => { resolveSelectedAddress(); }, [addressList, showAddressSheet]);
+
+  const addressText = selectedAddressObj
+    ? `${selectedAddressObj.addressLine1 ?? ''} ${selectedAddressObj.addressLine2 ?? ''}`.trim()
+    : 'Select a delivery address';
+
+  const todayISO = () => new Date().toISOString().slice(0, 10);
+  const toISO = (d) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+  const displayDate = (iso) => {
+    if (!iso) return 'Select start date';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    return d.toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
   };
 
   const validate = () => {
-    if (!form.productId) { Alert.alert('Select a product'); return false; }
-    if (!form.quantity || Number(form.quantity) < 1) { Alert.alert('Enter a valid quantity'); return false; }
-    if (!form.startDate) { Alert.alert('Enter a start date (YYYY-MM-DD)'); return false; }
+    if (!form.productId) { showDialog('Select a product', 'Please choose a product to subscribe to.'); return false; }
+    if (!form.quantity || Number(form.quantity) < 1) { showDialog('Enter a valid quantity', 'Cans per delivery must be at least 1.'); return false; }
+    if (!form.startDate) { showDialog('Pick a start date', 'Please choose when the subscription should start.'); return false; }
     const datePattern = /^\d{4}-\d{2}-\d{2}$/;
-    if (!datePattern.test(form.startDate)) { Alert.alert('Date format must be YYYY-MM-DD'); return false; }
+    if (!datePattern.test(form.startDate)) { showDialog('Invalid date', 'Date format must be YYYY-MM-DD.'); return false; }
     return true;
   };
 
@@ -56,13 +95,11 @@ const CreateSubscriptionScreen = ({ navigation }) => {
     if (!validate()) return;
     setSubmitting(true);
     try {
-      let addressId = Number(form.addressId);
+      // Address = the selected delivery address (chosen via the address sheet).
+      const saved = await getSelectedAddressId();
+      const addressId = Number(saved);
       if (!addressId || addressId === -1) {
-        const saved = await getSelectedAddressId();
-        addressId = Number(saved);
-      }
-      if (!addressId || addressId === -1) {
-        Alert.alert('No address', 'Please choose a delivery address first.');
+        showDialog('No address', 'Please choose a delivery address first.');
         setSubmitting(false);
         return;
       }
@@ -73,24 +110,23 @@ const CreateSubscriptionScreen = ({ navigation }) => {
         frequency: form.frequency,
         startDate: form.startDate,
       });
-      Alert.alert('Subscription created', 'Your subscription starts on ' + form.startDate, [
-        { text: 'OK', onPress: () => navigation?.navigate?.('ManageSubscription') },
-      ]);
+      showDialog('Subscription created', 'Your subscription starts on ' + form.startDate, () => navigation?.navigate?.('ManageSubscription'));
     } catch (e) {
-      Alert.alert('Could not create subscription', e?.message || 'Please try again.');
+      showDialog('Could not create subscription', e?.message || 'Please try again.');
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <NavScreen title="New Subscription" navigation={navigation}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <View style={[styles.screen, { backgroundColor: theme.surface }]}>
+      <TopAppBar title="New Subscription" navigation={navigation} />
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: spacing.xl, paddingTop: spacing.sm, paddingBottom: 40 }}>
 
         {/* Product */}
         <Section theme={theme} label="Product">
           {products.length > 0 ? (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: spacing.xs }}>
+            <View style={styles.chipWrap}>
               {products.map((p) => {
                 const pid = String(p?.id ?? p?.productId ?? '');
                 const active = form.productId === pid;
@@ -99,54 +135,39 @@ const CreateSubscriptionScreen = ({ navigation }) => {
                     key={pid}
                     onPress={() => set('productId')(pid)}
                     style={[styles.chip, {
-                      borderColor: active ? theme.primary : theme.divider,
-                      backgroundColor: active ? `${theme.primary}22` : 'transparent',
+                      borderColor: active ? theme.ink : theme.borderStrong,
+                      backgroundColor: active ? theme.ink : theme.surfaceCard,
                     }]}
                   >
-                    <AppText variant="bodyStrong" color={active ? theme.primary : theme.secondaryText}>
+                    <AppText variant="label" color={active ? theme.onInk : theme.ink}>
                       {p?.productName ?? p?.name ?? pid}
                     </AppText>
                   </TouchableOpacity>
                 );
               })}
-            </ScrollView>
+            </View>
           ) : (
-            <Field
-              theme={theme}
-              placeholder="Product ID"
-              value={form.productId}
-              onChangeText={set('productId')}
-              keyboardType="numeric"
-            />
+            <Field theme={theme} placeholder="Product ID" value={form.productId} onChangeText={set('productId')} keyboardType="numeric" />
           )}
         </Section>
 
         {/* Quantity */}
         <Section theme={theme} label="Cans per delivery">
-          <Field
-            theme={theme}
-            placeholder="e.g. 2"
-            value={form.quantity}
-            onChangeText={set('quantity')}
-            keyboardType="numeric"
-          />
+          <Field theme={theme} icon="cube-outline" placeholder="e.g. 2" value={form.quantity} onChangeText={set('quantity')} keyboardType="numeric" />
         </Section>
 
         {/* Frequency */}
         <Section theme={theme} label="Frequency">
-          <View style={styles.toggle}>
+          <View style={[styles.segment, { backgroundColor: theme.surfaceSunken }]}>
             {FREQUENCIES.map((f) => {
               const active = form.frequency === f.value;
               return (
                 <TouchableOpacity
                   key={f.value}
                   onPress={() => set('frequency')(f.value)}
-                  style={[styles.toggleBtn, {
-                    borderColor: active ? theme.primary : theme.divider,
-                    backgroundColor: active ? `${theme.primary}22` : 'transparent',
-                  }]}
+                  style={[styles.segmentItem, active && { backgroundColor: theme.surfaceCard, borderColor: theme.primary, borderWidth: 1.5 }]}
                 >
-                  <AppText variant="bodyStrong" color={active ? theme.primary : theme.secondaryText}>
+                  <AppText variant="label" color={active ? theme.primary : theme.inkMuted} style={{ fontSize: 13 }}>
                     {f.label}
                   </AppText>
                 </TouchableOpacity>
@@ -155,105 +176,152 @@ const CreateSubscriptionScreen = ({ navigation }) => {
           </View>
         </Section>
 
-        {/* Delivery address */}
-        {addressList.length > 0 && (
-          <Section theme={theme} label="Delivery address">
-            {addressList.map((a) => {
-              const aid = String(a?.id ?? '');
-              const active = form.addressId === aid;
-              return (
-                <TouchableOpacity
-                  key={aid}
-                  onPress={() => set('addressId')(aid)}
-                  style={[styles.addressRow, {
-                    borderColor: active ? theme.primary : theme.divider,
-                    backgroundColor: active ? `${theme.primary}11` : theme.card,
-                  }]}
-                >
-                  <AppText variant="bodyStrong" color={active ? theme.primary : theme.text} numberOfLines={1}>
-                    {a?.addressLine1 ?? a?.address ?? aid}
-                  </AppText>
-                  {a?.pincode ? (
-                    <AppText variant="caption" color={theme.secondaryText}>{a.pincode}</AppText>
-                  ) : null}
-                </TouchableOpacity>
-              );
-            })}
-            <AppText variant="caption" color={theme.secondaryText} style={{ marginTop: spacing.xs }}>
-              Leave unselected to use your current delivery address.
-            </AppText>
-          </Section>
-        )}
+        {/* Delivery address — selected address + change dropdown (opens the address sheet) */}
+        <Section theme={theme} label="Delivery address">
+          <AddressBar address={addressText} onClick={() => setShowAddressSheet(true)} />
+          <AppText variant="caption" color={theme.inkMuted} style={{ marginTop: spacing.xs }}>
+            This is where your subscription cans will be delivered.
+          </AppText>
+        </Section>
 
         {/* Start date */}
         <Section theme={theme} label="Start date">
-          <Field
-            theme={theme}
-            placeholder={`YYYY-MM-DD (e.g. ${todayISO()})`}
-            value={form.startDate}
-            onChangeText={set('startDate')}
-            keyboardType="numbers-and-punctuation"
-          />
+          <TouchableOpacity
+            onPress={() => setShowPicker(true)}
+            style={[styles.dateField, { borderColor: theme.borderStrong, backgroundColor: theme.surfaceCard }]}
+          >
+            <Ionicons name="calendar-outline" size={20} color={theme.primary} />
+            <AppText variant="bodyStrong" color={form.startDate ? theme.ink : theme.inkMuted} style={{ flex: 1, marginLeft: spacing.md }}>
+              {displayDate(form.startDate)}
+            </AppText>
+            <Ionicons name="chevron-down" size={20} color={theme.inkMuted} />
+          </TouchableOpacity>
+          {showPicker && (
+            <DateTimePicker
+              value={form.startDate ? new Date(form.startDate) : new Date()}
+              mode="date"
+              display={Platform.OS === 'ios' ? 'inline' : 'default'}
+              minimumDate={new Date()}
+              onChange={(_, date) => {
+                setShowPicker(Platform.OS === 'ios');
+                if (date) set('startDate')(toISO(date));
+              }}
+            />
+          )}
         </Section>
 
-        <AppText variant="caption" color={theme.secondaryText} style={{ marginBottom: spacing.lg }}>
-          Subscriptions are postpaid — billed monthly. You can pause, skip, or cancel any time from
-          My Subscriptions. Overdue balances block new orders until cleared.
-        </AppText>
+        {/* Info banner */}
+        <View style={[styles.infoBanner, { backgroundColor: theme.infoTint }]}>
+          <Ionicons name="information-circle-outline" size={18} color={theme.info} style={{ marginRight: spacing.sm }} />
+          <AppText variant="caption" color={theme.info} style={{ flex: 1 }}>
+            Subscriptions are postpaid — billed monthly. You can pause, skip, or cancel any time from
+            My Subscriptions. Overdue balances block new orders until cleared.
+          </AppText>
+        </View>
 
-        <AppButton title="Create subscription" isLoading={submitting} onAction={submit} />
+        <AppButton title="Create subscription" isLoading={submitting} loadingText="Creating…" onAction={submit} />
         <View style={{ height: spacing.xxl }} />
       </ScrollView>
-    </NavScreen>
+
+      {/* Address selection — reuses the Dashboard address sheet */}
+      <BottomSheet visible={showAddressSheet} onClose={() => setShowAddressSheet(false)}>
+        <AddressScreen
+          navigation={navigation}
+          onClose={() => setShowAddressSheet(false)}
+          callGetSelectedAddressCallBack={() => {
+            dispatch(getAddressList());
+            resolveSelectedAddress();
+          }}
+        />
+      </BottomSheet>
+
+      {/* Reusable app dialog (replaces OS alerts) */}
+      <AppModal
+        visible={dialog.visible}
+        setModalVisible={(v) => { if (!v) closeDialog(); }}
+        title={dialog.title}
+        description={dialog.message}
+        confirmText="OK"
+        hideCancel
+        onPositive={() => {
+          const cb = dialog.onOk;
+          closeDialog();
+          if (cb) cb();
+        }}
+      />
+    </View>
   );
 };
 
 const Section = ({ theme, label, children }) => (
-  <View style={{ marginBottom: spacing.lg }}>
-    <AppText variant="label" color={theme.secondaryText} style={{ marginBottom: spacing.sm }}>
-      {label}
-    </AppText>
+  <View style={{ marginBottom: spacing.xl }}>
+    <AppText variant="label" color={theme.ink} style={{ marginBottom: spacing.sm }}>{label}</AppText>
     {children}
   </View>
 );
 
-const Field = ({ theme, ...rest }) => (
-  <TextInput
-    placeholderTextColor={theme.secondaryText}
-    style={[styles.input, {
-      color: theme.text,
-      borderColor: theme.inputContainerBorder,
-      backgroundColor: theme.inputContainer,
-    }]}
-    {...rest}
-  />
+const Field = ({ theme, icon, ...rest }) => (
+  <View style={[styles.fieldRow, { borderColor: theme.borderStrong, backgroundColor: theme.surfaceCard }]}>
+    {icon ? <Ionicons name={icon} size={18} color={theme.primary} style={{ marginRight: spacing.sm }} /> : null}
+    <TextInput
+      placeholderTextColor={theme.inkMuted}
+      style={[styles.input, { color: theme.ink }]}
+      {...rest}
+    />
+  </View>
 );
 
 const styles = StyleSheet.create({
+  screen: { flex: 1 },
+  chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   chip: {
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
-    borderRadius: radius.full ?? 999,
-    borderWidth: 1,
-    marginRight: spacing.sm,
+    borderRadius: radius.pill,
+    borderWidth: 1.5,
   },
-  toggle: { flexDirection: 'row', gap: spacing.sm },
-  toggleBtn: {
-    flex: 1, alignItems: 'center',
-    paddingVertical: spacing.md,
-    borderRadius: radius.md, borderWidth: 1,
+  segment: {
+    flexDirection: 'row',
+    borderRadius: radius.sm,
+    padding: 4,
+    gap: 4,
   },
-  addressRow: {
-    padding: spacing.md,
+  segmentItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: radius.sm,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  dateField: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 52,
+    paddingHorizontal: spacing.lg,
     borderRadius: radius.md,
-    borderWidth: 1,
-    marginBottom: spacing.sm,
+    borderWidth: 1.5,
+  },
+  fieldRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
   },
   input: {
-    borderWidth: 1, borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    minHeight: 44,
+    flex: 1,
+    paddingVertical: 14,
+    fontFamily: fontFamily.medium,
+    fontSize: 15,
+  },
+  infoBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
   },
 });
 

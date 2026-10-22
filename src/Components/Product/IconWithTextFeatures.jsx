@@ -1,91 +1,36 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; 
-import VectorBg from '../VectorBg';
+import { View, StyleSheet } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import AppText from '../AppText';
 import { useTheme } from '../../Context/ThemeContext';
-import Fonts from '../../../assets/fonts/Fonts';
-// Note: You need to install 'react-native-vector-icons' for this component.
+import { radius, spacing } from '../../Themes/Themes';
 
 /**
- * Reusable component for displaying a feature with an icon, title, and description.
- * @param {object} props
- * @param {string} props.iconName - The name of the icon (e.g., 'flask-outline', requires MaterialCommunityIcons).
- * @param {string} props.title - The main heading/title text.
- * @param {string} props.description - The body/descriptive text.
- * @param {string} [props.iconColor='#3498db'] - Color of the icon.
- * @param {string} [props.iconBgColor='#ecf0f1'] - Background color for the icon circle.
+ * Feature row (redesign 02): 40 icon well + title + description. Rendered inside a
+ * Card by the parent (gap between rows handled there). Props preserved: iconName,
+ * title, description (iconColor/iconBgColor accepted but default to theme tokens).
  */
-const IconTextFeature = ({
-  iconName = 'flask-outline',
-  title = 'Minimal Chemical Treatment',
-  description = 'We use an advanced purification process that relies on natural filtration, ensuring our water is pure with significantly fewer chemicals.',
-  iconColor = '#3498db', // Blue color
-  iconBgColor = '#ecf0f1', // Light gray background
-}) => {
-
-       const { theme } = useTheme()
-    const headerConfig = {
-    color: theme.background,
-    fontFamily: Fonts.family.semiBold,
-    fontSize: Fonts.size.sm
-  }
-
-  const paratextConfig = {
-    color: theme.secondaryText,
-    fontFamily: Fonts.family.regular,
-    fontSize: Fonts.size.xs
-  }
-
+const IconTextFeature = ({ iconName = 'water-outline', title = '', description = '' }) => {
+  const { theme } = useTheme();
 
   return (
-    <View style={styles.featureContainer}>
-      {/* Icon Circle */}
-      {/* <View style={[styles.iconCircle, { backgroundColor: iconBgColor }]}>
-        <Icon name={iconName} size={30} color={iconColor} />
-      </View> */}
-        <VectorBg icon={iconName} bgColor={iconBgColor} iconTint={iconColor} style={styles.iconCircle} />
-
-      {/* Text Content */}
-      <View style={styles.textContainer}>
-        <Text style={headerConfig}>{title}</Text>
-        <Text style={paratextConfig}>{description}</Text>
+    <View style={styles.row}>
+      <View style={[styles.well, { backgroundColor: theme.primaryTint }]}>
+        <Ionicons name={iconName} size={20} color={theme.primary} />
+      </View>
+      <View style={styles.text}>
+        <AppText variant="bodyStrong" color={theme.ink}>{title}</AppText>
+        <AppText variant="caption" color={theme.inkMuted} style={styles.desc}>{description}</AppText>
       </View>
     </View>
   );
 };
 
-// --- Stylesheet for the component ---
 const styles = StyleSheet.create({
-  featureContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start', // Align content to the top
-    padding: 15,
-    backgroundColor: 'white', // White background for the card/row
-    borderRadius: 8,
-  },
-  iconCircle: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 15,
-    padding: 5,
-  },
-  textContainer: {
-    flex: 1, // Allows text to take up the remaining space
-  },
-  titleText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
-  },
-  descriptionText: {
-    fontSize: 15,
-    color: '#555',
-    lineHeight: 22,
-  },
+  row: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
+  well: { width: 40, height: 40, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center' },
+  text: { flex: 1 },
+  desc: { marginTop: 2, lineHeight: 18 },
 });
 
 export default IconTextFeature;

@@ -1,418 +1,217 @@
 import AppNavButton from '../../Components/AppNavButton';
 import BottomSheet from '../../Components/BottomSheet';
-import Line from '../../Components/Line';
 import { useAppContext } from '../../Context/AppContext';
 import { useTheme } from '../../Context/ThemeContext';
-import Fonts from '../../../assets/fonts/Fonts';
 import { useRoute } from '@react-navigation/native';
 import { useEffect, useState } from 'react';
-import { Image, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import CartButton from '../../Components/Cart/CartButton';
 import PerksUI from '../../Components/GlassyPerksContainer';
 import AddressScreen from '../../Screens/Address/AddressScreen';
-import ImageWithTitleDesc from '../../Components/Product/ImageWithTitleDesc'
-import IconWithFeatures from '../../Components/Product/IconWithTextFeatures'
-import { WaterFeatures } from '../../Data/waterFeaturesData'
-import { getSelectedAddress, getSelectedAddressId } from '../../Utils/GetSelectedAddress'
+import ImageWithTitleDesc from '../../Components/Product/ImageWithTitleDesc';
+import IconWithFeatures from '../../Components/Product/IconWithTextFeatures';
+import { WaterFeatures } from '../../Data/waterFeaturesData';
+import { getSelectedAddressId } from '../../Utils/GetSelectedAddress';
 import { useDispatch, useSelector } from 'react-redux';
 import { loadCartItems } from '../../Redux/Slices/CartSlice';
-import ProductImages from '../../Components/Product/ProductImages'
+import ProductImages from '../../Components/Product/ProductImages';
+import AppText from '../../Components/AppText';
+import Card from '../../Components/Card';
+import { fontFamily, radius, spacing } from '../../Themes/Themes';
+
 const DetailedProductScreen = ({ navigation, userID }) => {
-
-
-  //UI LOGIC AND STATE HANDLING 
   const route = useRoute();
   const { product } = route.params;
 
-  // const productID = product.sl_No
+  const insets = useSafeAreaInsets();
 
-  const insets = useSafeAreaInsets()
+  useAppContext();
+  useSelector((state) => state.cart);
+  const { theme } = useTheme();
 
-  const { height } = useAppContext()
-  const { cartItems, loading: cartLoading, error: cartError, isFetched: cartIsFetched, cartUpdateLoading } = useSelector((state) => state.cart)
-  const { theme } = useTheme()
+  const dispatch = useDispatch();
 
-
-  const isInCart = cartItems?.some(item => item.productId === product.productId);
-
-  const cartItem = cartItems?.find(item => item.productId === product.productId);
-
-  const quantity = cartItem ? cartItem.quantity : 0;
-
-
-  const dispatch = useDispatch()
-
-
-  const [showAddressBottomSheet, setShowAddressBottomSheet] = useState(false)
-  const { addressList } = useSelector((state) => state.address)
-  const { display_name, currentLocationFormattedAddress } = useSelector((state) => state.locations)
-  const { error: ProfileError, loading: profileLoading, isFetched: isProfileApiFetched, profileData } = useSelector((state) => state.profile)
+  const [showAddressBottomSheet, setShowAddressBottomSheet] = useState(false);
+  const { addressList } = useSelector((state) => state.address);
+  const { currentLocationFormattedAddress } = useSelector((state) => state.locations);
+  const { profileData } = useSelector((state) => state.profile);
   const [refreshing, setRefreshing] = useState(false);
 
-
-  const headerConfig = {
-    color: theme.background,
-    fontFamily: Fonts.family.semiBold,
-    fontSize: Fonts.size.sm
-  }
-
-  const paratextConfig = {
-    color: theme.secondaryText,
-    fontFamily: Fonts.family.medium,
-    fontSize: Fonts.size.xs
-  }
   const displayTrimmedAddress = (usersAddress) => {
     if (usersAddress) {
-      const address = usersAddress.length > 40
-        ? usersAddress.substring(0, 40) + '...'
-        : usersAddress;
-      return address;
-    } else {
-      return "Please choose address"
+      return usersAddress.length > 40 ? usersAddress.substring(0, 40) + '...' : usersAddress;
     }
+    return 'Please choose address';
   };
 
-
   const handleRefresh = () => {
-    dispatch(loadCartItems(userID))
-  }
-
-
-
-
+    dispatch(loadCartItems(userID));
+  };
 
   const [selectedAddress, setSelectedAddress] = useState(null);
-  const [receiversDetails, setReceiversDetails] = useState(null)
+  const [receiversDetails, setReceiversDetails] = useState(null);
   const [activeIndex, setActiveIndex] = useState(0);
-  //  useState({
-  //   receiverName:'',
-  //   receiverNumber:'',
-  //   receiversAddress:''
-  // })
 
   const getAddressFromStateList = async () => {
     const id = await getSelectedAddressId();
-
     if (!addressList?.length) return;
-
-    const matched = addressList.find(addr => addr.id == id);
-
+    const matched = addressList.find((addr) => addr.id == id);
     if (matched) {
-      setSelectedAddress(
-        `${matched.addressLine1 ?? ''} ${matched.addressLine2 ?? ''}`.trim()
-      );
-
+      setSelectedAddress(`${matched.addressLine1 ?? ''} ${matched.addressLine2 ?? ''}`.trim());
       setReceiversDetails({
         receiverName: matched.receiverName ?? '',
         receiverNumber: matched.receiverNumber ?? '',
       });
     } else {
-      // setSelectedAddress(currentLocationFormattedAddress ?? null); no need to set current location to address 
-      setSelectedAddress(null)
+      setSelectedAddress(null);
       setReceiversDetails(null);
     }
   };
 
   const isOrderForSelf = (() => {
     if (!receiversDetails) return true;
-
-    const receiverName = receiversDetails.receiverName
-      ?.trim()
-      .normalize("NFC")
-      .toLowerCase();
-
-    const profileName = profileData?.fullName
-      ?.trim()
-      .normalize("NFC")
-      .toLowerCase();
-
+    const receiverName = receiversDetails.receiverName?.trim().normalize('NFC').toLowerCase();
+    const profileName = profileData?.fullName?.trim().normalize('NFC').toLowerCase();
     if (receiversDetails.receiverNumber?.trim()) return false;
-
-    console.log("receiverName:", `"${receiverName}"`);
-    console.log("profileName:", `"${profileName}"`);
-    console.log("name match", receiverName === profileName);
-
     return receiverName === profileName;
   })();
-
-
 
   const displayReceiverName = isOrderForSelf
     ? profileData?.fullName
     : receiversDetails?.receiverName || profileData?.fullName;
 
+  useEffect(() => {
+    getAddressFromStateList();
+  }, [currentLocationFormattedAddress]);
 
   useEffect(() => {
-    getAddressFromStateList()
-  }, [currentLocationFormattedAddress])
+    console.log('selectedAddress:', selectedAddress);
+  }, [selectedAddress]);
 
-  useEffect(() => {
-    console.log("selectedAddress:", selectedAddress);
-  }, [selectedAddress])
+  const Field = ({ label, value, price }) => (
+    <View style={styles.field}>
+      <AppText variant="caption" color={theme.inkMuted}>{label}</AppText>
+      <AppText variant={price ? 'price' : 'bodyStrong'} color={theme.ink} numberOfLines={1}>{value}</AppText>
+    </View>
+  );
 
   return (
-    <View style={[styles.container, { marginBottom: insets.bottom + 10 }]}>
-      <ScrollView style={{ marginBottom: 10 }} refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={() => handleRefresh()} />
-      }>
-
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={{ zIndex: 1, position: "absolute", marginVertical: insets.top + 10, marginHorizontal: insets.left + 10 }}
-        >
-          <AppNavButton color={theme.secondary} />
-        </TouchableOpacity>
-        {/* backgroundColor: theme.inputContainerBorder,  color for below image*/}
-        <View style={[styles.imageContainer, { marginTop: insets.top }]}>
-
+    <View style={[styles.container, { backgroundColor: theme.surface }]}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 24 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+      >
+        {/* GALLERY */}
+        <View style={[styles.gallery, { backgroundColor: theme.sky200, paddingTop: insets.top }]}>
           <ScrollView
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
+            scrollEventThrottle={16}
             onScroll={(event) => {
               const slideSize = event.nativeEvent.layoutMeasurement.width;
-              const index = Math.floor(
-                event.nativeEvent.contentOffset.x / slideSize
-              );
+              const index = Math.floor(event.nativeEvent.contentOffset.x / slideSize);
               setActiveIndex(index);
             }}
-            scrollEventThrottle={16}
           >
             <ProductImages imageUrls={product?.imageUrls} />
           </ScrollView>
 
-          {/* DOT INDICATORS */}
-          <View style={styles.dotContainer}>
+          <View style={styles.dots}>
             {product?.imageUrls?.map((_, index) => (
               <View
                 key={index}
-                style={[
-                  styles.dot,
-                  activeIndex === index && styles.activeDot
-                ]}
+                style={activeIndex === index ? [styles.dotActive, { backgroundColor: theme.primary }] : [styles.dot, { backgroundColor: theme.surfaceCard }]}
               />
             ))}
           </View>
-
         </View>
 
+        {/* CONTENT */}
         <View style={styles.content}>
-          {/* order id  */}
-          <View style={[styles.cardContainer, { backgroundColor: theme.cardContainer }]}>
-
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-              <Text style={[headerConfig, { color: theme.greyText, fontSize: Fonts.size.base }]}>{product.name}</Text>
-              <TouchableOpacity style={{ flexDirection: "row", alignItems: "center", backgroundColor: "rgba(37, 119, 132, 0.1)", padding: 5, borderRadius: 30, paddingHorizontal: 10 }} onPress={() => setShowAddressBottomSheet(true)}>
-                <Text style={[paratextConfig, { color: theme.primary }]}>{selectedAddress ? 'Change' : 'Add'} Address</Text>
+          {/* Info Card */}
+          <Card>
+            <View style={styles.nameRow}>
+              <AppText variant="price" color={theme.ink} style={styles.name}>{product.name}</AppText>
+              <TouchableOpacity onPress={() => setShowAddressBottomSheet(true)} style={[styles.changeBtn, { borderColor: theme.borderSubtle }]} activeOpacity={0.8}>
+                <AppText style={{fontSize:12}} variant="label" color={theme.ink}>{selectedAddress ? 'Change Address' : 'Add Address'}</AppText>
               </TouchableOpacity>
-
-            </View>
-            <View style={{ flexDirection: "row" }}>
-              <View>
-                <Text style={[paratextConfig, { marginTop: 5 }]}>{`Note:You can purchase a can in unit not a single can, `}</Text>
-                <Text style={paratextConfig}>{`1 Unit = ${product.unitCount} Water can`}</Text>
-              </View>
             </View>
 
-            <Line style={{ marginTop: 10, marginBottom: 10 }} />
-
-
-            <View style={styles.detailsContainer}>
-              <View style={{ flexDirection: "column", paddingBottom: 5 }}>
-                <Text style={[paratextConfig, { color: theme.secondaryText }]}>{`MRP (incl. of all taxes)`}</Text>
-                <Text style={[headerConfig, { color: theme.greyText }]}>₹{product.basePrice}</Text>
-                {/* <Text style={[headerConfig, { color: theme.greyText }]}>₹{quantity > 0 ? product.originalPrice * quantity : product.originalPrice}</Text> */}
-              </View>
-              <View style={{ flexDirection: "column", paddingBottom: 5 }}>
-                <Text style={[paratextConfig, { color: theme.secondaryText }]}>{`Total Price`}</Text>
-                <Text style={[headerConfig, { color: theme.greyText }]}>Unit Price:₹{product.unitPrice}</Text>
-                {/* <Text style={[headerConfig, { color: theme.greyText }]}>Unit Price:₹{quantity > 0 ? product.unitPrice * quantity : product.unitPrice}</Text> */}
-              </View>
-
-              {selectedAddress && (
-                <View>
-                  <View style={{ flexDirection: "column", marginVertical: 5 }}>
-                    <View style={{ flexDirection: "row", alignItems: "center", marginVertical: 5 }}>
-                      <Text style={[paratextConfig, { color: theme.secondaryText }]}>
-                        Receiver's Name
-                      </Text>
-                    </View>
-                    <Text style={[paratextConfig, { color: theme.greyText }]}>{displayReceiverName}</Text>
-                  </View>
-                  <View style={{ flexDirection: "column" }}>
-                    <Text style={[paratextConfig, { color: theme.secondaryText }]}>Receiver's Address</Text>
-                    <Text style={[paratextConfig, { color: theme.greyText }]}>{displayTrimmedAddress(selectedAddress)
-                    }</Text>
-                  </View>
-                </View>
-
-              )}
-
+            <View style={[styles.packChip, { backgroundColor: theme.primaryTint }]}>
+              <Ionicons name="cube-outline" size={14} color={theme.primary} />
+              <AppText variant="caption" color={theme.primary}>1 unit = {product.unitCount} water cans</AppText>
             </View>
-            {/* <View style={{ paddingVertical: 5, alignItems: "center" }}>
-              <View style={[styles.deliveryTag, {
-                marginTop: 3,
-                backgroundColor: "#f9f1abff", // light yellow
-                borderColor: "#FDD835"
-              }]}>
-                <Image source={require('../../../assets/images/thunder.png')} style={{ width: 20, height: 20 }} tintColor={"#5D4037"} />
-                <Text style={[paratextConfig, { fontFamily: Fonts.family.bold, color: "#5D4037", marginRight: 8 }]}>Estimated Delivery Time : 35 Mins</Text>
-              </View>
-            </View> */}
 
-          </View>
+            <AppText variant="caption" color={theme.inkMuted} style={{ marginTop: 6 }}>Cans are sold by the unit, not one at a time.</AppText>
+
+            <View style={[styles.divider, { backgroundColor: theme.borderSubtle }]} />
+
+            <View style={styles.grid}>
+              <Field label="MRP (incl. of all taxes)" value={`₹${product.basePrice}`} />
+              <Field label="Unit price" value={`₹${product.unitPrice}`} price />
+              {selectedAddress && <Field label="Receiver's name" value={displayReceiverName} />}
+              {selectedAddress && <Field label="Receiver's address" value={displayTrimmedAddress(selectedAddress)} />}
+            </View>
+          </Card>
 
           <PerksUI />
 
+          <ImageWithTitleDesc />
 
+          <Card>
+            {WaterFeatures.map((feature, index) => (
+              <View key={index} style={index > 0 ? { marginTop: spacing.lg } : null}>
+                <IconWithFeatures iconName={feature.iconName} title={feature.header} description={feature.body} />
+              </View>
+            ))}
+          </Card>
         </View>
-
-        <ImageWithTitleDesc />
-        {WaterFeatures.map((feature, index) => (
-          <IconWithFeatures iconName={feature.iconName} title={feature.header} description={feature.body} key={index} />
-        ))}
       </ScrollView>
+
+      {/* Floating back button */}
+      <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.back, { top: insets.top + 10 }]}>
+        <AppNavButton color={theme.ink} />
+      </TouchableOpacity>
+
       <CartButton navigation={navigation} product={product} />
 
-
-      <BottomSheet
-        visible={showAddressBottomSheet}
-        onClose={() => setShowAddressBottomSheet(false)}
-      >
+      <BottomSheet visible={showAddressBottomSheet} onClose={() => setShowAddressBottomSheet(false)}>
         <AddressScreen
           navigation={navigation}
-          callGetSelectedAddressCallBack={()=>{
-            //do nothing
-          }}
+          callGetSelectedAddressCallBack={() => {}}
           onClose={() => setShowAddressBottomSheet(false)}
         />
       </BottomSheet>
-
     </View>
-  )
-}
+  );
+};
 
-export default DetailedProductScreen
+export default DetailedProductScreen;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-
-  imageContainer: {
+  container: { flex: 1 },
+  gallery: {
     height: 320,
-    width: "100%",
-    backgroundColor: "#fff",
-    borderBottomLeftRadius: 25,
-    borderBottomRightRadius: 25,
-    justifyContent: "center",
-    alignItems: "center"
-  },
-
-  productImage: {
-    width: 350,
-    height: 300,
-    marginHorizontal: 10,
-  },
-
-  dotContainer: {
-    flexDirection: "row",
-    // position: "absolute",
-    marginBottom:5,
-    alignSelf: "center"
-  },
-
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 5,
-    backgroundColor: "#ccc",
-    marginHorizontal: 4
-  },
-
-  activeDot: {
-    backgroundColor: "#257784",
-    width: 18
-  },
-
-  productImage: {
-    width: 350,
-    height: 300,
-    marginHorizontal: 10
-  },
-
-  content: {
-    padding: 10,
-  },
-  image: {
-    width: "100%",
-    height: 300,
-  },
-
-  header: {
-    backgroundColor: "red"
-  },
-
-  addButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 20,
-    alignItems: 'center',
+    width: '100%',
+    borderBottomLeftRadius: radius.lg,
+    borderBottomRightRadius: radius.lg,
     justifyContent: 'center',
-  },
-  addText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-
-  stepper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#0D6EFD',
-    borderRadius: 20,
     overflow: 'hidden',
   },
-  stepButton: {
-    backgroundColor: '#0D6EFD',
-    width: 32,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  quantityText: {
-    minWidth: 32,
-    textAlign: 'center',
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#0D6EFD',
-    paddingHorizontal: 8,
-  },
-
-  deliveryTag: {
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "flex-start",
-    marginVertical: 5,
-    paddingVertical: 2,
-    borderRadius: 5,
-  },
-
-  cardContainer: {
-    borderRadius: 20,
-    justifyContent: "center",
-    padding: 12,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-  },
-})
+  dots: { flexDirection: 'row', alignSelf: 'center', alignItems: 'center', gap: 6, position: 'absolute', bottom: 16 },
+  dot: { width: 6, height: 6, borderRadius: 3 },
+  dotActive: { width: 20, height: 6, borderRadius: 3 },
+  back: { position: 'absolute', left: 16, zIndex: 10 },
+  content: { paddingHorizontal: spacing.md, paddingTop: spacing.xl, gap: spacing.lg },
+  nameRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: spacing.md },
+  name: { flex: 1, fontSize: 22, lineHeight: 28, fontWeight: '600' },
+  changeBtn: { borderWidth: 1.5, borderRadius: radius.pill, paddingHorizontal: spacing.md, height: 30, alignItems: 'center', justifyContent: 'center' },
+  packChip: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', paddingVertical: 4, paddingHorizontal: 10, borderRadius: radius.pill, marginTop: spacing.md },
+  divider: { height: 1, marginVertical: spacing.md },
+  grid: { flexDirection: 'row', flexWrap: 'wrap' },
+  field: { width: '50%', paddingVertical: 6, paddingRight: spacing.sm, gap: 2 },
+});

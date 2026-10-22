@@ -1,45 +1,25 @@
-import { StyleSheet, Text, View } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import Fonts from '../../assets/fonts/Fonts'
-import { useTheme } from '../Context/ThemeContext'
+import { StyleSheet, View } from 'react-native';
+import AppText from './AppText';
+import { useTheme } from '../Context/ThemeContext';
+import { radius, spacing } from '../Themes/Themes';
 
+/**
+ * Dashboard footer ad block (redesign 02). surfaceSunken card, no emoji.
+ */
 const AppAdvertiseMent = () => {
+  const { theme } = useTheme();
 
-    const {theme} = useTheme()
+  return (
+    <View style={[styles.card, { backgroundColor: theme.surfaceSunken }]}>
+      <AppText variant="display" color={theme.inkMuted} style={styles.title}>Ithu Namma{'\n'}Ooru App</AppText>
+      <AppText variant="caption" color={theme.inkMuted}>Simple, fast, and made just for you. Made in Chennai.</AppText>
+    </View>
+  );
+};
 
-
-    const insets = useSafeAreaInsets()
-
-    const headerConfig = {
-        color: theme.text,
-        fontFamily: Fonts.family.semiBold,
-        fontSize: Fonts.size.xxxl
-    }
-
-    const paratextConfig = {
-        color: theme.text,
-        fontFamily: Fonts.family.semiBold,
-        fontSize: Fonts.size.xs
-    }
-
-
-    return (
-        <View style={[styles.container,{paddingBottom:insets.bottom}]}>
-            <Text style={headerConfig}>ITHU NAMMA OORU APP</Text>
-
-            <Text style={[paratextConfig,{textAlign:"justify"}]}>
-                Simple, fast, and made just for you. Originated with ❤️  In chennai
-            </Text>
-        </View>
-    )
-}
-
-export default AppAdvertiseMent
+export default AppAdvertiseMent;
 
 const styles = StyleSheet.create({
-    container: {
-        marginTop:100,
-        flex: 1,
-        padding:16
-    }
-})
+  card: { marginHorizontal: spacing.lg, marginTop: spacing.xl, borderRadius: radius.lg, padding: spacing.xl, gap: spacing.sm },
+  title: { fontSize: 26, lineHeight: 30 },
+});

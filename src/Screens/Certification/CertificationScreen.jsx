@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import NavScreen from '../../Components/NavScreen';
 import AppText from '../../Components/AppText';
 import StateView from '../../Components/StateView';
@@ -8,12 +9,12 @@ import { spacing, radius } from '../../Themes/Themes';
 import { useTheme } from '../../Context/ThemeContext';
 
 /**
- * CUS-30 · Certification & Trust. Per-store FSSAI + lab reports + source info.
- * Pass the resolved storeId via route params (from serviceability / active address).
+ * CUS-30 · Certification & Trust (prompt 04 restyle, pureLight). Per-store FSSAI +
+ * lab reports + source info. storeId comes from route params (serviceability scope).
  */
 const CertificationScreen = ({ navigation, route }) => {
   const { theme } = useTheme();
-  const storeId = route?.params?.storeId ?? 1; // TODO: pass the resolved store from address scope
+  const storeId = route?.params?.storeId ?? 1;
   const [state, setState] = useState({ loading: true, error: null, data: null });
 
   const load = useCallback(async () => {
@@ -31,21 +32,43 @@ const CertificationScreen = ({ navigation, route }) => {
   const d = state.data || {};
 
   return (
-    <NavScreen title="Quality & Certification" navigation={navigation}>
+    <NavScreen title="Quality & Certification" navigation={navigation} background={theme.surface}>
       <StateView loading={state.loading} error={state.error} onRetry={load}>
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <Card theme={theme} title="FSSAI License">
-            <Line theme={theme} label="License number" value={d.fssaiNumber ?? d.fssaiLicense ?? '—'} />
-            <Line theme={theme} label="Valid till" value={d.fssaiValidTill ?? d.validity ?? '—'} />
-          </Card>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: spacing.lg, paddingBottom: 40 }}>
 
-          <Card theme={theme} title="Water quality">
+          {/* FSSAI */}
+          <View style={[styles.card, { backgroundColor: theme.surfaceCard, borderColor: theme.successTint, borderWidth: 1.5 }]}>
+            <View style={[styles.leaf, { backgroundColor: theme.successTint }]} pointerEvents="none" />
+            <View style={styles.cardHeader}>
+              <View style={[styles.circle, { backgroundColor: theme.success }]}>
+                <Ionicons name="shield-checkmark-outline" size={22} color={theme.onPrimary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <AppText variant="bodyStrong" color={theme.ink} style={styles.cardTitle}>FSSAI License</AppText>
+                <AppText variant="caption" color={theme.inkMuted}>Food safety licence of your serving store</AppText>
+              </View>
+            </View>
+            <Line theme={theme} label="License number" value={d.fssaiNumber ?? d.fssaiLicense ?? '—'} tabular />
+            <Line theme={theme} label="Valid till" value={d.fssaiValidTill ?? d.validity ?? '—'} />
+          </View>
+
+          {/* Water quality */}
+          <View style={[styles.card, { backgroundColor: theme.surfaceCard }]}>
+            <View style={styles.cardHeader}>
+              <View style={[styles.circle, { backgroundColor: theme.brandBlue }]}>
+                <Ionicons name="water-outline" size={22} color={theme.ink} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <AppText variant="bodyStrong" color={theme.ink} style={styles.cardTitle}>Water quality</AppText>
+                <AppText variant="caption" color={theme.inkMuted}>Latest lab testing and treatment</AppText>
+              </View>
+            </View>
             <Line theme={theme} label="Last lab report" value={d.labReportDate ?? '—'} />
             <Line theme={theme} label="Source" value={d.source ?? '—'} />
             <Line theme={theme} label="Treatment" value={d.treatment ?? '—'} />
-          </Card>
+          </View>
 
-          <AppText variant="caption" color={theme.secondaryText} style={{ marginTop: spacing.md }}>
+          <AppText variant="caption" color={theme.inkMuted}>
             Certification is provided by your serving store. This is informational and does not affect ordering.
           </AppText>
         </ScrollView>
@@ -54,23 +77,43 @@ const CertificationScreen = ({ navigation, route }) => {
   );
 };
 
-const Card = ({ theme, title, children }) => (
-  <View style={[styles.card, { backgroundColor: theme.card }]}>
-    <AppText variant="bodyStrong" color={theme.highlightedText} style={{ marginBottom: spacing.sm }}>{title}</AppText>
-    {children}
-  </View>
-);
-
-const Line = ({ theme, label, value }) => (
+const Line = ({ theme, label, value, tabular }) => (
   <View style={styles.line}>
-    <AppText variant="body" color={theme.secondaryText}>{label}</AppText>
-    <AppText variant="bodyStrong" color={theme.text}>{String(value)}</AppText>
+    <AppText variant="label" color={theme.inkMuted}>{label}</AppText>
+    <AppText variant="bodyStrong" color={theme.ink} style={tabular ? styles.tabular : undefined}>{String(value)}</AppText>
   </View>
 );
 
 const styles = StyleSheet.create({
-  card: { borderRadius: radius.md, padding: spacing.lg, marginTop: spacing.md },
-  line: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: spacing.xs },
+  card: {
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    overflow: 'hidden',
+    gap: spacing.md,
+  },
+  leaf: {
+    position: 'absolute',
+    top: -30,
+    right: -30,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  circle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardTitle: { fontSize: 17, lineHeight: 24 },
+  line: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  tabular: { fontVariant: ['tabular-nums'] },
 });
 
 export default CertificationScreen;

@@ -1,12 +1,17 @@
 import { useTheme } from '../../Context/ThemeContext';
-import Fonts from '../../../assets/fonts/Fonts';
-import Ionicons from 'react-native-vector-icons/Ionicons'; // for tick/check icon
-import  LinearGradient  from 'react-native-linear-gradient'; // or react-native-linear-gradient
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useState } from 'react';
-import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import Toast from 'react-native-toast-message';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import AppText from '../AppText';
+import AppButton from '../AppButton';
+import { radius, spacing } from '../../Themes/Themes';
 
-const PaymentSection = ({ navigation , onPayClick, payableTotal }) => {
+/**
+ * Payment method picker + place-order CTA (pureLight restyle).
+ * Logic preserved exactly: `selectedMethod` state ('UPI' | 'COD') is passed to
+ * `onPayClick`, and the button label uses `payableTotal` (estimate.grandTotal).
+ */
+const PaymentSection = ({ navigation, onPayClick, payableTotal }) => {
   const { theme } = useTheme();
 
   const [selectedMethod, setSelectedMethod] = useState('UPI');
@@ -17,109 +22,90 @@ const PaymentSection = ({ navigation , onPayClick, payableTotal }) => {
   const totalLabel = hasTotal ? `₹${Number(payableTotal).toFixed(2)}` : '';
 
   const paymentMethods = [
-    { id: 'UPI', label: 'Google Pay / UPI', icon: require('../../../assets/images/gpayLogo.png') },
-    { id: 'COD', label: 'Cash on Delivery', icon: require('../../../assets/images/cash.png') },
+    { id: 'UPI', label: 'UPI / Google Pay', caption: "Scan the partner's QR at delivery" },
+    { id: 'COD', label: 'Cash on Delivery', caption: 'Pay cash to the delivery partner' },
   ];
 
+  const payHint =
+    selectedMethod === 'UPI'
+      ? 'Nothing is charged now. You pay by UPI when your cans arrive.'
+      : 'Nothing is charged now. You pay in cash when your cans arrive.';
+
   return (
-    <LinearGradient
-      colors={[theme.card, theme.card]}
-      style={[styles.paymentContainer, { backgroundColor: theme.background }]}
-    >
-      {/* Header */}
-      <Text style={[styles.headerText, { color: theme.buttonText }]}>Select Payment Method</Text>
+    <View style={styles.wrapper}>
+      <View style={[styles.card, { backgroundColor: theme.surfaceCard }]}>
+        <AppText variant="title" color={theme.ink} style={{ marginBottom: spacing.md }}>
+          Pay at the door with
+        </AppText>
 
-      {/* Radio Buttons */}
-      {paymentMethods.map((method) => (
-        <TouchableOpacity
-          key={method.id}
-          onPress={() => setSelectedMethod(method.id)}
-          style={styles.optionRow}
-        >
-          <View style={styles.radioCircle}>
-            {selectedMethod === method.id && (
-              <Ionicons name="checkmark-circle" size={24} color={theme.primary} />
-            )}
-            {selectedMethod !== method.id && (
-              <Ionicons name="ellipse-outline" size={24} color="gray" />
-            )}
-          </View>
-          <Image source={method.icon} style={styles.icon} />
-          <Text style={[styles.optionText, { color: theme.buttonText }]}>{method.label}</Text>
-        </TouchableOpacity>
-      ))}
-
-      {/* Checkout Button */}
-      <View style={styles.footer}>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Image
-            source={
-              selectedMethod === 'UPI'
-                ? require('../../../assets/images/gpayLogo.png')
-                : require('../../../assets/images/cash.png')
-            }
-            style={styles.icon}
-          />
-          <Text style={{ color: theme.buttonText, marginLeft: 10 }}>{selectedMethod}</Text>
-        </View>
-
-        <TouchableOpacity onPress={() => {
-          onPayClick(selectedMethod)
-
-        }} style={[styles.payButton, { backgroundColor: theme.primary }]}>
-          <Text style={{ color: theme.buttonText, fontFamily: Fonts.family.medium }}>
-            {hasTotal ? `Place Order · ${totalLabel}` : 'Place Order'}
-          </Text>
-        </TouchableOpacity>
+        {paymentMethods.map((method) => {
+          const active = selectedMethod === method.id;
+          return (
+            <TouchableOpacity
+              key={method.id}
+              activeOpacity={0.85}
+              onPress={() => setSelectedMethod(method.id)}
+              style={[
+                styles.optionRow,
+                {
+                  backgroundColor: active ? theme.primaryTint : theme.surfaceCard,
+                  borderColor: active ? theme.primary : theme.borderSubtle,
+                },
+              ]}
+            >
+              <Ionicons
+                name={active ? 'radio-button-on' : 'radio-button-off'}
+                size={22}
+                color={active ? theme.primary : theme.borderStrong}
+              />
+              <View style={styles.optionTextWrap}>
+                <AppText variant="bodyStrong" color={theme.ink}>{method.label}</AppText>
+                <AppText variant="caption" color={theme.inkMuted} style={{ marginTop: 2 }}>
+                  {method.caption}
+                </AppText>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
       </View>
-    </LinearGradient>
+
+      <AppButton
+        title={hasTotal ? `Place Order · ${totalLabel}` : 'Place Order'}
+        onAction={() => onPayClick(selectedMethod)}
+      />
+      <AppText variant="caption" color={theme.inkMuted} style={styles.payHint}>
+        {payHint}
+      </AppText>
+    </View>
   );
 };
 
 export default PaymentSection;
 
 const styles = StyleSheet.create({
-  paymentContainer: {
-    borderRadius: 20,
-    padding: 15,
-    margin: 10,
-    elevation: 3,
+  wrapper: {
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.lg,
   },
-  headerText: {
-    fontFamily: Fonts.family.semiBold,
-    fontSize: Fonts.size.base,
-    marginBottom: 10,
+  card: {
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
   },
   optionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 15,
+    borderWidth: 1.5,
+    borderRadius: radius.md,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
   },
-  radioCircle: {
-    marginRight: 10,
+  optionTextWrap: {
+    flex: 1,
+    marginLeft: spacing.md,
   },
-  optionText: {
-    fontFamily: Fonts.family.medium,
-    fontSize: Fonts.size.sm,
-    marginLeft: 10,
-  },
-  icon: {
-    width: 28,
-    height: 28,
-    resizeMode: 'contain',
-  },
-  footer: {
-    marginTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.2)',
-    paddingTop: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  payButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 10,
+  payHint: {
+    textAlign: 'center',
+    marginTop: spacing.md,
   },
 });

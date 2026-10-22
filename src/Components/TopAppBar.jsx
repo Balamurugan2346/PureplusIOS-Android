@@ -1,64 +1,59 @@
-import Fonts from '../../assets/fonts/Fonts';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppNavButton from '../Components/AppNavButton';
-import { useAppContext } from '../Context/AppContext';
 import { useTheme } from '../Context/ThemeContext';
+import { fontFamily, spacing } from '../Themes/Themes';
 
-const TopAppBar = ({title="Default",style,navigation,customNav= null,callback}) => {
-
-    
+/**
+ * Top app bar (00-foundation): no dark band, no rounded bottom. A light row on
+ * `surface` — back button + title + optional right slot. Props preserved:
+ * `title`, `style`, `navigation`, `customNav`, `callback`. Added: `right` slot.
+ */
+const TopAppBar = ({ title = 'Default', style, navigation, customNav = null, callback, right = null }) => {
   const insets = useSafeAreaInsets();
-  const { addToCart, cart, reduceQuantity, removeFromCart, usersAddress , isBottomBarVisible } = useAppContext()
-  const { theme } = useTheme()
+  const { theme } = useTheme();
 
- const padAmount = {
-    paddingBottom : isBottomBarVisible ? 10 : 20
- }
-  
-  const headerConfig = {
-    color: theme.greyText,
-    fontFamily: Fonts.family.semiBold,
-    fontSize: Fonts.size.lg
-  }
+  return (
+    <View
+      style={[
+        styles.topBar,
+        { backgroundColor: theme.surface, paddingTop: insets.top + 20 },
+        style,
+      ]}
+    >
+      <TouchableOpacity
+        onPress={() => {
+          if (customNav) {
+            callback();
+          } else {
+            navigation.goBack();
+          }
+        }}
+      >
+        <AppNavButton color={theme.ink} />
+      </TouchableOpacity>
+      <Text style={[styles.title, { color: theme.ink }]} numberOfLines={1}>
+        {title}
+      </Text>
+      {right ? <View>{right}</View> : null}
+    </View>
+  );
+};
 
-  const paratextConfig = {
-    color: theme.secondaryText,
-    fontFamily: Fonts.family.medium,
-    fontSize: Fonts.size.xs
-  }
-
-    return (
-        <View style={[styles.topBar, style =  { backgroundColor: theme.background, paddingTop: insets.top }]}>
-            <View style={{ flexDirection: "row",alignItems:"center" }}>
-                <TouchableOpacity
-                    onPress={() => {
-                        if(customNav){
-                            callback()
-                        }else{
-                            navigation.goBack()
-                        }
-                    }}
-                >
-                    <AppNavButton color={theme.secondary} />
-                </TouchableOpacity>
-                <Text style={[headerConfig, { marginLeft: 20, color: "white" }]}>{title}</Text>
-            </View>
-
-        </View>
-    )
-}
-
-export default TopAppBar
+export default TopAppBar;
 
 const styles = StyleSheet.create({
-    topBar: {
-        flexDirection: "row",
-        paddingHorizontal: 20,
-        height: "13%",
-        borderBottomLeftRadius: 30,
-        borderBottomRightRadius: 30
-    },
-
-    
-})
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.sm,
+    gap: spacing.md,
+  },
+  title: {
+    flex: 1,
+    fontFamily: fontFamily.semibold,
+    fontSize: 18,
+    lineHeight: 24,
+  },
+});

@@ -1,17 +1,16 @@
 import { useAppContext } from '../../../Context/AppContext';
 import { useTheme } from '../../../Context/ThemeContext';
-import Fonts from '../../../../assets/fonts/Fonts';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AppButton from '../../../Components/AppButton';
+import AppText from '../../../Components/AppText';
+import StatusBadge from '../../../Components/StatusBadge';
+import { radius, spacing } from '../../../Themes/Themes';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Image, LayoutAnimation, Linking, Platform, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, UIManager, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import OrderSummary from '../../../Components/Cart/OrderSummary';
-import Line from '../../../Components/Line';
 import OrderProdItem from '../../../Components/Order/OrderProdItem';
 import TopAppBar from '../../../Components/TopAppBar';
-import VectorBg from '../../../Components/VectorBg';
-import OrderTimeline from '../../../Components/OrderTracking/OrderTimeLIne';
 import { useDispatch, useSelector } from 'react-redux';
 import { getDetailedProducts } from '../../../Redux/Slices/ProductsSlice';
 import AppLoading from '../../../Components/AppLoading';
@@ -19,15 +18,16 @@ import { cancelOrder, clearOrderDetailed, getAllOrders, getOrderDetailed } from 
 import { useToast } from '../../../Components/Toast/ToastProvider';
 import OrderApi from '../../../API/modules/OrderService';
 
-/** CUS-16/17/20: map any backend order-status string to a label, color and icon. */
+/** CUS-16/17/20: map any backend order-status string to a label, semantic tone and icon.
+ *  `tone` resolves to theme tokens (theme[tone] / theme[`${tone}Tint`]) in the component. */
 const statusMeta = (raw) => {
     const s = String(raw ?? '').toLowerCase();
-    if (s.includes('cancel')) return { label: 'Cancelled', color: '#E53935', icon: 'close-circle' };
-    if (s.includes('fail')) return { label: 'Delivery failed', color: '#E53935', icon: 'alert-circle' };
-    if (s.includes('out')) return { label: 'Out for delivery', color: '#FB8C00', icon: 'bicycle' };
-    if (s.includes('deliver') || s.includes('complete')) return { label: 'Delivered', color: '#43A047', icon: 'checkmark-circle' };
-    if (s.includes('assign') || s.includes('load')) return { label: raw, color: '#FB8C00', icon: 'cube' };
-    return { label: raw || 'Placed', color: '#FB8C00', icon: 'time' };
+    if (s.includes('cancel')) return { label: 'Cancelled', tone: 'danger', icon: 'close-circle-outline' };
+    if (s.includes('fail')) return { label: 'Delivery failed', tone: 'danger', icon: 'alert-circle-outline' };
+    if (s.includes('out')) return { label: 'Out for delivery', tone: 'warning', icon: 'bicycle-outline' };
+    if (s.includes('deliver') || s.includes('complete')) return { label: 'Delivered', tone: 'success', icon: 'checkmark-circle-outline' };
+    if (s.includes('assign') || s.includes('load')) return { label: raw, tone: 'warning', icon: 'cube-outline' };
+    return { label: raw || 'Placed', tone: 'info', icon: 'time-outline' };
 };
 
 const formatDateTime = (value) => {
@@ -87,24 +87,12 @@ const OrderDetailedScreen = ({ navigation, route }) => {
     const { addToCart, cart, reduceQuantity, removeFromCart, usersAddress } = useAppContext()
     const { theme } = useTheme()
 
-    const headerConfig = {
-        color: theme.greyText,
-        fontFamily: Fonts.family.semiBold,
-        fontSize: Fonts.size.lg
-    }
-
-    const paratextConfig = {
-        color: theme.secondaryText,
-        fontFamily: Fonts.family.medium,
-        fontSize: Fonts.size.xs
-    }
-
-
     const { orderDetailed } = useSelector((state) => state.order)
     const { showToast } = useToast()
 
     const order = orderDetailed?.data
     const meta = statusMeta(order?.deliveryStatus ?? order?.status)
+    const metaColor = theme[meta.tone] || theme.info
 
     // CUS-20: authoritative cancel-window from backend (canCancel === PLACED / pre-ASSIGNED).
     const [canCancel, setCanCancel] = useState(false)
@@ -211,7 +199,7 @@ const OrderDetailedScreen = ({ navigation, route }) => {
     }
 
     return (
-        <View style={[styles.container, { backgroundColor: theme.secondaryBackground, paddingBottom: insets.bottom }]}>
+        <View style={[styles.container, { backgroundColor: theme.surface, paddingBottom: insets.bottom }]}>
             <TopAppBar title='Order Details' navigation={navigation} />
 
             {orderDetailed.isLoading && (
@@ -220,191 +208,136 @@ const OrderDetailedScreen = ({ navigation, route }) => {
 
             {orderDetailed && orderDetailed?.data ? (
                 <ScrollView
+                    contentContainerStyle={{ padding: spacing.xl, gap: spacing.lg, paddingBottom: 40 }}
                     refreshControl={
-                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[theme.primary]} />
                     }
                 >
-                    <View style={[styles.content]}>
+                    {/* Order card */}
+                    <View style={[styles.card, { backgroundColor: theme.surfaceCard }]}>
 
-                        {/* order id  */}
-                        <View style={[styles.cardContainer, { backgroundColor: theme.cardContainer }]}>
+                        <TouchableOpacity onPress={toggleExpand} style={styles.cardHeaderRow}>
+                            <AppText variant="title" color={theme.ink}>Order Details</AppText>
+                            <Ionicons name={!expanded ? 'chevron-down' : 'chevron-up'} color={theme.inkMuted} size={20} />
+                        </TouchableOpacity>
 
-                            <TouchableOpacity onPress={toggleExpand} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                                <Text style={[headerConfig, { marginLeft: 6, color: theme.greyText, fontSize: Fonts.size.base }]}>Order Details</Text>
-                                <Ionicons onPress={toggleExpand} name={!expanded ? 'chevron-down' : 'chevron-up'} color={theme.background} size={20} />
-                            </TouchableOpacity>
-                            <View style={{ flexDirection: "row", justifyContent: "space-around", alignItems: "center" }}>
-                                <VectorBg icon={"cart"} bgColor={'#F48FB1'} iconTint={"#880E4F"} />
-                                <View style={{ marginLeft: 10, flex: 1 }}>
-                                    <Text numberOfLines={1}
-                                        ellipsizeMode="tail" style={[paratextConfig, { color: theme.greyText }]}>{`OrderID : #${orderDetailed?.data?.orderId}`}</Text>
-                                    <Text style={paratextConfig}>{`${orderDetailed?.data.items?.length}`} items</Text>
-                                </View>
-
-
-                                <View style={{ paddingHorizontal: 10, paddingVertical: 5, alignItems: "center" }}>
-                                    <View style={[styles.deliveryTag, {
-                                        marginTop: 3,
-                                        backgroundColor: meta.color + '22',
-                                        borderColor: meta.color,
-                                        borderWidth: 1,
-                                    }]}>
-                                        <Ionicons name={meta.icon} color={meta.color} size={16} style={{ marginRight: 4 }} />
-                                        <Text style={[paratextConfig, { fontFamily: Fonts.family.bold, color: meta.color, marginRight: 6 }]}>{meta.label}</Text>
-                                    </View>
-                                </View>
+                        <View style={styles.orderRow}>
+                            <View style={[styles.iconWell, { backgroundColor: theme.primaryTint }]}>
+                                <Ionicons name="cart-outline" size={22} color={theme.primary} />
                             </View>
-
-                            <Line style={{ marginTop: 10 }} />
-                            <View style={{ flexDirection: "row", alignItems: "center", marginTop: 6, justifyContent: "space-between" }}>
-
-
-                                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                                    <Ionicons name={meta.icon} color={meta.color} size={26} />
-                                    <Text style={[headerConfig, { marginLeft: 6, color: meta.color, fontSize: Fonts.size.sm }]}>{meta.label}</Text>
-                                </View>
+                            <View style={{ flex: 1 }}>
+                                <AppText variant="bodyStrong" color={theme.ink} numberOfLines={1}>{`Order #${order?.orderId}`}</AppText>
+                                <AppText variant="caption" color={theme.inkMuted} style={{ marginTop: 2 }}>{`${order?.items?.length ?? 0} items`}</AppText>
                             </View>
-                            {expanded && (
-                                <View style={styles.detailsContainer}>
-                                    <View style={{ flexDirection: "column", paddingBottom: 5 }}>
-                                        <Text style={[paratextConfig, { color: theme.secondaryText }]}>Order ID</Text>
-                                        <Text style={[paratextConfig, { color: theme.greyText }]}>#{order?.orderId}</Text>
-                                    </View>
-                                    {!!(order?.receiverName || order?.receiverPhone) && (
-                                        <View style={{ flexDirection: "column", marginVertical: 5 }}>
-                                            <Text style={[paratextConfig, { color: theme.secondaryText }]}>Receiver Details</Text>
-                                            <Text style={[paratextConfig, { color: theme.greyText }]}>
-                                                {[order?.receiverName, order?.receiverPhone].filter(Boolean).join(', ')}
-                                            </Text>
-                                        </View>
-                                    )}
-                                    <View style={{ flexDirection: "column" }}>
-                                        <Text style={[paratextConfig, { color: theme.secondaryText }]}>Address</Text>
-                                        <Text style={[paratextConfig, { color: theme.greyText }]}>{order?.deliveryAddress ?? '—'}</Text>
-                                    </View>
-                                    <View style={{ flexDirection: "column", marginVertical: 5 }}>
-                                        <Text style={[paratextConfig, { color: theme.secondaryText }]}>Placed Time</Text>
-                                        <Text style={[paratextConfig, { color: theme.greyText }]}>{formatDateTime(order?.orderDate)}</Text>
-                                    </View>
-                                </View>
-                            )}
-
+                            <StatusBadge status={order?.deliveryStatus ?? order?.status} />
                         </View>
 
-                        {/* Track order — only while the order is in flight (PLACED / ASSIGNED /
-                            OUT_FOR_DELIVERY). Hidden once delivered, cancelled or failed. */}
-                        {canTrackOrder(order?.deliveryStatus ?? order?.status) && (
-                            <TouchableOpacity
-                                onPress={() => navigation?.navigate?.('OrderTrackingScreen', { id: orderId })}
-                                style={[styles.trackBtn, { backgroundColor: theme.primary }]}
-                            >
-                                <Ionicons name="location" size={20} color={theme.buttonText} style={{ marginRight: 8 }} />
-                                <Text style={[paratextConfig, { color: theme.buttonText, fontFamily: Fonts.family.semiBold, fontSize: Fonts.size.sm }]}>
-                                    Track Order
-                                </Text>
-                            </TouchableOpacity>
-                        )}
-
-                        {/* timeline — driven by the real order.history / status */}
-                        {/* <OrderTimeline order={order} fromWhiteBg={true} style={[styles.cardContainer, { backgroundColor: theme.cardContainer }]} /> */}
-
-                        {/* <OrderProdItem/> */}
-                        <View style={[styles.cardContainer, { backgroundColor: theme.cardContainer }]}>
-
-                            <TouchableOpacity
-                                onPress={toggleItemsExpand}
-                                style={{
-                                    flexDirection: "row",
-                                    justifyContent: "space-between",
-                                    alignItems: "center"
-                                }}
-                            >
-
-                                <Text
-                                    style={[
-                                        paratextConfig,
-                                        { marginLeft: 6, color: theme.greyText, fontSize: Fonts.size.sm }
-                                    ]}
-                                >
-                                    {orderDetailed?.data?.items?.length} items in order
-                                </Text>
-
-                                <Ionicons
-                                    name={!itemsExpanded ? "chevron-down" : "chevron-up"}
-                                    color={theme.background}
-                                    size={20}
-                                />
-
-                            </TouchableOpacity>
-
-                            {/* PRODUCTS */}
-
-                            {(itemsExpanded
-                                ? orderDetailed?.data?.items
-                                : orderDetailed?.data?.items?.slice(0, 2)
-                            )?.map((item, index) => (
-
-                                <OrderProdItem
-                                    key={index}
-                                    item={item}
-                                />
-
-                            ))}
-
+                        {/* Status line box */}
+                        <View style={[styles.statusBox, { backgroundColor: theme.surfaceSunken }]}>
+                            <Ionicons name={meta.icon} color={metaColor} size={18} style={{ marginRight: 8 }} />
+                            <AppText variant="label" color={metaColor} style={{ flex: 1 }}>{meta.label}</AppText>
                         </View>
 
-                        {/*Order summary — driven by the real order/{id} breakdown snapshot */}
-                        <OrderSummary isOrderDetails={true} order={order} />
-
-                        {/* CUS-18 invoice — available once the order is delivered. */}
-                        {isDelivered && (
-                          <View style={{ paddingHorizontal: 10 }}>
-                            <AppButton
-                              title="Download invoice"
-                              borderOnly
-                              isLoading={invoiceLoading}
-                              loadingText="Fetching..."
-                              onAction={handleInvoice}
-                            />
-                          </View>
+                        {expanded && (
+                            <View style={styles.detailsGrid}>
+                                <DetailRow theme={theme} label="Order ID" value={`#${order?.orderId}`} />
+                                {!!(order?.receiverName || order?.receiverPhone) && (
+                                    <DetailRow theme={theme} label="Receiver" value={[order?.receiverName, order?.receiverPhone].filter(Boolean).join(' · ')} />
+                                )}
+                                <DetailRow theme={theme} label="Address" value={order?.deliveryAddress ?? '—'} />
+                                <DetailRow theme={theme} label="Placed time" value={formatDateTime(order?.orderDate)} />
+                            </View>
                         )}
 
-                        {/* CUS-19/20 — self-service is open only while the order is unassigned (PLACED).
-                            can-cancel from the backend is the authoritative gate for this window. */}
-                        {canCancel && (
-                          <View style={{ paddingHorizontal: 10 }}>
-                            <AppButton
-                              title="Modify order"
-                              borderOnly
-                              style={{ marginBottom: 0 }}
-                              onAction={() => navigation?.navigate?.('ModifyOrder', { orderId: orderId })}
-                            />
-                            <AppButton
-                              title="Cancel order"
-                              isLoading={cancelling}
-                              loadingText="Cancelling..."
-                              style={{ backgroundColor: '#E53935' }}
-                              onAction={handleCancel}
-                            />
-                          </View>
-                        )}
                     </View>
+
+                    {/* Track order — only while the order is in flight. */}
+                    {canTrackOrder(order?.deliveryStatus ?? order?.status) && (
+                        <AppButton
+                            title="Track Order"
+                            icon="location-outline"
+                            onAction={() => navigation?.navigate?.('OrderTrackingScreen', { id: orderId })}
+                        />
+                    )}
+
+                    {/* Items card */}
+                    <View style={[styles.card, { backgroundColor: theme.surfaceCard }]}>
+                        <TouchableOpacity onPress={toggleItemsExpand} style={styles.cardHeaderRow}>
+                            <AppText variant="bodyStrong" color={theme.ink}>{`${order?.items?.length ?? 0} items in order`}</AppText>
+                            <Ionicons name={!itemsExpanded ? "chevron-down" : "chevron-up"} color={theme.inkMuted} size={20} />
+                        </TouchableOpacity>
+
+                        {(itemsExpanded
+                            ? order?.items
+                            : order?.items?.slice(0, 2)
+                        )?.map((item, index) => (
+                            <OrderProdItem key={index} item={item} />
+                        ))}
+                    </View>
+
+                    {/* Order summary — real order/{id} breakdown snapshot */}
+                    <OrderSummary isOrderDetails={true} order={order} />
+
+                    {/* CUS-18 invoice — available once delivered. */}
+                    {isDelivered && (
+                        <AppButton
+                            title="Download invoice"
+                            icon="download-outline"
+                            borderOnly
+                            isLoading={invoiceLoading}
+                            loadingText="Fetching..."
+                            onAction={handleInvoice}
+                        />
+                    )}
+
+                    {/* CUS-19/20 — self-service is open only while the order is unassigned (PLACED). */}
+                    {canCancel && (
+                        <View>
+                            <View style={styles.actionRow}>
+                                <View style={{ flex: 1 }}>
+                                    <AppButton
+                                        title="Modify order"
+                                        borderOnly
+                                        onAction={() => navigation?.navigate?.('ModifyOrder', { orderId: orderId })}
+                                    />
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <AppButton
+                                        title="Cancel order"
+                                        variant="dangerSoft"
+                                        isLoading={cancelling}
+                                        loadingText="Cancelling..."
+                                        onAction={handleCancel}
+                                    />
+                                </View>
+                            </View>
+                            <AppText variant="caption" color={theme.inkMuted} style={styles.actionHint}>
+                                Free to change or cancel until a delivery partner is assigned.
+                            </AppText>
+                        </View>
+                    )}
                 </ScrollView>
             ) : (
-                <Image
-                    source={require('../../../../assets/images/no_order.jpg')}
-                    style={{
-                        width: 180,
-                        height: 180,
-                        marginBottom: 10
-                    }}
-                    resizeMode="contain"
-                />
+                <View style={styles.emptyWrap}>
+                    <Image
+                        source={require('../../../../assets/images/no_order.jpg')}
+                        style={{ width: 120, height: 120 }}
+                        resizeMode="contain"
+                    />
+                </View>
             )}
 
         </View>
     )
 }
+
+/** 2-column label/value detail row used in the expanded order card. */
+const DetailRow = ({ theme, label, value }) => (
+    <View style={styles.detailRow}>
+        <AppText variant="caption" color={theme.inkMuted} style={styles.detailLabel}>{label}</AppText>
+        <AppText variant="caption" color={theme.ink} style={styles.detailValue}>{value}</AppText>
+    </View>
+)
 
 export default OrderDetailedScreen
 
@@ -412,117 +345,58 @@ const styles = StyleSheet.create({
     container: {
         flex: 1
     },
-
-    deliveryTag: {
+    card: {
+        borderRadius: radius.lg,
+        padding: spacing.lg,
+        gap: spacing.md,
+    },
+    cardHeaderRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+    },
+    orderRow: {
         flexDirection: "row",
         alignItems: "center",
-        alignSelf: "flex-start",
-        marginVertical: 5,
-        paddingVertical: 2,
-        borderRadius: 5,
+        gap: spacing.md,
     },
-
-    cardContainer: {
-        borderRadius: 20,
+    iconWell: {
+        width: 44,
+        height: 44,
+        borderRadius: radius.sm,
+        alignItems: "center",
         justifyContent: "center",
-        padding: 12,
-        margin: 10,
-        elevation: 3,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
     },
-
-    content: {
-        margin: 8
-    },
-    trackBtn: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: 14,
-        paddingVertical: 12,
-        marginHorizontal: 10,
-        marginTop: 2,
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
-    },
-    header: {
-        marginLeft: 6,
-    },
-    summaryRow: {
+    statusBox: {
         flexDirection: "row",
-        justifyContent: "space-around",
         alignItems: "center",
+        borderRadius: radius.sm,
+        padding: spacing.md,
     },
-    summaryTextContainer: {
-        marginLeft: 10,
+    detailsGrid: {
+        gap: spacing.md,
+    },
+    detailRow: {
+        flexDirection: "row",
+        alignItems: "flex-start",
+    },
+    detailLabel: {
+        width: 110,
+    },
+    detailValue: {
         flex: 1,
     },
-    orderIdText: {
-        fontSize: 14,
-    },
-    itemText: {
-        fontSize: 12,
-    },
-    deliveryTagContainer: {
-        paddingHorizontal: 10,
-        paddingVertical: 5,
-        alignItems: "center",
-    },
-    deliveryText: {
-        fontSize: 10,
-    },
-    deliveryTag: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 5,
-        borderWidth: 1,
-        borderRadius: 8,
-    },
-    tagIcon: {
-        width: 20,
-        height: 20,
-        marginRight: 5,
-    },
-    tagText: {
-        fontFamily: 'bold',
-    },
-    line: {
-        height: 1,
-        backgroundColor: '#ccc',
-        marginVertical: 10,
-    },
-    statusRow: {
+    actionRow: {
         flexDirection: "row",
+        gap: spacing.md,
+    },
+    actionHint: {
+        textAlign: "center",
+        marginTop: spacing.md,
+    },
+    emptyWrap: {
+        flex: 1,
         alignItems: "center",
-        justifyContent: "space-between",
+        justifyContent: "center",
     },
-    statusLeft: {
-        flexDirection: "row",
-        alignItems: "center",
-    },
-    statusIcon: {
-        width: 30,
-        height: 30,
-    },
-    statusText: {
-        marginLeft: 6,
-    },
-    lottieStyle: {
-        width: 60,
-        height: 60,
-    },
-    detailsContainer: {
-        marginTop: 10,
-        paddingHorizontal: 10,
-    },
-    detailText: {
-        fontSize: 12,
-        marginVertical: 2,
-    }
 })

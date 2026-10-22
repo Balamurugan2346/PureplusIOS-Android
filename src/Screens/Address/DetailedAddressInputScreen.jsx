@@ -6,6 +6,7 @@ import { Image, InteractionManager, KeyboardAvoidingView, Platform, ScrollView, 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AddressWithChangeButton from '../../Components/AddressWithChangeButton';
 import TopAppBar from '../../Components/TopAppBar';
+import { spacing } from '../../Themes/Themes';
 import AddressInputForm from '../../Screens/Address/AddressInputForms';
 import { useRoute } from '@react-navigation/native';
 const DetailedAddressInputScreen = ({ navigation }) => {
@@ -18,7 +19,7 @@ const DetailedAddressInputScreen = ({ navigation }) => {
     console.log("Got address:", pickedAddress, "isEdit:", isEdit);
 
     return (
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={[styles.container, { backgroundColor: theme.secondaryBackground, marginBottom: insets.bottom }]}>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={[styles.container, { backgroundColor: theme.surface, marginBottom: insets.bottom }]}>
             <TopAppBar title={isEdit ? 'Edit Address' : 'Add Address'} navigation={navigation} />
             <ScrollView>
                 <View style={[styles.content]}>
@@ -42,33 +43,6 @@ const styles = StyleSheet.create({
     },
 
     content: {
-        padding: 10
-    },
-    mapCard: {
-    },
-
-
-    input: {
-        backgroundColor: 'white',
-        borderRadius: 10,
-        elevation: 3,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
-    },
-
-    inputContainer: {
-
-    },
-    cardContainer: {
-        backgroundColor: 'white',
-        borderRadius: 20,
-        flexDirection: "column",
-        elevation: 3,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
+        padding: spacing.md,
     },
 })

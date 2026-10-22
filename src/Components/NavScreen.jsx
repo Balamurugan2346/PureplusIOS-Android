@@ -5,19 +5,25 @@ import { spacing } from '../Themes/Themes';
 import { useTheme } from '../Context/ThemeContext';
 
 /**
- * Standard screen shell: the app's TopAppBar (back + title) + a themed,
- * padded body. Use on every stacked screen so the nav header is consistent.
+ * Standard screen shell (00-foundation): the light TopAppBar (back + title) + a
+ * padded body on `surface`. Everything is light now, but the `background` prop is
+ * still accepted (overrides the body background) so callers keep working.
  *
  *   <NavScreen title="Wallet" navigation={navigation}>...</NavScreen>
  */
-const NavScreen = ({ title, navigation, children, padded = true, style, background }) => {
+const NavScreen = ({ title, navigation, children, padded = true, style, background, right }) => {
   const { theme } = useTheme();
-  // `background` lets a screen override the themed (dark) body — e.g. a white surface.
-  const bodyBg = background ?? theme.background;
+  const bodyBg = background ?? theme.surface;
   return (
     <View style={{ flex: 1, backgroundColor: bodyBg }}>
-      <TopAppBar title={title} navigation={navigation} />
-      <View style={[{ flex: 1, paddingTop: spacing.md, backgroundColor: bodyBg }, padded && { paddingHorizontal: spacing.lg }, style]}>
+      <TopAppBar title={title} navigation={navigation} right={right} />
+      <View
+        style={[
+          { flex: 1, paddingTop: spacing.sm, backgroundColor: bodyBg },
+          padded && { paddingHorizontal: spacing.xl },
+          style,
+        ]}
+      >
         {children}
       </View>
     </View>

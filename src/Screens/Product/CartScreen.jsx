@@ -1,7 +1,6 @@
 import BottomSheet from '../../Components/BottomSheet';
 import Fonts from '../../../assets/fonts/Fonts';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import LinearGradient from 'react-native-linear-gradient';
 import { useEffect, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,6 +9,8 @@ import EstimateSummary from '../../Components/Cart/EstimateSummary';
 import PaymentWithAddressBar from '../../Components/Cart/PayButtonWithAddressBar';
 import PaymentSection from '../../Components/Cart/PaymentSection';
 import TopAppBar from '../../Components/TopAppBar';
+import AppText from '../../Components/AppText';
+import { radius, spacing } from '../../Themes/Themes';
 import ViewCoupon from '../../Components/ViewCoupon';
 import { useAppContext } from '../../Context/AppContext';
 import { useTheme } from '../../Context/ThemeContext';
@@ -121,7 +122,8 @@ const CartScreen = ({ navigation }) => {
 
   // Per-product GST% for the estimate items (cart rows don't carry it; look it up from the catalog).
   const taxFor = (productId) => {
-    const p = productList?.find((x) => x.productId === productId);
+    const catalogList = Array.isArray(productList) ? productList : (productList?.data ?? []);
+    const p = catalogList.find((x) => x.productId === productId);
     return Number(p?.taxPercent ?? p?.taxPercentage ?? 0) || 0;
   };
 
@@ -288,7 +290,7 @@ const CartScreen = ({ navigation }) => {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.secondaryBackground, paddingBottom: isBottomBarVisible ? 0 : insets.bottom }]}>
+    <View style={[styles.container, { backgroundColor: theme.surface, paddingBottom: isBottomBarVisible ? 0 : insets.bottom }]}>
 
       {placeOrderLoading || orderDetailed.isLoading &&  (
         <AppLoading isVisible={placeOrderLoading  || orderDetailed.isLoading} />
@@ -308,16 +310,8 @@ const CartScreen = ({ navigation }) => {
           {/* coupon ui */}
           {/* <ViewCoupon navigation={navigation} /> */}
 
-          {/* cart items */}
-          <LinearGradient
-            colors={[theme.cardContainer, theme.cardContainer]}
-            style={{
-              borderRadius: 20,
-              marginTop:20,
-              marginHorizontal: 10,
-              padding: 10,
-            }}
-          >
+          {/* delivery time card */}
+          <View style={[styles.card, { backgroundColor: theme.surfaceCard, marginTop: spacing.lg }]}>
             {/* delivery time ui */}
 
             {/* Delivery-time row. The left block is a two-line vertical stack: a bold
@@ -327,11 +321,8 @@ const CartScreen = ({ navigation }) => {
                 a placeholder "…". The button stays flexShrink:0 so it can't be pushed off. */}
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
               <View style={{ flexDirection: "row", alignItems: "center", flex: 1, marginRight: 10 }}>
-                <View style={{ backgroundColor: "lightgreen", borderRadius: 10, width: 40, height: 40, alignItems: "center", justifyContent: "center" }}>
-
-                  <View style={{ backgroundColor: "white", width: 25, height: 25, borderRadius: 30, justifyContent: "center", alignItems: "center" }}>
-                    <Ionicons name='time' color={"lightgreen"} size={20} />
-                  </View>
+                <View style={{ backgroundColor: theme.successTint, borderRadius: 12, width: 44, height: 44, alignItems: "center", justifyContent: "center" }}>
+                  <Ionicons name='time' color={theme.success} size={24} />
                 </View>
 
                 <View style={{ flex: 1, marginLeft: 10 }}>
@@ -353,11 +344,11 @@ const CartScreen = ({ navigation }) => {
 
               <Pressable onPress={() => {
                 navigation.navigate('SheduleOrderScreen')
-              }} style={{ backgroundColor: "#FFF59D", borderRadius: 20, alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              }} style={{ backgroundColor: theme.warningTint, borderRadius: 999, alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
 
-                <View style={{ flexDirection: "row", paddingHorizontal: 10, paddingVertical: 5, justifyContent: "center",alignItems:"center" }}>
-                  <Ionicons name='time' color={"#FDD835"} size={20} />
-                  <Text style={[{ marginLeft: 3, color: "#5D4037", fontFamily: Fonts.family.regular,fontSize:12 }]}>
+                <View style={{ flexDirection: "row", paddingHorizontal: 12, paddingVertical: 7, justifyContent: "center", alignItems: "center" }}>
+                  <Ionicons name='time-outline' color={theme.warning} size={16} />
+                  <Text style={[{ marginLeft: 4, color: theme.warning, fontFamily: Fonts.family.medium, fontSize: 12 }]}>
                     {selectedSlot?.type === 'scheduled' ? 'Change' : 'Schedule'}
                   </Text>
                 </View>
@@ -365,13 +356,10 @@ const CartScreen = ({ navigation }) => {
               </Pressable>
 
             </View>
+          </View>
 
-
-
-
-
-
-            {/* cart items */}
+          {/* cart items card */}
+          <View style={[styles.card, { backgroundColor: theme.surfaceCard, marginTop: spacing.lg }]}>
             <View>
               {cartItems.map((item) => (
                 <CartItem
@@ -379,46 +367,12 @@ const CartScreen = ({ navigation }) => {
                   cartItem={item}
                 />
               ))}
-
             </View>
-          </LinearGradient>
+            <AppText variant="caption" color={theme.inkMuted} style={{ marginTop: spacing.sm }}>Quantity is counted in units. Pack size per product is shown on each item.</AppText>
+          </View>
           {/* {selectedAddress && ( */}
           <PaymentWithAddressBar displayName={displayReceiverName} receiversDetails={receiversDetails} isOrderForSelf={isOrderForSelf} address={selectedAddress} navigation={navigation} showBottomSheet={() => setShowAddressBottomSheet(true)} />
           {/* )} */}
-
-          {/* CUS-29: Order for someone else */}
-   {/* <View style={styles.forSomeoneCard}>
-            <View style={styles.forSomeoneRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={[headerConfig, { fontSize: Fonts.size.sm }]}>Order for someone else</Text>
-                <Text style={[paratextConfig, { marginTop: 2 }]}>Add receiver name & phone</Text>
-              </View>
-              <Switch
-                value={forSomeoneElse}
-                onValueChange={setForSomeoneElse}
-                trackColor={{ true: '#4A90E2' }}
-              />
-            </View>
-            {forSomeoneElse && (
-              <View style={{ marginTop: 10 }}>
-                <TextInput
-                  value={receiverName}
-                  onChangeText={setReceiverName}
-                  placeholder="Receiver's full name"
-                  placeholderTextColor={paratextConfig.color}
-                  style={[styles.receiverInput, { color: headerConfig.color, borderColor: '#ccc' }]}
-                />
-                <TextInput
-                  value={receiverPhone}
-                  onChangeText={setReceiverPhone}
-                  placeholder="Receiver's phone (optional)"
-                  placeholderTextColor={paratextConfig.color}
-                  keyboardType="phone-pad"
-                  style={[styles.receiverInput, { color: headerConfig.color, borderColor: '#ccc', marginTop: 8 }]}
-                />
-              </View>
-            )}
-          </View>        */}
 
           {/* bill summary — live checkout estimate (CUS-12) */}
           <EstimateSummary
@@ -504,19 +458,16 @@ const CartScreen = ({ navigation }) => {
         </ScrollView>
       ) : (
         cartIsFetched && (
-          <View style={{ flexDirection: 'column', alignItems: 'center', paddingVertical: 20 }}>
-            <Text style={[paratextConfig, { color: 'black' }]}>No Items in the cart</Text>
+          <View style={styles.emptyWrap}>
+            <View style={[styles.emptyIcon, { backgroundColor: theme.primaryTint }]}>
+              <Ionicons name="cart-outline" size={32} color={theme.primary} />
+            </View>
+            <AppText variant="bodyStrong" color={theme.ink} style={{ marginTop: spacing.md }}>No items in the cart</AppText>
             <TouchableOpacity
-              style={{
-                backgroundColor: theme.background,
-                borderRadius: 10,
-                paddingHorizontal: 20,
-                paddingVertical: 10,
-                marginTop: 10,
-              }}
+              style={[styles.emptyBtn, { backgroundColor: theme.ink }]}
               onPress={() => navigation.goBack()}
             >
-              <Text style={[paratextConfig, { color: 'white' }]}>Go Back</Text>
+              <AppText variant="button" color={theme.onInk}>Go Back</AppText>
             </TouchableOpacity>
           </View>
         )
@@ -551,56 +502,28 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  forSomeoneCard: {
-    marginHorizontal: 10,
-    marginTop: 10,
-    padding: 14,
-    borderRadius: 16,
-    backgroundColor: '#f0f4ff',
+  card: {
+    borderRadius: radius.lg,
+    marginHorizontal: spacing.lg,
+    padding: spacing.lg,
   },
-  forSomeoneRow: {
-    flexDirection: 'row',
+  emptyWrap: {
+    flexDirection: 'column',
     alignItems: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: spacing.xl,
   },
-  receiverInput: {
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-    backgroundColor: '#fff',
-  },
-
-  paymentContainer: {
-    borderRadius: 20,
-    justifyContent: "center",
-    padding: 12,
-    margin: 10,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-  },
-  paymentOption: {
-    flexDirection: 'row',
+  emptyIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  icon: {
-    width: 28,
-    height: 28,
-    resizeMode: 'contain',
-    marginRight: 8,
-  },
-  paymentText: {
-
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-  },
-  payButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 6
+  emptyBtn: {
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: 12,
+    marginTop: spacing.lg,
   },
 });

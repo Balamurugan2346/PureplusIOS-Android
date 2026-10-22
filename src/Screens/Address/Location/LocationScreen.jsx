@@ -1,8 +1,10 @@
 import React, { useEffect, useState, useRef } from 'react';
 import AppButton from '../../../Components/AppButton';
+import AppText from '../../../Components/AppText';
 import TopAppBar from '../../../Components/TopAppBar';
 import { useTheme } from '../../../Context/ThemeContext';
 import Fonts from '../../../../assets/fonts/Fonts';
+import { fontFamily, radius, spacing, floatShadow } from '../../../Themes/Themes';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
 import {
@@ -173,6 +175,23 @@ const LocationScreen = ({ navigation }) => {
     }, [route.params]);
 
     // ---------------------------
+    // On mount: default-center the map on the device's CURRENT location.
+    // Only when NOT editing an existing address AND no lat/long was passed in
+    // (the route-params effect above already animates to a passed lat/long,
+    // so we avoid double-fetching / fighting that animation).
+    // syncToCurrentLocation() sets its own programmatic-move guard, so this
+    // won't trigger a spurious region-change decode.
+    // ---------------------------
+    useEffect(() => {
+        const { fromEdit, lat, long } = route.params ?? {};
+        if (fromEdit !== true && lat == null && long == null) {
+            syncToCurrentLocation();
+        }
+        // run once on mount
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // ---------------------------
     // Apply decode results — but DO NOT override when initially editing (isEditing)
     // This effect runs when decodeAddress finishes and location slice updates a1/a2/display_name/pinCode/c/s
     // ---------------------------
@@ -338,12 +357,15 @@ const LocationScreen = ({ navigation }) => {
             style={[styles.suggestionRow]}
             onPress={() => onSelectSuggestion(item)}
         >
-            <Text style={[styles.suggestionText, { color: theme.text }]}>
-                {item.properties.formatted || item.properties.address_line1 || item.properties.address_line2}
-            </Text>
-            <Text style={[styles.suggestionSubText, { color: theme.secondaryText }]}>
-                {(item.properties?.city || item.properties?.state || '') + (item.properties?.postcode ? ` - ${item.properties.postcode}` : '')}
-            </Text>
+            <Ionicons name="location-outline" size={18} color={theme.primary} style={{ marginRight: spacing.md, marginTop: 1 }} />
+            <View style={{ flex: 1 }}>
+                <Text style={[styles.suggestionText, { color: theme.ink }]}>
+                    {item.properties.formatted || item.properties.address_line1 || item.properties.address_line2}
+                </Text>
+                <Text style={[styles.suggestionSubText, { color: theme.inkMuted }]}>
+                    {(item.properties?.city || item.properties?.state || '') + (item.properties?.postcode ? ` – ${item.properties.postcode}` : '')}
+                </Text>
+            </View>
         </TouchableOpacity>
     );
 
@@ -372,66 +394,10 @@ const LocationScreen = ({ navigation }) => {
     // ---------------------------
     return (
         <View style={[styles.container]}>
-            <TopAppBar navigation={navigation} title="Location" />
-
-            {/* SEARCH BAR */}
-            <View style={[styles.searchBarContainer, { backgroundColor: theme.card }]}>
-                <Ionicons name="search" size={20} color="#999" style={{ marginHorizontal: 8 }} />
-                <TextInput
-                    ref={searchRef}
-                    value={text}
-                    placeholder="Search area or address"
-                    style={[styles.searchInput, { color: theme.text }]}
-                    placeholderTextColor="#999"
-                    onChangeText={onSearchChange}
-                    onPressIn={() => setShowAutocomplete(true)}
-                    onFocus={() => setShowAutocomplete(true)}
-                />
-
-                <TouchableOpacity onPress={syncToCurrentLocation} style={styles.syncButton}>
-                    <Ionicons name="locate" size={20} color={theme.text} />
-                </TouchableOpacity>
-            </View>
-
-            {/* AUTOCOMPLETE OVERLAY */}
-            {showAutocomplete && (
-                <View style={[styles.autocompleteOverlay, { marginTop: insets.top + 130 }]} pointerEvents="box-none">
-                    <View style={[styles.autocompleteBox, { backgroundColor: theme.card }]}>
-                        {autoLoading ? (
-                            <ActivityIndicator />
-                        ) : (
-                            <FlatList
-                                data={autoList}
-                                keyExtractor={(i, idx) => (i.id ?? i.place_id ?? idx).toString()}
-                                renderItem={renderSuggestion}
-                                keyboardShouldPersistTaps="handled"
-                                ItemSeparatorComponent={() => <View style={styles.separator} />}
-                                ListEmptyComponent={() => (
-                                    <View style={styles.emptyRow}>
-                                        <Text style={{ color: theme.secondaryText }}>No matches</Text>
-                                    </View>
-                                )}
-                            />
-                        )}
-                    </View>
-                </View>
-            )}
-
-            {/* MAP CENTER PIN */}
-            <View style={{
-                position: 'absolute',
-                top: '45%',
-                left: '50%',
-                marginLeft: -15,
-                zIndex: 10,
-            }}>
-                <Ionicons name='location-sharp' size={30} color='red' />
-            </View>
-
-            {/* MAP */}
+            {/* MAP (full-screen background layer) */}
             <MapView
                 ref={mapRef}
-                style={{ flex: 1, marginHorizontal: 10 }}
+                style={StyleSheet.absoluteFillObject}
                 onRegionChangeComplete={handleRegionChangeComplete}
                 provider={PROVIDER_GOOGLE}
                 initialRegion={{
@@ -448,57 +414,110 @@ const LocationScreen = ({ navigation }) => {
             >
             </MapView>
 
+            <TopAppBar navigation={navigation} title="Location" />
+
+            {/* SEARCH BAR */}
+            <View style={[styles.searchBarContainer, { backgroundColor: theme.surfaceCard }, floatShadow]}>
+                <Ionicons name="search" size={20} color={theme.inkMuted} style={{ marginHorizontal: spacing.md }} />
+                <TextInput
+                    ref={searchRef}
+                    value={text}
+                    placeholder="Search area or address"
+                    style={[styles.searchInput, { color: theme.ink }]}
+                    placeholderTextColor={theme.inkMuted}
+                    onChangeText={onSearchChange}
+                    onPressIn={() => setShowAutocomplete(true)}
+                    onFocus={() => setShowAutocomplete(true)}
+                />
+
+                <TouchableOpacity onPress={syncToCurrentLocation} style={[styles.syncButton, { backgroundColor: theme.primaryTint }]}>
+                    <Ionicons name="locate-outline" size={20} color={theme.primary} />
+                </TouchableOpacity>
+            </View>
+
+            {/* AUTOCOMPLETE OVERLAY */}
+            {showAutocomplete && (
+                <View style={[styles.autocompleteOverlay, { marginTop: insets.top + 140 }]} pointerEvents="box-none">
+                    <View style={[styles.autocompleteBox, { backgroundColor: theme.card }]}>
+                        {autoLoading ? (
+                            <ActivityIndicator />
+                        ) : (
+                            <FlatList
+                                data={autoList}
+                                keyExtractor={(i, idx) => (i.id ?? i.place_id ?? idx).toString()}
+                                renderItem={renderSuggestion}
+                                keyboardShouldPersistTaps="handled"
+                                ItemSeparatorComponent={() => <View style={[styles.separator, { backgroundColor: theme.borderSubtle }]} />}
+                                ListEmptyComponent={() => (
+                                    <View style={styles.emptyRow}>
+                                        <Text style={{ color: theme.secondaryText }}>No matches</Text>
+                                    </View>
+                                )}
+                            />
+                        )}
+                    </View>
+                </View>
+            )}
+
+            {/* MAP CENTER PIN (branded) */}
+            <View style={styles.centerPin} pointerEvents="none">
+                <View style={[styles.pinPill, { backgroundColor: theme.ink }]}>
+                    <AppText variant="caption" color={theme.onInk}>Deliver here</AppText>
+                </View>
+                <Ionicons name='location' size={40} color={theme.primary} />
+                <View style={[styles.pinShadow, { backgroundColor: theme.scrim }]} />
+            </View>
+
             {/* FOOTER */}
-            <View style={[styles.footer, { marginBottom: insets.bottom, backgroundColor: theme.background }]}>
+            <View style={[styles.footer, styles.footerFloating, { marginBottom: insets.bottom, backgroundColor: theme.surfaceCard }, floatShadow]}>
                 {isGEOcodingApiLoading || isLocationFetching ? (
-                    <View>
+                    <View style={{ marginBottom: spacing.lg }}>
                         <ShimmerPlaceholder
                             LinearGradient={LinearGradient}
-                            shimmerColors={[theme.secondaryBackground, theme.secondaryBackground, theme.secondaryText]}
+                            shimmerColors={[theme.surfaceSunken, theme.surfaceSunken, theme.borderSubtle]}
                             shimmerStyle={{
                                 height: 20,
                                 width: '100%',
-                                borderRadius: 4,
-                                marginBottom: 6
+                                borderRadius: 6,
+                                marginBottom: 8
                             }}
                         />
 
                         <ShimmerPlaceholder
                             LinearGradient={LinearGradient}
-                            shimmerColors={[theme.secondaryBackground, theme.secondaryBackground, theme.secondaryText]}
+                            shimmerColors={[theme.surfaceSunken, theme.surfaceSunken, theme.borderSubtle]}
                             shimmerStyle={{
                                 height: 12,
                                 width: '40%',
-                                borderRadius: 4
+                                borderRadius: 6
                             }}
                         />
                     </View>
                 ) : (
-                    <View>
-                        <Text
-                            style={{
-                                color: theme.text,
-                                fontFamily: Fonts.family.semiBold,
-                                fontSize: Fonts.size.sm
-                            }}
-                        >
-                            {address.addressline1 || 'No address selected'}
-                        </Text>
+                    <View style={styles.footerAddressRow}>
+                        <View style={[styles.footerWell, { backgroundColor: theme.primaryTint }]}>
+                            <Ionicons name="location" size={22} color={theme.primary} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <AppText variant="bodyStrong" color={theme.ink}>
+                                {address.addressline1 || 'No address selected'}
+                            </AppText>
 
-                        <Text
-                            style={{
-                                color: theme.secondaryText,
-                                fontFamily: Fonts.family.medium,
-                                fontSize: Fonts.size.xs
-                            }}
-                        >
-                            {address.addressline2 || address.formattedAddress || ''}
-                        </Text>
+                            <AppText variant="caption" color={theme.inkMuted} style={{ marginTop: 2 }}>
+                                {address.addressline2 || address.formattedAddress || ''}
+                            </AppText>
+
+                            {!!address.pinCode && (
+                                <View style={[styles.pinBadge, { backgroundColor: theme.primaryTint }]}>
+                                    <AppText variant="badge" color={theme.primary}>{`PINCODE ${address.pinCode}`}</AppText>
+                                </View>
+                            )}
+                        </View>
                     </View>
                 )}
 
                 <AppButton
-                    title={'Confirm Location'}
+                    title={'Confirm location'}
                     onAction={onConfirmLocation}
                 />
             </View>
@@ -514,69 +533,118 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     searchBarContainer: {
-        margin: 10,
-        borderRadius: 8,
-        height: 44,
+        marginHorizontal: spacing.md,
+        marginVertical: spacing.md,
+        borderRadius: radius.pill,
+        height: 52,
         flexDirection: 'row',
         alignItems: 'center',
+        paddingRight: spacing.sm,
         zIndex: 50,
-        elevation: 6,
     },
     searchInput: {
         flex: 1,
         height: '100%',
-        paddingHorizontal: 8,
+        paddingHorizontal: spacing.sm,
+        fontFamily: fontFamily.regular,
         fontSize: 14,
     },
     syncButton: {
-        paddingHorizontal: 12,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',
     },
     autocompleteOverlay: {
         width: "100%",
         position: 'absolute',
-        paddingHorizontal: 12,
-        paddingBottom: 12,
+        paddingHorizontal: spacing.md,
+        paddingBottom: spacing.md,
         zIndex: 80,
         elevation: 8,
     },
     autocompleteBox: {
-        borderRadius: 8,
+        borderRadius: radius.md,
         overflow: 'visible',
-        // shadow for iOS
-        shadowColor: '#000',
-        shadowOpacity: 0.15,
-        shadowRadius: 6,
-        shadowOffset: { width: 0, height: 2 },
-        elevation: 8,
+        ...floatShadow,
         paddingVertical: 6,
     },
     suggestionRow: {
-        paddingVertical: 10,
-        paddingHorizontal: 12,
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        paddingVertical: spacing.md,
+        paddingHorizontal: spacing.lg,
     },
     suggestionText: {
         fontSize: 14,
-        fontFamily: Fonts.family.medium,
+        fontFamily: fontFamily.semibold,
     },
     suggestionSubText: {
         fontSize: 12,
         marginTop: 2,
-        fontFamily: Fonts.family.regular,
+        fontFamily: fontFamily.regular,
     },
     separator: {
         height: 1,
-        opacity: 0.06,
-        backgroundColor: '#000',
-        marginHorizontal: 6,
+        marginHorizontal: spacing.lg,
     },
     emptyRow: {
-        padding: 12,
+        padding: spacing.md,
         alignItems: 'center',
     },
+    centerPin: {
+        position: 'absolute',
+        top: '42%',
+        left: '50%',
+        marginLeft: -20,
+        zIndex: 10,
+        alignItems: 'center',
+    },
+    pinPill: {
+        paddingHorizontal: spacing.md,
+        paddingVertical: 4,
+        borderRadius: radius.pill,
+        marginBottom: 2,
+    },
+    pinShadow: {
+        width: 16,
+        height: 5,
+        borderRadius: 3,
+        opacity: 0.3,
+        marginTop: -2,
+    },
     footer: {
-        padding: 12,
-        borderTopWidth: 0.5,
+        padding: spacing.xl,
+        paddingBottom: spacing.xxl,
+        borderTopLeftRadius: radius.lg,
+        borderTopRightRadius: radius.lg,
+    },
+    footerFloating: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 60,
+    },
+    footerAddressRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: spacing.md,
+        marginBottom: spacing.lg,
+    },
+    footerWell: {
+        width: 44,
+        height: 44,
+        borderRadius: radius.sm,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    pinBadge: {
+        alignSelf: 'flex-start',
+        paddingHorizontal: spacing.sm,
+        paddingVertical: 3,
+        borderRadius: radius.pill,
+        marginTop: spacing.sm,
     },
 });

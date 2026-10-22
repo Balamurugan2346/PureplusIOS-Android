@@ -1,9 +1,13 @@
-import Fonts from '../../../assets/fonts/Fonts';
 import React, { useCallback, useState } from 'react';
 import { Image, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useTheme } from '../../Context/ThemeContext';
+import { fontFamily, radius, spacing } from '../../Themes/Themes';
 
-
+/**
+ * Labeled text input (00-foundation). Props preserved: onValidateInput, style,
+ * textStyle, type, label, icon, placeholder, inputRef, returnKeyType,
+ * onSubmitEditing, initialValue, tintColor. The `label` now renders when passed.
+ */
 const CustomInput = ({
   onValidateInput,
   style,
@@ -16,7 +20,7 @@ const CustomInput = ({
   returnKeyType = 'next',
   onSubmitEditing,
   initialValue = '',
-  tintColor = '#E0F1E5'
+  tintColor,
 }) => {
   const [input, setInput] = useState(initialValue);
   const [error, setError] = useState('');
@@ -33,31 +37,26 @@ const CustomInput = ({
       setError('');
       onValidateInput?.({ input: text, error: '' });
     }
-  }, [onValidateInput]);
+  }, [onValidateInput, type]);
+
+  const borderColor = error ? theme.danger : isFocused ? theme.primary : theme.borderStrong;
+  const borderWidth = error || isFocused ? 2 : 1;
+  const iconTint = error ? theme.danger : isFocused ? theme.primary : (tintColor || theme.inkMuted);
 
   return (
-    <View style={{ marginTop: 10 }}>
-      {/* <Text style={{
-        color: theme.text, marginBottom: 5, marginLeft: 5,
-        fontSize: Fonts.size.xs, fontFamily: Fonts.family.regular
-      }}>{label}</Text> */}
+    <View style={{ marginTop: spacing.md }}>
+      {label ? <Text style={[styles.label, { color: theme.ink }]}>{label}</Text> : null}
 
-      <View style={[
-        styles.inputContainer,
-        {
-          borderColor: isFocused ? theme.primary : theme.inputContainerBorder,
-          borderWidth: isFocused ? 1 : 1,
-          backgroundColor: theme.inputContainer
-        },style]}>
-        <Image source={icon} style={{ width: 20, tintColor: tintColor, marginLeft: 5, height: 20 }} />
+      <View style={[styles.inputContainer, { borderColor, borderWidth, backgroundColor: theme.surfaceCard }, style]}>
+        {icon ? <Image source={icon} style={{ width: 20, height: 20, tintColor: iconTint }} /> : null}
         <TextInput
           ref={inputRef}
-          style={[{ marginLeft: 10, width: "100%", color: theme.text , fontSize:Fonts.size.sm, fontFamily:Fonts.family.regular},textStyle]}
+          style={[styles.textInput, { color: theme.ink }, textStyle]}
           value={input}
           onChangeText={validateInput}
-          keyboardType='default'
+          keyboardType="default"
           placeholder={placeholder}
-          placeholderTextColor={theme.text}
+          placeholderTextColor={theme.inkMuted}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           returnKeyType={returnKeyType}
@@ -65,24 +64,24 @@ const CustomInput = ({
         />
       </View>
 
-      <Text style={{
-        marginLeft: 5, color: theme.error,
-        fontFamily: Fonts.family.light, fontSize: Fonts.size.xs
-      }}>{error}</Text>
+      {error ? <Text style={[styles.error, { color: theme.danger }]}>{error}</Text> : null}
     </View>
   );
 };
 
-
-
 export default CustomInput;
 
 const styles = StyleSheet.create({
-inputContainer : {
-  width:"100%",
-  padding:5,
-  flexDirection:"row",
-  alignItems:"center",
-  borderRadius:14,
-}
+  label: { fontFamily: fontFamily.medium, fontSize: 13, lineHeight: 18, marginBottom: 6 },
+  inputContainer: {
+    width: '100%',
+    height: 52,
+    paddingHorizontal: spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    borderRadius: radius.md,
+  },
+  textInput: { flex: 1, fontSize: 15, lineHeight: 22, fontFamily: fontFamily.regular, padding: 0 },
+  error: { marginTop: 6, fontSize: 12, lineHeight: 16, fontFamily: fontFamily.regular },
 });

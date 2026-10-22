@@ -1,20 +1,20 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, FlatList, StyleSheet } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import NavScreen from '../../Components/NavScreen';
 import AppText from '../../Components/AppText';
 import StateView from '../../Components/StateView';
 import StatusBadge from '../../Components/StatusBadge';
+import HeroAmountCard from '../../Components/Money/HeroAmountCard';
 import formatCurrency from '../../Utils/formatCurrency';
 import SubscriptionService from '../../API/modules/SubscriptionService';
 import { spacing, radius } from '../../Themes/Themes';
 import { useTheme } from '../../Context/ThemeContext';
 
 /**
- * CUS-23 · Billing / Postpaid. Monthly cycle for subscription + B2B deliveries.
- * Overdue past the Super-Admin threshold blocks ALL new orders until paid.
- *
- * Sourced from the subscription ledger (unbilled balance + next billing). If a
- * dedicated postpaid-ledger customer endpoint is added later, swap the fetch.
+ * CUS-23 · Billing / Postpaid (prompt 05 restyle). Monthly cycle for subscription + B2B.
+ * Overdue past the Super-Admin threshold blocks ALL new orders until paid. Read-only
+ * (no in-app pay). Sourced from the subscription ledger.
  */
 const BillingScreen = ({ navigation }) => {
   const { theme } = useTheme();
@@ -36,57 +36,73 @@ const BillingScreen = ({ navigation }) => {
   const anyOverdue = state.data.some((s) => String(s?.status || '').toUpperCase() === 'OVERDUE');
 
   return (
-    <NavScreen title="Billing" navigation={navigation}>
+    <NavScreen title="Billing" navigation={navigation} background={theme.surface}>
 
-      <View style={[styles.summary, { backgroundColor: anyOverdue ? theme.error : theme.primary }]}>
-        <AppText variant="caption" color={theme.buttonText}>Current unbilled balance</AppText>
-        <AppText variant="h1" color={theme.buttonText} style={{ marginTop: spacing.xs }}>
-          {formatCurrency(totalUnbilled)}
-        </AppText>
+      <HeroAmountCard
+        caption="CURRENT UNBILLED BALANCE"
+        amount={formatCurrency(totalUnbilled)}
+        subLine={anyOverdue ? undefined : 'Billed monthly for subscriptions and B2B deliveries.'}
+        tone={anyOverdue ? 'alert' : 'default'}
+      >
         {anyOverdue && (
-          <AppText variant="caption" color={theme.buttonText} style={{ marginTop: spacing.sm }}>
-            You have an overdue balance. New orders are blocked until it is paid.
-          </AppText>
+          <View style={[styles.overdueBox, { backgroundColor: theme.surfaceCard }]}>
+            <Ionicons name="warning-outline" size={18} color={theme.danger} style={{ marginRight: 8 }} />
+            <AppText variant="caption" color={theme.danger} style={{ flex: 1, fontWeight: '600' }}>
+              You have an overdue balance. New orders are blocked until it is paid.
+            </AppText>
+          </View>
         )}
-      </View>
+      </HeroAmountCard>
 
-      <AppText variant="h3" color={theme.highlightedText} style={{ marginVertical: spacing.md }}>
-        Postpaid accounts
-      </AppText>
+      <AppText variant="title" color={theme.ink} style={{ marginVertical: spacing.lg }}>Postpaid accounts</AppText>
 
       <StateView loading={state.loading} error={state.error} empty={!state.data.length}
         onRetry={load} emptyText="No postpaid activity">
-        <FlatList
-          data={state.data}
-          keyExtractor={(item, i) => String(item?.id ?? i)}
-          renderItem={({ item }) => (
-            <View style={[styles.row, { backgroundColor: theme.card }]}>
-              <View style={{ flex: 1 }}>
-                <AppText variant="body" color={theme.text}>
-                  {item?.productName ?? item?.product ?? 'Subscription'}
-                </AppText>
-                <AppText variant="caption" color={theme.secondaryText}>
-                  Next bill: {item?.nextBillingDate ?? '-'}
-                </AppText>
+        <View style={[styles.listCard, { backgroundColor: theme.surfaceCard }]}>
+          <FlatList
+            data={state.data}
+            keyExtractor={(item, i) => String(item?.id ?? i)}
+            scrollEnabled={false}
+            renderItem={({ item, index }) => (
+              <View style={[styles.row, index > 0 && { borderTopWidth: 1, borderTopColor: theme.borderSubtle }]}>
+                <View style={{ flex: 1, marginRight: spacing.md }}>
+                  <AppText variant="bodyStrong" color={theme.ink}>
+                    {item?.productName ?? item?.product ?? 'Subscription'}
+                  </AppText>
+                  <AppText variant="caption" color={theme.inkMuted} style={{ marginTop: 2 }}>
+                    Next bill: {item?.nextBillingDate ?? '-'}
+                  </AppText>
+                </View>
+                <View style={{ alignItems: 'flex-end', gap: 4 }}>
+                  <AppText variant="bodyStrong" color={theme.ink}>
+                    {formatCurrency(item?.unbilledBalance ?? 0)}
+                  </AppText>
+                  <StatusBadge status={item?.status} />
+                </View>
               </View>
-              <View style={{ alignItems: 'flex-end' }}>
-                <AppText variant="bodyStrong" color={theme.text}>
-                  {formatCurrency(item?.unbilledBalance ?? 0)}
-                </AppText>
-                <StatusBadge status={item?.status} />
-              </View>
-            </View>
-          )}
-          showsVerticalScrollIndicator={false}
-        />
+            )}
+            showsVerticalScrollIndicator={false}
+          />
+        </View>
       </StateView>
     </NavScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  summary: { borderRadius: radius.lg, padding: spacing.xl },
-  row: { flexDirection: 'row', alignItems: 'center', padding: spacing.md, borderRadius: radius.md, marginBottom: spacing.sm },
+  overdueBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: radius.sm,
+    padding: spacing.md,
+    marginTop: spacing.md,
+  },
+  listCard: { borderRadius: radius.lg, paddingHorizontal: spacing.lg },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 72,
+  },
 });
 
 export default BillingScreen;

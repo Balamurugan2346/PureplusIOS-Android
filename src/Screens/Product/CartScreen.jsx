@@ -6,6 +6,7 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text, TextIn
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import CartItem from '../../Components/Cart/CartItem';
 import EstimateSummary from '../../Components/Cart/EstimateSummary';
+import EmptiesReturnSelector from '../../Components/Cart/EmptiesReturnSelector';
 import PaymentWithAddressBar from '../../Components/Cart/PayButtonWithAddressBar';
 import PaymentSection from '../../Components/Cart/PaymentSection';
 import TopAppBar from '../../Components/TopAppBar';
@@ -79,6 +80,10 @@ const CartScreen = ({ navigation }) => {
   const [estimateLoading, setEstimateLoading] = useState(false);
   const [estimateError, setEstimateError] = useState(null);
   const [isFirstOrder, setIsFirstOrder] = useState(false);
+  // CUS-12 empties-return: how many held empties the customer will hand over on THIS order.
+  // null = not chosen → backend assumes a full swap (lowest deposit). The customer can lower it
+  // once the estimate tells us how many cans they hold (estimate.depositHeldCans).
+  const [emptiesReturned, setEmptiesReturned] = useState(null);
   //  useState({
   //   receiverName:'',
   //   receiverNumber:'',
@@ -152,6 +157,8 @@ const CartScreen = ({ navigation }) => {
       hasLift: !!(addr.lift ?? addr.hasLift),
       isFirstOrder: !!isFirstOrder,
       items,
+      // Only send when the customer explicitly chose; omitting keeps the backend's full-swap default.
+      ...(emptiesReturned != null && { emptiesReturned: Number(emptiesReturned) }),
     };
 
     console.log("payload",payload)
@@ -239,10 +246,11 @@ const CartScreen = ({ navigation }) => {
     return () => { active = false; };
   }, [])
 
-  // Re-price whenever the cart, the selected address, or first-order status changes.
+  // Re-price whenever the cart, the selected address, first-order status, or the
+  // customer's chosen empties-to-return changes.
   useEffect(() => {
     fetchEstimate();
-  }, [selectedAddressObj?.id, cartItems, isFirstOrder])
+  }, [selectedAddressObj?.id, cartItems, isFirstOrder, emptiesReturned])
 
 
   const handleRefresh = () => {
@@ -373,6 +381,15 @@ const CartScreen = ({ navigation }) => {
           {/* {selectedAddress && ( */}
           <PaymentWithAddressBar displayName={displayReceiverName} receiversDetails={receiversDetails} isOrderForSelf={isOrderForSelf} address={selectedAddress} navigation={navigation} showBottomSheet={() => setShowAddressBottomSheet(true)} />
           {/* )} */}
+
+          {/* empties-to-return selector (CUS-12) — only when the customer holds cans.
+              Drives the refundable-deposit line in the estimate below. */}
+          <EmptiesReturnSelector
+            heldCans={Number(estimate?.depositHeldCans ?? 0)}
+            value={emptiesReturned != null ? emptiesReturned : Number(estimate?.depositEmptiesAssumed ?? estimate?.depositHeldCans ?? 0)}
+            onChange={(v) => setEmptiesReturned(v)}
+            disabled={estimateLoading}
+          />
 
           {/* bill summary — live checkout estimate (CUS-12) */}
           <EstimateSummary

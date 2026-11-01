@@ -12,7 +12,7 @@ import { getData, storeData, clearDataBeforeLogout } from '../OfflineStore/Offli
  *  - dev-only request/response logging with the Authorization header redacted
  */
 
-const API_BASE_URL = 'https://pureplusapp.in';
+export const API_BASE_URL = 'https://pureplusapp.in';
 
 // Endpoints that must NEVER carry a bearer token (they mint/refresh it).
 const AUTH_WHITELIST = [

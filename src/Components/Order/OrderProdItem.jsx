@@ -1,6 +1,7 @@
-import { Image, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useTheme } from '../../Context/ThemeContext';
 import AppText from '../AppText';
+import ProductImage from '../Product/ProductImage';
 import { radius, spacing } from '../../Themes/Themes';
 
 /**
@@ -12,16 +13,11 @@ const OrderProdItem = ({ item }) => {
 
     const { theme } = useTheme()
 
-    const image =
-        item?.imageUrls?.length > 0
-            ? { uri: item.imageUrls[0] }
-            : require('../../../assets/images/watercan2.png');
-
     return (
         <View>
             <View style={styles.container}>
                 {/* LEFT */}
-                <Image source={image} style={[styles.thumb, { backgroundColor: theme.sky200 }]} resizeMode="contain" />
+                <ProductImage imageUrls={item?.imageUrls} style={[styles.thumb, { backgroundColor: theme.sky200 }]} resizeMode="contain" />
                 <View style={{ flex: 1 }}>
                     <AppText variant="label" color={theme.ink} numberOfLines={2}>{item?.productName}</AppText>
                     <AppText variant="caption" color={theme.inkMuted} style={{ marginTop: 2 }}>

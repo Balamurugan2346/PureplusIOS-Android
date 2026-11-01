@@ -1,18 +1,23 @@
 import React from 'react';
-import { View, Image, StyleSheet, Dimensions } from 'react-native';
+import { View, StyleSheet, Dimensions } from 'react-native';
+import ProductImage from './ProductImage';
+import { filterValidImageUris } from '../../Utils/productImage';
 
 const { width } = Dimensions.get('window');
 
 /**
  * Product gallery images (redesign 02). Each image is full screen-width so the
- * parent's paging ScrollView snaps one image per page. Props preserved: imageUrls.
+ * parent's paging ScrollView snaps one image per page. Only real image URLs are shown;
+ * when none are valid a single placeholder page is rendered. Props preserved: imageUrls.
  */
 const ProductImages = ({ imageUrls }) => {
-  if (imageUrls && imageUrls.length > 0) {
+  const uris = filterValidImageUris(imageUrls);
+
+  if (uris.length > 0) {
     return (
       <View style={styles.row}>
-        {imageUrls.map((img, index) => (
-          <Image key={index} source={{ uri: img }} style={styles.productImage} resizeMode="contain" />
+        {uris.map((uri, index) => (
+          <ProductImage key={index} uri={uri} style={styles.productImage} resizeMode="contain" />
         ))}
       </View>
     );
@@ -20,7 +25,7 @@ const ProductImages = ({ imageUrls }) => {
 
   return (
     <View style={styles.placeholder}>
-      <Image source={require('../../../assets/images/no_image.png')} style={styles.productImage} resizeMode="contain" />
+      <ProductImage imageUrls={[]} style={styles.productImage} resizeMode="contain" />
     </View>
   );
 };

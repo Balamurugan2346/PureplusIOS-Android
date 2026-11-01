@@ -1,11 +1,12 @@
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useAppContext } from '../../Context/AppContext';
 import { useTheme } from '../../Context/ThemeContext';
 import { clearCart, loadCartItems, addToCart, updateCart } from '../../Redux/Slices/CartSlice';
 import { useToast } from '../Toast/ToastProvider';
 import { useDispatch, useSelector } from 'react-redux';
 import AppText from '../AppText';
+import ProductImage from '../Product/ProductImage';
 import { radius, spacing } from '../../Themes/Themes';
 
 const CartItem = ({ cartItem }) => {
@@ -37,26 +38,6 @@ const CartItem = ({ cartItem }) => {
     const hasPreviousPrice = basePrice != null && unitPrice != null && Number(basePrice) > Number(unitPrice)
     // Cans-per-unit pack size, truthful per row (different lines may differ).
     const unitCount = catalogProduct?.unitCount
-
-    // Product image from the cart response's imageUrls (a product can carry several
-    // images — like any e-commerce listing — so we show the first). Falls back to the
-    // bundled watercan asset when there are no images. Also tolerates the array arriving
-    // as a JSON string, which the backend emits via `ImageUrls::text` in some paths.
-    const resolveProductImage = () => {
-        let urls = cartItem?.imageUrls;
-        if (typeof urls === 'string') {
-            const s = urls.trim();
-            if (s.startsWith('[')) {
-                try { urls = JSON.parse(s); } catch { urls = []; }
-            } else {
-                urls = s ? [s] : [];
-            }
-        }
-        if (Array.isArray(urls) && urls.length > 0 && urls[0]) {
-            return { uri: urls[0] };
-        }
-        return require('../../../assets/images/watercan2.png');
-    };
 
     const handleIncrease = (item) => {
         dispatch(
@@ -104,7 +85,7 @@ const CartItem = ({ cartItem }) => {
     return (
         <View>
             <View style={styles.container}>
-                <Image source={resolveProductImage()} style={[styles.thumb, { backgroundColor: theme.sky200 }]} resizeMode="cover" />
+                <ProductImage imageUrls={cartItem?.imageUrls} style={[styles.thumb, { backgroundColor: theme.sky200 }]} resizeMode="cover" />
                 <View style={{ flex: 1 }}>
                     <AppText variant="bodyStrong" color={theme.ink} numberOfLines={2}>{`${cartItem.productName}`}</AppText>
                     {unitCount != null && (

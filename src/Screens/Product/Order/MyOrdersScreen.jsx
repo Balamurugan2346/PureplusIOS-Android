@@ -100,18 +100,13 @@ const MyOrdersScreen = ({ navigation }) => {
   /* ---------------- ITEM RENDER ---------------- */
 
   const renderItem = ({ item }) => {
-
-    const status =
-      item.status === "Cancelled"
-        ? "C"
-        : item.status === "Completed"
-          ? "CO"
-          : "P";
-
+    // Pass the real backend order_status straight through (OrderItem maps it to a label/colour).
+    // Amount = collect-at-door (payable + refundable deposit); fall back to the old amount until
+    // the backend field ships.
     return (
       <OrderItem
-        status={status}
-        amount={item.amount}
+        status={item.status}
+        amount={item.collectAtDoor ?? item.amount}
         date={item.date}
         images={item.imageUrls}
         onItemClick={() =>

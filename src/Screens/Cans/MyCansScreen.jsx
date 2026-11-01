@@ -31,13 +31,16 @@ const MyCansScreen = ({ navigation }) => {
 
   useEffect(() => { load(); }, [load]);
 
-  const lines = state.data?.heldCans ?? state.data?.cans ?? state.data?.lines ?? [];
+  // Backend CustomerCansResponse (GET /api/customer/cans): { totalCansHeld, depositsPaid, cans: [{ productId, productName, held }] }.
+  const lines = state.data?.cans ?? state.data?.heldCans ?? state.data?.lines ?? [];
   const held =
+    state.data?.totalCansHeld ??
     state.data?.totalHeld ??
     state.data?.cansHeldTotal ??
     state.data?.cansHeld ??
     (Array.isArray(lines) ? lines.reduce((sum, l) => sum + (l?.held ?? l?.quantity ?? 0), 0) : 0);
   const depositPaid =
+    state.data?.depositsPaid ??
     state.data?.totalDepositPaid ??
     state.data?.depositPaid ??
     state.data?.totalDeposit ??

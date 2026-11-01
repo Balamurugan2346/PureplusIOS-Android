@@ -17,6 +17,7 @@ import { getSelectedAddressId } from '../../Utils/GetSelectedAddress';
 import { useDispatch, useSelector } from 'react-redux';
 import { loadCartItems } from '../../Redux/Slices/CartSlice';
 import ProductImages from '../../Components/Product/ProductImages';
+import { filterValidImageUris } from '../../Utils/productImage';
 import AppText from '../../Components/AppText';
 import Card from '../../Components/Card';
 import { fontFamily, radius, spacing } from '../../Themes/Themes';
@@ -121,7 +122,7 @@ const DetailedProductScreen = ({ navigation, userID }) => {
           </ScrollView>
 
           <View style={styles.dots}>
-            {product?.imageUrls?.map((_, index) => (
+            {Array.from({ length: Math.max(1, filterValidImageUris(product?.imageUrls).length) }).map((_, index) => (
               <View
                 key={index}
                 style={activeIndex === index ? [styles.dotActive, { backgroundColor: theme.primary }] : [styles.dot, { backgroundColor: theme.surfaceCard }]}

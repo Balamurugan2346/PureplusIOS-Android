@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, Pressable, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Pressable, TouchableOpacity } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useSelector } from 'react-redux';
 import { useTheme } from '../../Context/ThemeContext';
 import { fontFamily, radius, spacing } from '../../Themes/Themes';
+import ProductImage from './ProductImage';
 
 /**
  * Product list-item card for the dashboard rail (CUS-10, redesign 02).
@@ -23,11 +24,6 @@ export default function ProductCard1({ product, onPress, onInfoClick }) {
   const quantity = cartItem ? cartItem.quantity : 0;
   const inCart = quantity > 0;
 
-  const image =
-    product?.imageUrls && product.imageUrls.length > 0
-      ? { uri: product.imageUrls[0] }
-      : require('../../../assets/images/no_image.png');
-
   return (
     <Pressable
       onPress={onPress}
@@ -43,7 +39,7 @@ export default function ProductCard1({ product, onPress, onInfoClick }) {
     >
       {/* IMAGE WELL */}
       <View style={[styles.imageWell, { backgroundColor: theme.sky200 }]}>
-        <Image source={image} style={styles.image} resizeMode="contain" />
+        <ProductImage imageUrls={product?.imageUrls} style={styles.image} resizeMode="contain" />
 
         {onInfoClick && (
           <TouchableOpacity style={[styles.infoBtn, { backgroundColor: theme.surfaceCard }]} onPress={onInfoClick} hitSlop={8}>

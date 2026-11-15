@@ -91,10 +91,10 @@ const DetailedProductScreen = ({ navigation, userID }) => {
     console.log('selectedAddress:', selectedAddress);
   }, [selectedAddress]);
 
-  const Field = ({ label, value, price }) => (
-    <View style={styles.field}>
+  const Field = ({ label, value, price, multiline = false, fullWidth = false, small = false }) => (
+    <View style={[styles.field, fullWidth && { width: '100%' }]}>
       <AppText variant="caption" color={theme.inkMuted}>{label}</AppText>
-      <AppText variant={price ? 'price' : 'bodyStrong'} color={theme.ink} numberOfLines={1}>{value}</AppText>
+      <AppText variant={price ? 'price' : 'bodyStrong'} color={theme.ink} style={small && styles.smallValue} {...(!multiline && { numberOfLines: 1 })}>{value}</AppText>
     </View>
   );
 
@@ -152,10 +152,9 @@ const DetailedProductScreen = ({ navigation, userID }) => {
             <View style={[styles.divider, { backgroundColor: theme.borderSubtle }]} />
 
             <View style={styles.grid}>
-              <Field label="MRP (incl. of all taxes)" value={`₹${product.basePrice}`} />
               <Field label="Unit price" value={`₹${product.unitPrice}`} price />
               {selectedAddress && <Field label="Receiver's name" value={displayReceiverName} />}
-              {selectedAddress && <Field label="Receiver's address" value={displayTrimmedAddress(selectedAddress)} />}
+              {selectedAddress && <Field label="Receiver's address" value={selectedAddress} multiline fullWidth small />}
             </View>
           </Card>
 
@@ -215,4 +214,5 @@ const styles = StyleSheet.create({
   divider: { height: 1, marginVertical: spacing.md },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
   field: { width: '50%', paddingVertical: 6, paddingRight: spacing.sm, gap: 2 },
+  smallValue: { fontSize: 12, lineHeight: 18 },
 });

@@ -18,7 +18,7 @@ export default function ProductCard1({ product, onPress, onInfoClick }) {
   const name = product?.name ?? product?.productName ?? 'Product';
   const unitCount = product?.unitCount;
   const unitPrice = product?.unitPrice;
-  const basePrice = product?.basePrice;
+  const uom = product?.uom;
 
   const cartItem = cartItems?.find((item) => item.productId === product?.productId);
   const quantity = cartItem ? cartItem.quantity : 0;
@@ -73,9 +73,12 @@ export default function ProductCard1({ product, onPress, onInfoClick }) {
             <Text style={[styles.price, { color: theme.ink }]}>₹{unitPrice}</Text>
             <Text style={[styles.perUnit, { color: theme.inkMuted }]}> /unit</Text>
           </View>
-          {basePrice != null && (
-            <Text style={[styles.perCan, { color: theme.inkMuted }]}>₹{basePrice} / can</Text>
-          )}
+          {uom ? (
+            <View style={[styles.uomChip, { backgroundColor: theme.infoTint }]}>
+              <Ionicons name="scale-outline" size={11} color={theme.info} />
+              <Text style={[styles.uomText, { color: theme.info }]}>per {uom}</Text>
+            </View>
+          ) : null}
         </View>
 
         {/* ADD PILL */}
@@ -121,7 +124,8 @@ const styles = StyleSheet.create({
   priceRow: { flexDirection: 'row', alignItems: 'flex-end' },
   price: { fontSize: 16, lineHeight: 22, fontFamily: fontFamily.bold },
   perUnit: { fontSize: 12, marginBottom: 2 },
-  perCan: { fontSize: 12, lineHeight: 16, marginTop: 2, fontFamily: fontFamily.regular },
+  uomChip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 3, paddingHorizontal: 8, borderRadius: radius.pill, alignSelf: 'flex-start', marginTop: 4 },
+  uomText: { fontSize: 11, lineHeight: 16, fontFamily: fontFamily.medium },
   addBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, height: 34, borderRadius: radius.pill },
   addText: { fontSize: 13, fontFamily: fontFamily.semibold },
 });

@@ -106,6 +106,8 @@ const MyOrdersScreen = ({ navigation }) => {
     return (
       <OrderItem
         status={item.status}
+        orderCode={item.orderCode}
+        orderType={item.orderType}
         amount={item.collectAtDoor ?? item.amount}
         date={item.date}
         images={item.imageUrls}

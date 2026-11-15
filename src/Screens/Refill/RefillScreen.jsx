@@ -429,7 +429,7 @@ const RefillScreen = ({ navigation }) => {
                 <>
                   <KeyValueRows
                     rows={[
-                      pricing.subtotal > 0 && { label: 'Water', value: formatCurrency(pricing.subtotal) },
+                      pricing.subtotal > 0 && { label: 'Item total', value: formatCurrency(pricing.subtotal) },
                       pricing.gstAmount > 0 && { label: 'GST', value: formatCurrency(pricing.gstAmount) },
                       pricing.deliveryCharge > 0 && { label: 'Delivery', value: formatCurrency(pricing.deliveryCharge) },
                       pricing.convenienceFee > 0 && { label: 'Convenience fee', value: formatCurrency(pricing.convenienceFee) },

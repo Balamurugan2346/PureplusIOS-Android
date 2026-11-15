@@ -365,13 +365,14 @@ const CartScreen = ({ navigation }) => {
 
               <Pressable onPress={() => {
                 navigation.navigate('SheduleOrderScreen')
-              }} style={{ backgroundColor: theme.warningTint, borderRadius: 999, alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              }} style={{ backgroundColor: theme.warningTint, borderRadius: 999, borderWidth: 1.5, borderColor: theme.warning, alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
 
-                <View style={{ flexDirection: "row", paddingHorizontal: 12, paddingVertical: 7, justifyContent: "center", alignItems: "center" }}>
+                <View style={{ flexDirection: "row", paddingHorizontal: 12, paddingVertical: 7, justifyContent: "center", alignItems: "center", gap: 4 }}>
                   <Ionicons name='time-outline' color={theme.warning} size={16} />
-                  <Text style={[{ marginLeft: 4, color: theme.warning, fontFamily: Fonts.family.medium, fontSize: 12 }]}>
+                  <Text style={[{ color: theme.warning, fontFamily: Fonts.family.medium, fontSize: 12 }]}>
                     {selectedSlot?.type === 'scheduled' ? 'Change' : 'Schedule'}
                   </Text>
+                  <Ionicons name='chevron-forward' color={theme.warning} size={14} />
                 </View>
 
               </Pressable>

@@ -26,7 +26,7 @@ const statusMeta = (raw) => {
     if (s.includes('fail')) return { label: 'Delivery failed', tone: 'danger', icon: 'alert-circle-outline' };
     if (s.includes('out')) return { label: 'Out for delivery', tone: 'warning', icon: 'bicycle-outline' };
     if (s.includes('deliver') || s.includes('complete')) return { label: 'Delivered', tone: 'success', icon: 'checkmark-circle-outline' };
-    if (s.includes('assign') || s.includes('load')) return { label: raw, tone: 'warning', icon: 'cube-outline' };
+    if (s.includes('assign') || s.includes('load')) return { label: 'Driver Assigned', color: '#C2500A', icon: 'person-outline' };
     return { label: raw || 'Placed', tone: 'info', icon: 'time-outline' };
 };
 
@@ -92,7 +92,7 @@ const OrderDetailedScreen = ({ navigation, route }) => {
 
     const order = orderDetailed?.data
     const meta = statusMeta(order?.deliveryStatus ?? order?.status)
-    const metaColor = theme[meta.tone] || theme.info
+    const metaColor = meta.color ?? theme[meta.tone] ?? theme.info
 
     // CUS-20: authoritative cancel-window from backend (canCancel === PLACED / pre-ASSIGNED).
     const [canCancel, setCanCancel] = useState(false)
@@ -226,7 +226,7 @@ const OrderDetailedScreen = ({ navigation, route }) => {
                                 <Ionicons name="cart-outline" size={22} color={theme.primary} />
                             </View>
                             <View style={{ flex: 1 }}>
-                                <AppText variant="bodyStrong" color={theme.ink} numberOfLines={1}>{`Order #${order?.orderId}`}</AppText>
+                                <AppText variant="bodyStrong" color={theme.ink} numberOfLines={1}>{order?.orderCode || `Order #${order?.orderId}`}</AppText>
                                 <AppText variant="caption" color={theme.inkMuted} style={{ marginTop: 2 }}>{`${order?.items?.length ?? 0} items`}</AppText>
                             </View>
                             <StatusBadge status={order?.deliveryStatus ?? order?.status} />
@@ -236,11 +236,20 @@ const OrderDetailedScreen = ({ navigation, route }) => {
                         <View style={[styles.statusBox, { backgroundColor: theme.surfaceSunken }]}>
                             <Ionicons name={meta.icon} color={metaColor} size={18} style={{ marginRight: 8 }} />
                             <AppText variant="label" color={metaColor} style={{ flex: 1 }}>{meta.label}</AppText>
+                            {!!order?.orderType && (
+                                <View style={[styles.orderTypeBadge, {
+                                    backgroundColor: order.orderType === 'REFILL' ? '#F0E9FF' : theme.surfaceCard,
+                                }]}>
+                                    <AppText variant="caption" color={order.orderType === 'REFILL' ? '#6B21A8' : theme.inkMuted}>
+                                        {order.orderType === 'REFILL' ? 'Refill' : 'Standard'}
+                                    </AppText>
+                                </View>
+                            )}
                         </View>
 
                         {expanded && (
                             <View style={styles.detailsGrid}>
-                                <DetailRow theme={theme} label="Order ID" value={`#${order?.orderId}`} />
+                                <DetailRow theme={theme} label="Order ID" value={order?.orderCode || `#${order?.orderId}`} />
                                 {!!(order?.receiverName || order?.receiverPhone) && (
                                     <DetailRow theme={theme} label="Receiver" value={[order?.receiverName, order?.receiverPhone].filter(Boolean).join(' · ')} />
                                 )}
@@ -271,7 +280,7 @@ const OrderDetailedScreen = ({ navigation, route }) => {
                             ? order?.items
                             : order?.items?.slice(0, 2)
                         )?.map((item, index) => (
-                            <OrderProdItem key={index} item={item} />
+                            <OrderProdItem key={index} item={item} isRefill={order?.orderType === 'REFILL'} />
                         ))}
                     </View>
 
@@ -372,6 +381,11 @@ const styles = StyleSheet.create({
         alignItems: "center",
         borderRadius: radius.sm,
         padding: spacing.md,
+    },
+    orderTypeBadge: {
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: radius.sm,
     },
     detailsGrid: {
         gap: spacing.md,

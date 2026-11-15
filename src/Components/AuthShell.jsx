@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Keyboard, Platform, StyleSheet, TouchableOpacity, TouchableWithoutFeedback, useWindowDimensions, View } from 'react-native';
+import { Keyboard, Platform, ScrollView, StyleSheet, TouchableOpacity, TouchableWithoutFeedback, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import BrandShape from './BrandShape';
@@ -79,6 +79,10 @@ const AuthShell = ({ variant = 'login', onBack, topLeft, topRight, minHeight, ch
   const sheetBottom = keyboardOpen ? effectiveLift : 0;
   // Clear the system bar only when the sheet is at the bottom (keyboard closed).
   const sheetPadBottom = (keyboardOpen ? 0 : insets.bottom) + spacing.xl;
+  // Prevent the sheet from colliding with the top bar on small screens / tall keyboards.
+  const sheetMaxHeight = keyboardOpen
+    ? windowH - effectiveLift - insets.top - spacing.lg
+    : undefined;
 
   return (
     <TouchableWithoutFeedback accessible={false} onPress={() => Keyboard.dismiss()}>
@@ -109,13 +113,20 @@ const AuthShell = ({ variant = 'login', onBack, topLeft, topRight, minHeight, ch
             {
               backgroundColor: theme.surfaceCard,
               bottom: sheetBottom,
-              paddingBottom: sheetPadBottom,
+              maxHeight: sheetMaxHeight,
               minHeight,
             },
             floatShadow,
           ]}
         >
-          {children}
+          <ScrollView
+            bounces={false}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={[styles.sheetContent, { paddingBottom: sheetPadBottom }]}
+          >
+            {children}
+          </ScrollView>
         </View>
       </View>
     </TouchableWithoutFeedback>
@@ -146,6 +157,9 @@ const styles = StyleSheet.create({
     zIndex: 2,
     borderTopLeftRadius: radius.lg,
     borderTopRightRadius: radius.lg,
+    overflow: 'hidden',
+  },
+  sheetContent: {
     paddingTop: 32,
     paddingHorizontal: spacing.xl,
     gap: spacing.xl - 4,

@@ -21,9 +21,18 @@ class RefillService {
   }
 
   /**
+   * POST api/customer/refill/quote — price preview (no order placed).
+   * Same body as /place (storeId, addressId, deliveryType, lines[] or productId+quantity).
+   * → Data = { productId, quantity, isAllowed, shortage, pricing: { subtotal, gstAmount,
+   *   deliveryCharge, convenienceFee, floorCharge, deliverySurcharge, deposit, total, lines[] } }
+   */
+  quote(payload) { return http.post(endpoints.refill.quote, payload); }
+
+  /**
    * POST api/customer/refill/place
-   * body must be exactly {storeId, productId, quantity, paymentType, addressId, slotId}
-   * (paymentType "COD"|"UPI"; slotId nullable) → Data = {orderId, productId, quantity}
+   * body: {storeId, productId, quantity, paymentType, addressId, deliveryType,
+   *        slotId? (scheduled), deliveryDate? (YYYY-MM-DD, scheduled)}
+   * → Data = {orderId, productId, quantity}
    */
   place(payload) { return http.post(endpoints.refill.place, payload); }
 }

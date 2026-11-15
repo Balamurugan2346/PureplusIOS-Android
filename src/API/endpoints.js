@@ -104,6 +104,7 @@ const endpoints = {
   refill: {
     balance: 'api/customer/refill/balance',
     validate: 'api/customer/refill/validate',
+    quote: 'api/customer/refill/quote',
     place: 'api/customer/refill/place',
   },
 

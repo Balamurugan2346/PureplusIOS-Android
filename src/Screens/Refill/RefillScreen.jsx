@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  View, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator,
+  View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useSelector } from 'react-redux';
 import NavScreen from '../../Components/NavScreen';
 import AppText from '../../Components/AppText';
 import AppButton from '../../Components/AppButton';
+import AppModal from '../../Components/AppModal';
 import StateView from '../../Components/StateView';
 import QuantityStepper from '../../Components/QuantityStepper';
 import KeyValueRows from '../../Components/Money/KeyValueRows';
@@ -17,51 +18,80 @@ import formatCurrency from '../../Utils/formatCurrency';
 import { spacing, radius } from '../../Themes/Themes';
 import { useTheme } from '../../Context/ThemeContext';
 import { refillService } from '../../API/modules/MiscService';
+import CheckoutService from '../../API/modules/CheckoutService';
 import GeoService from '../../API/modules/GeoService';
 import { getSelectedAddressId, getSelectedAddress } from '../../Utils/GetSelectedAddress';
-
-/**
- * CUS-25 · Refill order flow (prompt 05 restyle, pureLight). Refill ≠ new order: swaps
- * empty cans for full ones at the door. Deposit unchanged (can-for-can swap); you only
- * pay for the water. Balance/validate/place + serviceability logic preserved.
- */
 
 const PAYMENT_TYPES = [
   { label: 'Cash (COD)', value: 'COD' },
   { label: 'UPI / Online', value: 'UPI' },
 ];
 
-const RefillScreen = ({ navigation, route }) => {
+const RefillScreen = ({ navigation }) => {
   const { theme } = useTheme();
-
   const addressList = useSelector((st) => st.address?.addressList ?? []);
 
-  // Slot placeholder (no live slot API for refill yet).
-  const slots = [{ id: 'next', label: 'Next available' }];
-
+  // ── Balance ──────────────────────────────────────────────
   const [balances, setBalances] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // ── Product / qty ─────────────────────────────────────────
   const [selectedProductId, setSelectedProductId] = useState(null);
   const [quantity, setQuantity] = useState('1');
+
+  // ── Delivery type ─────────────────────────────────────────
+  const [deliveryType, setDeliveryType] = useState('instant');
+  const [dayGroups, setDayGroups] = useState([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const slotsLoadedRef = useRef(false);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedSlotId, setSelectedSlotId] = useState(null);
+
+  // ── Payment / address ─────────────────────────────────────
   const [paymentType, setPaymentType] = useState('COD');
   const [selectedAddressId, setSelectedAddressId] = useState(-1);
   const [selectedAddr, setSelectedAddr] = useState(null);
   const [showAddressSheet, setShowAddressSheet] = useState(false);
-  const [slotId, setSlotId] = useState(slots[0]?.id ?? null);
+
+  // ── Serviceability ────────────────────────────────────────
+  const [resolvedStoreId, setResolvedStoreId] = useState(null);
+
+  // ── Quote ─────────────────────────────────────────────────
+  const [quote, setQuote] = useState(null);
+  const [quoting, setQuoting] = useState(false);
+  const [quoteError, setQuoteError] = useState(null);
+
+  // ── Place ─────────────────────────────────────────────────
   const [placing, setPlacing] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [placedOrderId, setPlacedOrderId] = useState(null);
 
-  const [validateState, setValidateState] = useState(null);
-  const [validating, setValidating] = useState(false);
-
+  // ── Computed ──────────────────────────────────────────────
   const selected = balances.find((b) => b.productId === selectedProductId) ?? null;
   const balance = selected?.balance ?? 0;
   const qtyNum = Number(quantity) || 0;
-
   const hasCans = balances.some((b) => (b.balance ?? 0) > 0);
-  const allowed = validateState?.isAllowed === true && qtyNum > 0 && hasCans;
+  const shortage = selected ? Math.max(0, qtyNum - balance) : 0;
+  const allowedLocally = hasCans && qtyNum >= 1 && shortage === 0 && selectedProductId !== null;
+  const isScheduled = deliveryType === 'scheduled';
+  const scheduledReady = !isScheduled || (!!selectedDate && !!selectedSlotId);
 
+  const pricing = quote?.pricing ?? null;
+  const canPlace = allowedLocally && selectedAddressId > 0 && !!resolvedStoreId && scheduledReady;
+
+  const buttonTitle = (() => {
+    if (!hasCans) return 'No cans to refill';
+    if (shortage > 0) return `Short by ${shortage} can${shortage !== 1 ? 's' : ''}`;
+    if (!(selectedAddressId > 0)) return 'Choose a delivery address';
+    if (isScheduled && !selectedDate) return 'Choose a delivery date';
+    if (isScheduled && !selectedSlotId) return 'Choose a time slot';
+    if (quoting) return 'Checking price…';
+    if (pricing && canPlace) return `Confirm refill · ${formatCurrency(pricing.total, { compact: true })}`;
+    return 'Confirm refill';
+  })();
+
+  // ── Load balance on mount ─────────────────────────────────
   const loadBalance = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -81,54 +111,72 @@ const RefillScreen = ({ navigation, route }) => {
 
   useEffect(() => { loadBalance(); }, [loadBalance]);
 
-  const validateTimer = useRef(null);
+  // ── Load slots when schedule is chosen (once) ─────────────
   useEffect(() => {
-    if (validateTimer.current) clearTimeout(validateTimer.current);
-    if (!selectedProductId || qtyNum <= 0) {
-      setValidateState(null);
-      setValidating(false);
+    if (!isScheduled || slotsLoadedRef.current) return;
+    slotsLoadedRef.current = true;
+    setSlotsLoading(true);
+    CheckoutService.slots()
+      .then((data) => {
+        const groups = Array.isArray(data) ? data : [];
+        setDayGroups(groups);
+        const firstWithSlots = groups.find((g) => (g.slots?.length ?? 0) > 0);
+        if (firstWithSlots) setSelectedDate(firstWithSlots.date);
+      })
+      .catch(() => setDayGroups([]))
+      .finally(() => setSlotsLoading(false));
+  }, [isScheduled]);
+
+  // ── Clear slot selections when switching to instant ───────
+  useEffect(() => {
+    if (!isScheduled) {
+      setSelectedDate(null);
+      setSelectedSlotId(null);
+    }
+  }, [isScheduled]);
+
+  // ── Resolve storeId from selected address ─────────────────
+  useEffect(() => {
+    const addr = selectedAddr || addressList.find((a) => a.id === selectedAddressId) || null;
+    const pincode = addr?.pincode || addr?.pinCode || addr?.pin_code;
+    if (!pincode) { setResolvedStoreId(null); return; }
+    GeoService.resolveServiceability(String(pincode).trim())
+      .then((svc) => setResolvedStoreId(svc?.serviceable && svc?.storeId ? svc.storeId : null))
+      .catch(() => setResolvedStoreId(null));
+  }, [selectedAddr, selectedAddressId, addressList]);
+
+  // ── Fetch quote (debounced 600 ms) ───────────────────────
+  const quoteTimer = useRef(null);
+  useEffect(() => {
+    if (quoteTimer.current) clearTimeout(quoteTimer.current);
+    if (!selectedProductId || qtyNum < 1 || !(selectedAddressId > 0) || !resolvedStoreId || shortage > 0) {
+      setQuote(null);
+      setQuoting(false);
+      setQuoteError(null);
       return undefined;
     }
-    setValidating(true);
-    validateTimer.current = setTimeout(async () => {
+    setQuoting(true);
+    quoteTimer.current = setTimeout(async () => {
       try {
-        const v = await refillService.validate(selectedProductId, qtyNum);
-        setValidateState(v ?? null);
+        const q = await refillService.quote({
+          storeId: resolvedStoreId,
+          addressId: selectedAddressId,
+          deliveryType,
+          lines: [{ productId: selectedProductId, quantity: qtyNum }],
+        });
+        setQuote(q ?? null);
+        setQuoteError(null);
       } catch (e) {
-        setValidateState({ isAllowed: false, shortage: 0, depositRequired: 0 });
+        setQuote(null);
+        setQuoteError(e?.message || 'Price unavailable. Please try again.');
       } finally {
-        setValidating(false);
+        setQuoting(false);
       }
-    }, 400);
-    return () => {
-      if (validateTimer.current) clearTimeout(validateTimer.current);
-    };
-  }, [selectedProductId, qtyNum]);
+    }, 600);
+    return () => { if (quoteTimer.current) clearTimeout(quoteTimer.current); };
+  }, [selectedProductId, qtyNum, selectedAddressId, resolvedStoreId, deliveryType, shortage]);
 
-  const onSelectProduct = (pid) => {
-    setSelectedProductId(pid);
-    const b = balances.find((x) => x.productId === pid);
-    const max = b?.balance ?? 0;
-    if (max <= 0) {
-      setQuantity('0');
-    } else if (Number(quantity) > max) {
-      setQuantity(String(max));
-    } else if (Number(quantity) < 1) {
-      setQuantity('1');
-    }
-  };
-
-  // Stepper handlers — clamp to 1..balance (same range as the old numeric input).
-  const incQty = () => {
-    const max = Math.max(balance, 1);
-    if (qtyNum < max) setQuantity(String(qtyNum + 1));
-  };
-  const decQty = () => {
-    if (qtyNum > 1) setQuantity(String(qtyNum - 1));
-  };
-
-  const onSelectPayment = (v) => setPaymentType(v);
-
+  // ── Sync address from storage / redux ────────────────────
   const syncSelectedAddress = useCallback(async () => {
     const id = await getSelectedAddressId();
     const numId = Number(id);
@@ -143,66 +191,60 @@ const RefillScreen = ({ navigation, route }) => {
 
   useEffect(() => { syncSelectedAddress(); }, [syncSelectedAddress]);
 
+  // ── Product selection ─────────────────────────────────────
+  const onSelectProduct = (pid) => {
+    setSelectedProductId(pid);
+    const b = balances.find((x) => x.productId === pid);
+    const max = b?.balance ?? 0;
+    if (max <= 0) setQuantity('0');
+    else if (Number(quantity) > max) setQuantity(String(max));
+    else if (Number(quantity) < 1) setQuantity('1');
+  };
+
+  const incQty = () => { if (qtyNum < balance) setQuantity(String(qtyNum + 1)); };
+  const decQty = () => { if (qtyNum > 1) setQuantity(String(qtyNum - 1)); };
+
+  // ── Place order ───────────────────────────────────────────
   const onPlace = async () => {
-    if (!allowed || placing) return;
-
-    if (!(selectedAddressId > 0)) {
-      Alert.alert('No address', 'Please choose a delivery address first.');
-      return;
-    }
-
+    if (!canPlace || placing) return;
     setPlacing(true);
     try {
-      const addr = selectedAddr || addressList.find((a) => a.id === selectedAddressId) || null;
-      const pincode = addr?.pincode || addr?.pinCode || addr?.pin_code;
-      if (!pincode) {
-        Alert.alert('No address', 'Please choose a delivery address with a pincode first.');
-        return;
-      }
-
-      const svc = await GeoService.resolveServiceability(String(pincode).trim());
-      if (!svc?.serviceable || !svc?.storeId) {
-        Alert.alert('Not serviceable', svc?.reason || "We don't deliver to this area yet.");
-        return;
-      }
-      const storeId = svc.storeId;
-
-      const res = await refillService.place({
-        storeId,
+      const payload = {
+        storeId: resolvedStoreId,
         productId: selectedProductId,
         quantity: qtyNum,
         paymentType,
         addressId: selectedAddressId,
-        slotId: typeof slotId === 'number' ? slotId : null,
-      });
-
-      Alert.alert(
-        'Refill scheduled',
-        `Order #${res?.orderId} placed. Your empties will be swapped at delivery.`,
-        [{
-          text: 'OK',
-          onPress: () => (navigation?.navigate
-            ? navigation.navigate('MyOrdersScreen')
-            : navigation?.goBack?.()),
-        }],
-      );
+        deliveryType,
+        ...(isScheduled && selectedSlotId ? { slotId: selectedSlotId } : {}),
+        ...(isScheduled && selectedDate ? { deliveryDate: selectedDate } : {}),
+      };
+      const res = await refillService.place(payload);
+      setPlacedOrderId(res?.orderId ?? res?.OrderId ?? null);
+      setShowSuccessModal(true);
     } catch (e) {
-      Alert.alert('Could not place refill', e?.message || 'Please try again.');
+      setQuoteError(e?.message || 'Could not place refill. Please try again.');
     } finally {
       setPlacing(false);
     }
   };
 
+  // ── Slots for the selected day ─────────────────────────────
+  const activeDaySlots = (isScheduled && selectedDate)
+    ? (dayGroups.find((g) => g.date === selectedDate)?.slots ?? [])
+    : [];
+
   const emptyNoCans = !loading && !error && !hasCans;
-  const depositRequired = validateState?.depositRequired ?? 0;
-  const shortage = validateState?.shortage ?? 0;
   const payWord = paymentType === 'COD' ? 'in cash' : 'by UPI';
 
   return (
     <>
       <NavScreen title="Refill Cans" navigation={navigation} background={theme.surface}>
         <StateView loading={loading} error={error} onRetry={loadBalance}>
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: spacing.xxl, gap: spacing.xl }}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: spacing.xxl, gap: spacing.xl }}
+          >
 
             {emptyNoCans && (
               <View style={[styles.sunken, { backgroundColor: theme.surfaceSunken }]}>
@@ -213,7 +255,7 @@ const RefillScreen = ({ navigation, route }) => {
               </View>
             )}
 
-            {/* 1 · Product chips */}
+            {/* 1 · Product */}
             <Section theme={theme} label="Product">
               <View style={styles.chipWrap}>
                 {balances.map((b) => {
@@ -247,7 +289,96 @@ const RefillScreen = ({ navigation, route }) => {
               </View>
             </Section>
 
-            {/* 3 · Payment — segmented */}
+            {/* 3 · Delivery type */}
+            <Section theme={theme} label="Delivery">
+              <View style={styles.deliveryRow}>
+                <DeliveryTypeCard
+                  theme={theme}
+                  icon="flash-outline"
+                  title="Instant"
+                  subtitle="ASAP"
+                  active={!isScheduled}
+                  onPress={() => setDeliveryType('instant')}
+                />
+                <DeliveryTypeCard
+                  theme={theme}
+                  icon="calendar-outline"
+                  title="Schedule"
+                  subtitle="Pick a slot"
+                  active={isScheduled}
+                  onPress={() => setDeliveryType('scheduled')}
+                />
+              </View>
+            </Section>
+
+            {/* 4 · Date + Slot (scheduled only) */}
+            {isScheduled && (
+              <>
+                <Section theme={theme} label="Delivery date">
+                  {slotsLoading ? (
+                    <View style={[styles.loadingRow, { backgroundColor: theme.surfaceCard }]}>
+                      <ActivityIndicator size="small" color={theme.inkMuted} />
+                      <AppText variant="caption" color={theme.inkMuted} style={{ marginLeft: spacing.sm }}>Loading slots…</AppText>
+                    </View>
+                  ) : dayGroups.length === 0 ? (
+                    <View style={[styles.sunken, { backgroundColor: theme.surfaceSunken }]}>
+                      <AppText variant="caption" color={theme.inkMuted}>No slots available. Try again later.</AppText>
+                    </View>
+                  ) : (
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
+                      {dayGroups.map((g) => {
+                        const active = selectedDate === g.date;
+                        const empty = (g.slots?.length ?? 0) === 0;
+                        return (
+                          <TouchableOpacity
+                            key={g.date}
+                            onPress={() => { setSelectedDate(g.date); setSelectedSlotId(null); }}
+                            style={[styles.dayTile, {
+                              backgroundColor: active ? theme.ink : theme.surfaceCard,
+                              borderColor: active ? theme.ink : theme.borderSubtle,
+                              opacity: empty && !active ? 0.45 : 1,
+                            }]}
+                          >
+                            <AppText variant="caption" color={active ? theme.onInk : theme.inkMuted}>{g.label}</AppText>
+                            <AppText variant="title" color={active ? theme.onInk : theme.ink} style={{ marginTop: 2 }}>
+                              {g.date?.split('-')?.[2] ?? ''}
+                            </AppText>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </ScrollView>
+                  )}
+                </Section>
+
+                {selectedDate && activeDaySlots.length > 0 && (
+                  <Section theme={theme} label="Time slot">
+                    <View style={styles.slotGrid}>
+                      {activeDaySlots.map((sl) => {
+                        const active = selectedSlotId === sl.slotId;
+                        return (
+                          <TouchableOpacity
+                            key={sl.slotId}
+                            onPress={() => sl.isAvailable !== false && setSelectedSlotId(sl.slotId)}
+                            style={[styles.slotChip, {
+                              backgroundColor: active ? theme.ink : theme.surfaceCard,
+                              borderColor: active ? theme.ink : theme.borderSubtle,
+                              opacity: sl.isAvailable === false ? 0.4 : 1,
+                            }]}
+                          >
+                            <AppText variant="label" color={active ? theme.onInk : theme.ink}>{sl.slotName}</AppText>
+                            <AppText variant="caption" color={active ? theme.onInk : theme.inkMuted}>
+                              {sl.startTime}–{sl.endTime}
+                            </AppText>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </Section>
+                )}
+              </>
+            )}
+
+            {/* 5 · Payment */}
             <Section theme={theme} label="Payment">
               <View style={[styles.segment, { backgroundColor: theme.surfaceSunken }]}>
                 {PAYMENT_TYPES.map((p) => {
@@ -255,8 +386,12 @@ const RefillScreen = ({ navigation, route }) => {
                   return (
                     <TouchableOpacity
                       key={p.value}
-                      onPress={() => onSelectPayment(p.value)}
-                      style={[styles.segmentItem, active && { backgroundColor: theme.surfaceCard, borderColor: theme.primary, borderWidth: 1.5 }]}
+                      onPress={() => setPaymentType(p.value)}
+                      style={[styles.segmentItem, active && {
+                        backgroundColor: theme.surfaceCard,
+                        borderColor: theme.primary,
+                        borderWidth: 1.5,
+                      }]}
                     >
                       <AppText variant="bodyStrong" color={active ? theme.primary : theme.inkMuted}>{p.label}</AppText>
                     </TouchableOpacity>
@@ -265,51 +400,24 @@ const RefillScreen = ({ navigation, route }) => {
               </View>
             </Section>
 
-            {/* 4 · Delivery address */}
+            {/* 6 · Delivery address */}
             <Section theme={theme} label="Delivery address">
               <DeliveryAddressBar address={selectedAddr} onPress={() => setShowAddressSheet(true)} />
             </Section>
 
-            {/* 5 · Slot (placeholder) */}
-            <Section theme={theme} label="Delivery slot">
-              <View style={styles.chipWrap}>
-                {slots.map((sl) => {
-                  const active = slotId === sl.id;
-                  return (
-                    <TouchableOpacity
-                      key={sl.id}
-                      onPress={() => setSlotId(sl.id)}
-                      style={[styles.chip, {
-                        borderColor: active ? theme.ink : theme.borderStrong,
-                        backgroundColor: active ? theme.ink : theme.surfaceCard,
-                      }]}
-                    >
-                      <AppText variant="label" color={active ? theme.onInk : theme.ink}>{sl.label}</AppText>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </Section>
-
-            {/* 6 · Refill summary */}
+            {/* 7 · Price estimate */}
             <View style={[styles.card, { backgroundColor: theme.surfaceCard }]}>
-              <View style={styles.summaryHeader}>
-                <AppText variant="title" color={theme.ink}>Refill summary</AppText>
-                {validating && (
-                  <View style={styles.checking}>
+              <View style={styles.cardHeader}>
+                <AppText variant="title" color={theme.ink}>Price estimate</AppText>
+                {quoting && (
+                  <View style={styles.row}>
                     <ActivityIndicator size="small" color={theme.inkMuted} />
                     <AppText variant="caption" color={theme.inkMuted} style={{ marginLeft: spacing.xs }}>Checking…</AppText>
                   </View>
                 )}
               </View>
 
-              <KeyValueRows
-                rows={[
-                  { label: 'Cans to refill', value: String(qtyNum) },
-                  { label: 'Deposit required', value: formatCurrency(depositRequired), valueColor: depositRequired > 0 ? theme.ink : theme.success },
-                ]}
-              />
-
+              {/* Shortage blocks pricing */}
               {shortage > 0 ? (
                 <View style={[styles.banner, { backgroundColor: theme.dangerTint }]}>
                   <Ionicons name="alert-circle-outline" size={18} color={theme.danger} style={{ marginRight: spacing.sm }} />
@@ -317,37 +425,73 @@ const RefillScreen = ({ navigation, route }) => {
                     Short by {shortage} can{shortage !== 1 ? 's' : ''}. Place a standard order to get more cans.
                   </AppText>
                 </View>
-              ) : allowed ? (
-                <View style={[styles.banner, { backgroundColor: theme.infoTint }]}>
-                  <Ionicons name="information-circle-outline" size={18} color={theme.info} style={{ marginRight: spacing.sm }} />
-                  <AppText variant="caption" color={theme.info} style={{ flex: 1 }}>
-                    Hand over {qtyNum} empty can{qtyNum !== 1 ? 's' : ''} at the door. You pay only for the water, {payWord}.
-                  </AppText>
+              ) : pricing ? (
+                <>
+                  <KeyValueRows
+                    rows={[
+                      pricing.subtotal > 0 && { label: 'Water', value: formatCurrency(pricing.subtotal) },
+                      pricing.gstAmount > 0 && { label: 'GST', value: formatCurrency(pricing.gstAmount) },
+                      pricing.deliveryCharge > 0 && { label: 'Delivery', value: formatCurrency(pricing.deliveryCharge) },
+                      pricing.convenienceFee > 0 && { label: 'Convenience fee', value: formatCurrency(pricing.convenienceFee) },
+                      pricing.floorCharge > 0 && { label: 'Floor charge', value: formatCurrency(pricing.floorCharge) },
+                      pricing.deliverySurcharge > 0 && { label: 'Express surcharge', value: formatCurrency(pricing.deliverySurcharge) },
+                    ]}
+                  />
+                  <View style={[styles.divider, { backgroundColor: theme.borderSubtle }]} />
+                  <View style={styles.totalRow}>
+                    <AppText variant="bodyStrong" color={theme.ink}>Total</AppText>
+                    <AppText variant="bodyStrong" color={theme.ink}>{formatCurrency(pricing.total)}</AppText>
+                  </View>
+                  <View style={styles.depositRow}>
+                    <AppText variant="caption" color={theme.inkMuted}>Deposit</AppText>
+                    <AppText variant="caption" color={theme.success}>₹0 — stays the same</AppText>
+                  </View>
+                  <View style={[styles.banner, { backgroundColor: theme.infoTint, marginTop: spacing.md }]}>
+                    <Ionicons name="information-circle-outline" size={16} color={theme.info} style={{ marginRight: spacing.sm }} />
+                    <AppText variant="caption" color={theme.info} style={{ flex: 1 }}>
+                      Hand {qtyNum} empty can{qtyNum !== 1 ? 's' : ''} to the driver at the door. Pay {payWord}.
+                    </AppText>
+                  </View>
+                </>
+              ) : quoteError ? (
+                <View style={[styles.banner, { backgroundColor: theme.dangerTint }]}>
+                  <Ionicons name="alert-circle-outline" size={16} color={theme.danger} style={{ marginRight: spacing.sm }} />
+                  <AppText variant="caption" color={theme.danger} style={{ flex: 1 }}>{quoteError}</AppText>
                 </View>
-              ) : null}
+              ) : (
+                <AppText variant="caption" color={theme.inkMuted}>
+                  {!(selectedAddressId > 0)
+                    ? 'Add a delivery address above to see the price.'
+                    : !selectedProductId
+                    ? 'Select a product to see the price.'
+                    : 'Price will appear here.'}
+                </AppText>
+              )}
             </View>
 
-            {/* 7 · How refill works */}
+            {/* 8 · How refill works */}
             <View style={[styles.sunken, { backgroundColor: theme.surfaceSunken }]}>
               <AppText variant="bodyStrong" color={theme.ink} style={{ marginBottom: spacing.sm }}>How refill works</AppText>
               <AppText variant="caption" color={theme.inkMuted}>
-                The delivery partner brings fresh full cans and takes back your empties at the door —
+                The driver brings fresh full cans and takes back your empties at the door —
                 a can-for-can swap. Your deposit stays the same. You only pay for the water.
               </AppText>
             </View>
 
-            {/* 8 · Primary action */}
+            {/* 9 · Action button */}
             <AppButton
-              title={allowed ? 'Schedule refill' : (hasCans ? 'Not enough cans' : 'No cans to refill')}
+              title={buttonTitle}
               isLoading={placing}
-              disabled={!allowed}
-              onAction={allowed && !placing ? onPlace : undefined}
+              loadingText="Placing refill…"
+              disabled={!canPlace}
+              onAction={canPlace && !placing ? onPlace : undefined}
             />
+
           </ScrollView>
         </StateView>
       </NavScreen>
 
-      {/* Address bottom sheet — rendered at screen root so its overlay is full-screen. */}
+      {/* Address bottom sheet */}
       {showAddressSheet && (
         <BottomSheet visible={showAddressSheet} onClose={() => setShowAddressSheet(false)}>
           <AddressScreen
@@ -357,9 +501,26 @@ const RefillScreen = ({ navigation, route }) => {
           />
         </BottomSheet>
       )}
+
+      {/* Success modal */}
+      <AppModal
+        visible={showSuccessModal}
+        setModalVisible={setShowSuccessModal}
+        title="Refill scheduled!"
+        description={
+          placedOrderId
+            ? `Order #${placedOrderId} placed. Hand your empties to the driver at the door.`
+            : 'Your refill order has been placed.'
+        }
+        confirmText="View orders"
+        hideCancel
+        onPositive={() => navigation?.navigate?.('MyOrdersScreen')}
+      />
     </>
   );
 };
+
+// ── Sub-components ────────────────────────────────────────────────────────────
 
 const Section = ({ theme, label, children }) => (
   <View>
@@ -368,7 +529,27 @@ const Section = ({ theme, label, children }) => (
   </View>
 );
 
+const DeliveryTypeCard = ({ theme, icon, title, subtitle, active, onPress }) => (
+  <TouchableOpacity
+    onPress={onPress}
+    style={[styles.deliveryCard, {
+      backgroundColor: active ? theme.primaryTint : theme.surfaceCard,
+      borderColor: active ? theme.primary : theme.borderSubtle,
+    }]}
+  >
+    <View style={[styles.deliveryIcon, { backgroundColor: active ? theme.surfaceCard : theme.surfaceSunken }]}>
+      <Ionicons name={icon} size={20} color={active ? theme.primary : theme.inkMuted} />
+    </View>
+    <AppText variant="bodyStrong" color={theme.ink} style={{ marginTop: spacing.sm }}>{title}</AppText>
+    <AppText variant="caption" color={theme.inkMuted}>{subtitle}</AppText>
+  </TouchableOpacity>
+);
+
+// ── Styles ────────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center' },
+
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   chip: {
     flexDirection: 'row',
@@ -384,6 +565,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: radius.pill,
   },
+
   qtyRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -391,6 +573,43 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
   },
+
+  deliveryRow: { flexDirection: 'row', gap: spacing.md },
+  deliveryCard: {
+    flex: 1,
+    padding: spacing.lg,
+    borderWidth: 1.5,
+    borderRadius: radius.md,
+    alignItems: 'flex-start',
+  },
+  deliveryIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  dayTile: {
+    minWidth: 68,
+    height: 60,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  slotGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  slotChip: {
+    minWidth: '47%',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.sm,
+    borderWidth: 1.5,
+    alignItems: 'center',
+  },
+
   segment: {
     flexDirection: 'row',
     borderRadius: radius.sm,
@@ -406,21 +625,39 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: 'transparent',
   },
+
   card: { borderRadius: radius.lg, padding: spacing.lg },
-  sunken: { borderRadius: radius.md, padding: spacing.lg },
-  summaryHeader: {
+  cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: spacing.md,
   },
-  checking: { flexDirection: 'row', alignItems: 'center' },
+  divider: { height: 1, marginVertical: spacing.md },
+  totalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  depositRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: spacing.xs,
+  },
+
+  sunken: { borderRadius: radius.md, padding: spacing.lg },
   banner: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     borderRadius: radius.sm,
     padding: spacing.md,
-    marginTop: spacing.md,
+  },
+  loadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+    borderRadius: radius.md,
   },
 });
 

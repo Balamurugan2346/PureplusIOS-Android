@@ -81,9 +81,9 @@ const CartScreen = ({ navigation }) => {
   const [estimateError, setEstimateError] = useState(null);
   const [isFirstOrder, setIsFirstOrder] = useState(false);
   // CUS-12 empties-return: how many held empties the customer will hand over on THIS order.
-  // null = not chosen → backend assumes a full swap (lowest deposit). The customer can lower it
-  // once the estimate tells us how many cans they hold (estimate.depositHeldCans).
-  const [emptiesReturned, setEmptiesReturned] = useState(null);
+  // Defaults to 0 (assume none returned → full deposit); the customer raises it up to the cans they
+  // hold (estimate.depositHeldCans), or taps "Return all". Always sent to the estimate.
+  const [emptiesReturned, setEmptiesReturned] = useState(0);
   //  useState({
   //   receiverName:'',
   //   receiverNumber:'',
@@ -148,7 +148,9 @@ const CartScreen = ({ navigation }) => {
       productId: ci.productId,
       quantity: ci.quantity,          // 1 quantity = 1 unit
       unitPrice: Number(ci.price) || 0,
-      taxPercent:18, //need to replace from backend logic
+      // Real per-product GST% from the cart API (CartItemResponse.taxPercentage); fall back to the
+      // catalog lookup, then 0. No more hardcoded 18.
+      taxPercent: Number(ci.taxPercentage ?? taxFor(ci.productId)) || 0,
     }));
 
     const payload = {
@@ -157,8 +159,8 @@ const CartScreen = ({ navigation }) => {
       hasLift: !!(addr.lift ?? addr.hasLift),
       isFirstOrder: !!isFirstOrder,
       items,
-      // Only send when the customer explicitly chose; omitting keeps the backend's full-swap default.
-      ...(emptiesReturned != null && { emptiesReturned: Number(emptiesReturned) }),
+      // Customer's declared empties for this order (default 0 = none returned). Backend clamps to [0, heldCans].
+      emptiesReturned: Number(emptiesReturned) || 0,
     };
 
     console.log("payload",payload)
@@ -251,6 +253,17 @@ const CartScreen = ({ navigation }) => {
   useEffect(() => {
     fetchEstimate();
   }, [selectedAddressObj?.id, cartItems, isFirstOrder, emptiesReturned])
+
+  // Keep the chosen empties within the swap cap (min of held cans and cans delivered this order).
+  // If the cart shrinks so fewer cans are delivered, auto-reduce the return so it never exceeds it.
+  useEffect(() => {
+    const delivered = (estimate?.items || []).reduce(
+      (a, i) => a + (Number(i.deliveredCans) || (Number(i.cansPerUnit) || 0) * (Number(i.quantity) || 0)),
+      0,
+    );
+    const cap = Math.min(Number(estimate?.depositHeldCans ?? 0), delivered);
+    if (Number(emptiesReturned) > cap) setEmptiesReturned(cap);
+  }, [estimate])
 
 
   const handleRefresh = () => {
@@ -383,10 +396,18 @@ const CartScreen = ({ navigation }) => {
           {/* )} */}
 
           {/* empties-to-return selector (CUS-12) — only when the customer holds cans.
-              Drives the refundable-deposit line in the estimate below. */}
+              Capped at the cans delivered in THIS order (a swap), never more: returning more than
+              delivered is a net reduction = deposit refund, handled separately (My Cans). */}
           <EmptiesReturnSelector
             heldCans={Number(estimate?.depositHeldCans ?? 0)}
-            value={emptiesReturned != null ? emptiesReturned : Number(estimate?.depositEmptiesAssumed ?? estimate?.depositHeldCans ?? 0)}
+            maxReturn={Math.min(
+              Number(estimate?.depositHeldCans ?? 0),
+              (estimate?.items || []).reduce(
+                (a, i) => a + (Number(i.deliveredCans) || (Number(i.cansPerUnit) || 0) * (Number(i.quantity) || 0)),
+                0,
+              ),
+            )}
+            value={Number(emptiesReturned) || 0}
             onChange={(v) => setEmptiesReturned(v)}
             disabled={estimateLoading}
           />

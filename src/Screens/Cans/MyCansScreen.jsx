@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import NavScreen from '../../Components/NavScreen';
 import AppText from '../../Components/AppText';
@@ -17,6 +18,7 @@ import { useTheme } from '../../Context/ThemeContext';
 const MyCansScreen = ({ navigation }) => {
 
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const [state, setState] = useState({ loading: true, error: null, data: null });
 
   const load = useCallback(async () => {
@@ -94,7 +96,7 @@ const MyCansScreen = ({ navigation }) => {
             </View>
           </ScrollView>
 
-          <View style={styles.footer}>
+          <View style={[styles.footer, { paddingBottom: spacing.lg + insets.bottom }]}>
             <AppButton title="Schedule refill" onAction={() => navigation?.navigate?.('Refill')} />
           </View>
         </View>
@@ -113,7 +115,7 @@ const styles = StyleSheet.create({
   info: { borderRadius: radius.lg, padding: spacing.lg },
   note: { borderRadius: radius.md, padding: spacing.lg },
   link: { textDecorationLine: 'underline' },
-  footer: { paddingTop: spacing.lg, paddingBottom: spacing.xl },
+  footer: { paddingTop: spacing.lg },
 });
 
 export default MyCansScreen;

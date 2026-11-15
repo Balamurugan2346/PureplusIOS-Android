@@ -68,10 +68,17 @@ const ScheduleDeliveryScreen = ({ navigation }) => {
     //     { id: 5, label: '13:00 - 14:00', enabled: true },
     // ]), []);
 
-    const slots = useMemo(() => {
-        if (!slotsState || !Array.isArray(slotsState)) return [];
-        return slotsState;
-    }, [slotsState]);
+    // NEW slots API shape: an array of DAY GROUPS, backend offers Today + Tomorrow only —
+    // [{ date:'YYYY-MM-DD', label:'Today'|'Tomorrow', slots:[{ slotId, slotName, startTime, endTime, isAvailable }] }].
+    // "Today" already has its past slots filtered out server-side.
+    const dayGroups = useMemo(() => (Array.isArray(slotsState) ? slotsState : []), [slotsState]);
+
+    // Slots for the currently selected day.
+    const activeGroup = useMemo(
+        () => dayGroups.find((g) => g.date === selectedDate) ?? null,
+        [dayGroups, selectedDate]
+    );
+    const slots = activeGroup?.slots ?? [];
 
 
     /* ======================================================
@@ -117,6 +124,14 @@ const ScheduleDeliveryScreen = ({ navigation }) => {
         setSelectedSlot(null);
     }, [selectedDate]);
 
+    // When schedule mode is on and groups have loaded, default to the first day that actually
+    // has slots (so a customer with no slots left Today lands on Tomorrow).
+    useEffect(() => {
+        if (deliveryType !== 'schedule' || selectedDate || dayGroups.length === 0) return;
+        const firstWithSlots = dayGroups.find((g) => (g.slots?.length ?? 0) > 0) ?? dayGroups[0];
+        setSelectedDate(firstWithSlots.date);
+    }, [deliveryType, dayGroups, selectedDate]);
+
 
     /* ======================================================
        CONFIRM BUTTON LOGIC
@@ -157,23 +172,17 @@ const ScheduleDeliveryScreen = ({ navigation }) => {
     /* ======================================================
        DAY STRIP (today → +7), replaces the native date button
     ====================================================== */
-    const dayList = useMemo(() => {
-        const out = [];
-        const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        for (let i = 0; i <= 7; i++) {
-            const d = new Date();
-            d.setDate(d.getDate() + i);
-            const year = d.getFullYear();
-            const month = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
-            out.push({
-                value: `${year}-${month}-${day}`,
-                top: i === 0 ? 'Today' : weekdays[d.getDay()],
-                num: String(d.getDate()),
-            });
-        }
-        return out;
-    }, []);
+    // Day strip is driven by the API groups now (no hardcoded +7 window). Each tile = one offered day.
+    const dayList = useMemo(
+        () =>
+            dayGroups.map((g) => ({
+                value: g.date,
+                top: g.label,                       // "Today" / "Tomorrow"
+                num: g.date?.split('-')?.[2] ?? '', // day-of-month
+                count: g.slots?.length ?? 0,
+            })),
+        [dayGroups]
+    );
 
     const confirmLabel = (() => {
         if (deliveryType === 'instant') return 'Confirm instant delivery';
@@ -240,15 +249,16 @@ const ScheduleDeliveryScreen = ({ navigation }) => {
                                     contentContainerStyle={{ gap: spacing.md, paddingVertical: spacing.sm }}
                                     renderItem={({ item: d }) => {
                                         const active = selectedDate === d.value;
+                                        const empty = d.count === 0;
                                         return (
                                             <TouchableOpacity
                                                 onPress={() => setSelectedDate(d.value)}
                                                 style={[
                                                     styles.dayTile,
-                                                    { backgroundColor: active ? theme.ink : theme.surfaceCard, borderColor: active ? theme.ink : theme.borderSubtle },
+                                                    { backgroundColor: active ? theme.ink : theme.surfaceCard, borderColor: active ? theme.ink : theme.borderSubtle, opacity: empty && !active ? 0.5 : 1 },
                                                 ]}
                                             >
-                                                <AppText variant="caption" color={active ? theme.onInk : theme.inkMuted}>{d.top}</AppText>
+                                                <AppText variant="caption" numberOfLines={1} color={active ? theme.onInk : theme.inkMuted}>{d.top}</AppText>
                                                 <AppText variant="title" color={active ? theme.onInk : theme.ink} style={{ marginTop: 2 }}>{d.num}</AppText>
                                             </TouchableOpacity>
                                         );
@@ -283,6 +293,19 @@ const ScheduleDeliveryScreen = ({ navigation }) => {
                         onPress={() => setSelectedSlot(item)}
                     />
                 )}
+                ListEmptyComponent={
+                    deliveryType === 'schedule' && !GetSlotLoading && selectedDate ? (
+                        <View style={[styles.instantCard, { backgroundColor: theme.surfaceCard, marginTop: spacing.lg }]}>
+                            <View style={[styles.instantIcon, { backgroundColor: theme.surfaceSunken }]}>
+                                <Ionicons name="time-outline" size={22} color={theme.inkMuted} />
+                            </View>
+                            <AppText variant="bodyStrong" color={theme.ink} style={{ marginTop: spacing.md }}>No slots for this day</AppText>
+                            <AppText variant="caption" color={theme.inkMuted} style={{ marginTop: 2, textAlign: 'center' }}>
+                                {dayGroups.length > 1 ? 'Try another day above.' : 'Please check back later.'}
+                            </AppText>
+                        </View>
+                    ) : null
+                }
                 ListFooterComponent={
                     deliveryType === 'schedule' ? (
                         <View style={[styles.infoBanner, { backgroundColor: theme.infoTint }]}>
@@ -375,8 +398,9 @@ const styles = StyleSheet.create({
         marginBottom: spacing.xs,
     },
     dayTile: {
-        width: 52,
+        minWidth: 76,
         height: 64,
+        paddingHorizontal: spacing.md,
         borderRadius: radius.md,
         borderWidth: 1.5,
         alignItems: 'center',

@@ -3,6 +3,7 @@ import AppText from './AppText';
 import BrandShape from './BrandShape';
 import { useTheme } from '../Context/ThemeContext';
 import { radius, spacing } from '../Themes/Themes';
+import { API_BASE_URL } from '../API/Client';
 
 /**
  * Dashboard promo banner card (redesign 02). Props preserved: title, description, img.
@@ -15,7 +16,7 @@ const Banner = ({ title, description, img }) => {
   if (img) {
     return (
       <View style={[styles.card, { backgroundColor: theme.sky200 }]}>
-        <ImageBackground source={{ uri: img }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+        <ImageBackground source={{ uri: `${API_BASE_URL + img}` }} style={StyleSheet.absoluteFill} resizeMode="cover" />
         <View style={[styles.caption, { backgroundColor: theme.surfaceCard }]}>
           {!!title && <AppText variant="title" color={theme.ink} numberOfLines={1}>{title}</AppText>}
           {!!description && <AppText variant="caption" color={theme.inkMuted} numberOfLines={2}>{description}</AppText>}

@@ -150,6 +150,11 @@ const endpoints = {
     readAll: 'api/customer/notifications/read-all',
   },
 
+  charges: {
+    info: 'api/customer/charges/info',
+    orderCharges: (id) => `api/customer/orders/${id}/charges`,
+  },
+
   support: {
     get: 'api/CustomerSupport', // fixed casing (was 'api/customerSupport')
   },

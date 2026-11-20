@@ -42,6 +42,7 @@ import CreateSubscriptionScreen from '../Screens/Subscriptions/CreateSubscriptio
 import CertificationScreen from '../Screens/Certification/CertificationScreen'
 import RefillScreen from '../Screens/Refill/RefillScreen'
 import NotificationScreen from '../Screens/Main/Notification'
+import ChargesInfoScreen from '../Screens/Account/ChargesInfoScreen'
 
 const Stack = createNativeStackNavigator();
 
@@ -136,6 +137,9 @@ export default function AppNavigator() {
 
         {/* Notifications */}
         <Stack.Screen name='Notifications' component={NotificationScreen} />
+
+        {/* Account info */}
+        <Stack.Screen name='ChargesInfo' component={ChargesInfoScreen} />
 
       </Stack.Navigator>
     </>

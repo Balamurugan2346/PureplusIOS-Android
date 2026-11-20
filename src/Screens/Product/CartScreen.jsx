@@ -6,7 +6,6 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text, TextIn
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import CartItem from '../../Components/Cart/CartItem';
 import EstimateSummary from '../../Components/Cart/EstimateSummary';
-import EmptiesReturnSelector from '../../Components/Cart/EmptiesReturnSelector';
 import PaymentWithAddressBar from '../../Components/Cart/PayButtonWithAddressBar';
 import PaymentSection from '../../Components/Cart/PaymentSection';
 import TopAppBar from '../../Components/TopAppBar';
@@ -80,10 +79,6 @@ const CartScreen = ({ navigation }) => {
   const [estimateLoading, setEstimateLoading] = useState(false);
   const [estimateError, setEstimateError] = useState(null);
   const [isFirstOrder, setIsFirstOrder] = useState(false);
-  // CUS-12 empties-return: how many held empties the customer will hand over on THIS order.
-  // Defaults to 0 (assume none returned → full deposit); the customer raises it up to the cans they
-  // hold (estimate.depositHeldCans), or taps "Return all". Always sent to the estimate.
-  const [emptiesReturned, setEmptiesReturned] = useState(0);
   //  useState({
   //   receiverName:'',
   //   receiverNumber:'',
@@ -159,8 +154,6 @@ const CartScreen = ({ navigation }) => {
       hasLift: !!(addr.lift ?? addr.hasLift),
       isFirstOrder: !!isFirstOrder,
       items,
-      // Customer's declared empties for this order (default 0 = none returned). Backend clamps to [0, heldCans].
-      emptiesReturned: Number(emptiesReturned) || 0,
     };
 
     console.log("payload",payload)
@@ -248,22 +241,10 @@ const CartScreen = ({ navigation }) => {
     return () => { active = false; };
   }, [])
 
-  // Re-price whenever the cart, the selected address, first-order status, or the
-  // customer's chosen empties-to-return changes.
+  // Re-price whenever the cart, the selected address, or first-order status changes.
   useEffect(() => {
     fetchEstimate();
-  }, [selectedAddressObj?.id, cartItems, isFirstOrder, emptiesReturned])
-
-  // Keep the chosen empties within the swap cap (min of held cans and cans delivered this order).
-  // If the cart shrinks so fewer cans are delivered, auto-reduce the return so it never exceeds it.
-  useEffect(() => {
-    const delivered = (estimate?.items || []).reduce(
-      (a, i) => a + (Number(i.deliveredCans) || (Number(i.cansPerUnit) || 0) * (Number(i.quantity) || 0)),
-      0,
-    );
-    const cap = Math.min(Number(estimate?.depositHeldCans ?? 0), delivered);
-    if (Number(emptiesReturned) > cap) setEmptiesReturned(cap);
-  }, [estimate])
+  }, [selectedAddressObj?.id, cartItems, isFirstOrder])
 
 
   const handleRefresh = () => {
@@ -396,22 +377,6 @@ const CartScreen = ({ navigation }) => {
           <PaymentWithAddressBar displayName={displayReceiverName} receiversDetails={receiversDetails} isOrderForSelf={isOrderForSelf} address={selectedAddress} navigation={navigation} showBottomSheet={() => setShowAddressBottomSheet(true)} />
           {/* )} */}
 
-          {/* empties-to-return selector (CUS-12) — only when the customer holds cans.
-              Capped at the cans delivered in THIS order (a swap), never more: returning more than
-              delivered is a net reduction = deposit refund, handled separately (My Cans). */}
-          <EmptiesReturnSelector
-            heldCans={Number(estimate?.depositHeldCans ?? 0)}
-            maxReturn={Math.min(
-              Number(estimate?.depositHeldCans ?? 0),
-              (estimate?.items || []).reduce(
-                (a, i) => a + (Number(i.deliveredCans) || (Number(i.cansPerUnit) || 0) * (Number(i.quantity) || 0)),
-                0,
-              ),
-            )}
-            value={Number(emptiesReturned) || 0}
-            onChange={(v) => setEmptiesReturned(v)}
-            disabled={estimateLoading}
-          />
 
           {/* bill summary — live checkout estimate (CUS-12) */}
           <EstimateSummary

@@ -31,6 +31,7 @@ const ACCOUNT_ITEMS = [
   { name: 'New Subscription', icon: 'add-circle-outline', tone: 'info', key: 'CreateSubscription' },
   { name: 'My Bulk Requests', icon: 'list-outline', tone: 'primary', key: 'BulkRequestStatus' },
   { name: 'Quality & Certification', icon: 'shield-checkmark-outline', tone: 'success', key: 'Certification' },
+  { name: 'Delivery & Charges', icon: 'pricetag-outline', tone: 'info', key: 'ChargesInfo' },
 ];
 
 // --- Services & support (moved here from the Dashboard quick-actions to de-duplicate). ---

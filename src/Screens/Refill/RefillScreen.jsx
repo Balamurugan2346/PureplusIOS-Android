@@ -67,12 +67,18 @@ const RefillScreen = ({ navigation }) => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [placedOrderId, setPlacedOrderId] = useState(null);
 
+  // ── Validate info: held / pending / available per selected product ──
+  const [validateInfo, setValidateInfo] = useState(null);
+
   // ── Computed ──────────────────────────────────────────────
   const selected = balances.find((b) => b.productId === selectedProductId) ?? null;
   const balance = selected?.balance ?? 0;
   const qtyNum = Number(quantity) || 0;
   const hasCans = balances.some((b) => (b.balance ?? 0) > 0);
-  const shortage = selected ? Math.max(0, qtyNum - balance) : 0;
+  // Use available (held − pending) so an active refill in-flight correctly reduces the max.
+  const available = validateInfo?.available ?? balance;
+  const pendingCans = validateInfo?.pending ?? 0;
+  const shortage = selected ? Math.max(0, qtyNum - available) : 0;
   const allowedLocally = hasCans && qtyNum >= 1 && shortage === 0 && selectedProductId !== null;
   const isScheduled = deliveryType === 'scheduled';
   const scheduledReady = !isScheduled || (!!selectedDate && !!selectedSlotId);
@@ -134,6 +140,20 @@ const RefillScreen = ({ navigation }) => {
       setSelectedSlotId(null);
     }
   }, [isScheduled]);
+
+  // ── Fetch held/pending/available for the selected product ────
+  useEffect(() => {
+    if (!selectedProductId) { setValidateInfo(null); return; }
+    refillService.validate(selectedProductId, 1)
+      .then((v) => setValidateInfo(v ?? null))
+      .catch(() => setValidateInfo(null));
+  }, [selectedProductId]);
+
+  // Clamp quantity to available once validateInfo loads (pending may reduce the max).
+  useEffect(() => {
+    if (validateInfo && qtyNum > validateInfo.available && validateInfo.available > 0)
+      setQuantity(String(validateInfo.available));
+  }, [validateInfo]);
 
   // ── Resolve storeId from selected address ─────────────────
   useEffect(() => {
@@ -201,7 +221,7 @@ const RefillScreen = ({ navigation }) => {
     else if (Number(quantity) < 1) setQuantity('1');
   };
 
-  const incQty = () => { if (qtyNum < balance) setQuantity(String(qtyNum + 1)); };
+  const incQty = () => { if (qtyNum < available) setQuantity(String(qtyNum + 1)); };
   const decQty = () => { if (qtyNum > 1) setQuantity(String(qtyNum - 1)); };
 
   // ── Place order ───────────────────────────────────────────
@@ -270,9 +290,15 @@ const RefillScreen = ({ navigation }) => {
                       }]}
                     >
                       <AppText variant="label" color={active ? theme.onInk : theme.ink}>{b.productName}</AppText>
-                      <View style={[styles.badge, { backgroundColor: active ? theme.onInk : theme.primaryTint }]}>
-                        <AppText variant="caption" color={active ? theme.ink : theme.primary}>{b.balance} held</AppText>
-                      </View>
+                      {active && pendingCans > 0 ? (
+                        <View style={[styles.badge, { backgroundColor: theme.warningTint }]}>
+                          <AppText variant="caption" color={theme.warning}>{available} avail · {pendingCans} pending</AppText>
+                        </View>
+                      ) : (
+                        <View style={[styles.badge, { backgroundColor: active ? theme.onInk : theme.primaryTint }]}>
+                          <AppText variant="caption" color={active ? theme.ink : theme.primary}>{b.balance} held</AppText>
+                        </View>
+                      )}
                     </TouchableOpacity>
                   );
                 })}
@@ -282,9 +308,16 @@ const RefillScreen = ({ navigation }) => {
             {/* 2 · Quantity */}
             <Section theme={theme} label="Cans to refill">
               <View style={[styles.qtyRow, { backgroundColor: theme.surfaceCard }]}>
-                <AppText variant="caption" color={theme.inkMuted} style={{ flex: 1, marginRight: spacing.md }}>
-                  You hold {balance} can{balance !== 1 ? 's' : ''}{selected ? ` of ${selected.productName}` : ''}
-                </AppText>
+                <View style={{ flex: 1, marginRight: spacing.md }}>
+                  <AppText variant="caption" color={theme.inkMuted}>
+                    {`${validateInfo?.held ?? balance} held${selected ? ` of ${selected.productName}` : ''}`}
+                  </AppText>
+                  {pendingCans > 0 && (
+                    <AppText variant="caption" color={theme.warning} style={{ marginTop: 2 }}>
+                      {`${pendingCans} in active refill · ${available} available now`}
+                    </AppText>
+                  )}
+                </View>
                 <QuantityStepper value={qtyNum} min={1} onIncrease={incQty} onDecrease={decQty} />
               </View>
             </Section>
@@ -446,6 +479,13 @@ const RefillScreen = ({ navigation }) => {
                     <AppText variant="caption" color={theme.inkMuted}>Deposit</AppText>
                     <AppText variant="caption" color={theme.success}>₹0 — stays the same</AppText>
                   </View>
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate('ChargesInfo')}
+                    style={{ flexDirection: 'row', alignItems: 'center', marginTop: spacing.sm }}
+                  >
+                    <Ionicons name="information-circle-outline" size={14} color={theme.info} />
+                    <AppText variant="caption" color={theme.info} style={{ marginLeft: 4 }}>About these charges</AppText>
+                  </TouchableOpacity>
                   <View style={[styles.banner, { backgroundColor: theme.infoTint, marginTop: spacing.md }]}>
                     <Ionicons name="information-circle-outline" size={16} color={theme.info} style={{ marginRight: spacing.sm }} />
                     <AppText variant="caption" color={theme.info} style={{ flex: 1 }}>

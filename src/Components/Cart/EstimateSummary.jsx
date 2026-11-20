@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import Fonts from '../../../assets/fonts/Fonts';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../../Context/ThemeContext';
+import AppModal from '../AppModal';
 
 /**
  * CUS-12 checkout estimate (live price breakdown) shown in the cart.
@@ -19,14 +21,26 @@ const money = (n) => `₹${(Number(n) || 0).toFixed(2)}`;
 
 export default function EstimateSummary({ estimate, loading, error, isFirstOrder, addressSelected }) {
   const { theme } = useTheme();
+  const [tooltip, setTooltip] = useState({ visible: false, text: '' });
 
   const headerConfig = { color: theme.greyText, fontFamily: Fonts.family.regular, fontSize: Fonts.size.xs };
   const paraConfig = { color: theme.secondaryText, fontFamily: Fonts.family.medium, fontSize: Fonts.size.xs };
 
-  const Row = ({ label, value, strong, hint, valueColor }) => (
+  const Row = ({ label, value, strong, hint, valueColor, info }) => (
     <View style={styles.row}>
       <View style={{ flex: 1, marginRight: 8 }}>
-        <Text style={[strong ? paraConfig : headerConfig, { fontSize: strong ? Fonts.size.lg : Fonts.size.sm }, strong && { color: theme.greyText }]}>{label}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Text style={[strong ? paraConfig : headerConfig, { fontSize: strong ? Fonts.size.lg : Fonts.size.sm }, strong && { color: theme.greyText }]}>{label}</Text>
+          {!!info && (
+            <TouchableOpacity
+              onPress={() => setTooltip({ visible: true, text: info })}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={{ marginLeft: 4 }}
+            >
+              <Ionicons name="information-circle-outline" size={13} color={theme.greyText} />
+            </TouchableOpacity>
+          )}
+        </View>
         {hint ? <Text style={[paraConfig, { fontSize: 12, marginTop: 2 }]}>{hint}</Text> : null}
       </View>
       <Text style={[paraConfig, strong && { fontSize: Fonts.size.lg, fontWeight: 'bold' }, valueColor && { color: valueColor }]}>
@@ -85,13 +99,19 @@ export default function EstimateSummary({ estimate, loading, error, isFirstOrder
           <Row
             label={`Floor charge${estimate.floor ? ` (floor ${estimate.floor}${estimate.hasLift ? ', lift' : ''})` : ''}`}
             value={money(estimate.floorCharge)}
+            info="A small charge for delivering to upper floors without a lift. Covers the extra effort of carrying heavy water cans up the stairs."
           />
           <Row
             label="Delivery charges"
             value={estimate.freeDeliveryApplied ? 'FREE' : money(estimate.deliveryCharge)}
             valueColor={estimate.freeDeliveryApplied ? theme.success : undefined}
+            info="Charged based on the distance from our store to your address. Free on eligible orders."
           />
-          <Row label="Handling charges" value={money(estimate.convenienceFee)} />
+          <Row
+            label="Handling charges"
+            value={money(estimate.convenienceFee)}
+            info="A convenience fee covering order coordination and logistics."
+          />
           <Row
             label="Refundable can deposit"
             hint="Refunded when cans are returned"
@@ -116,6 +136,15 @@ export default function EstimateSummary({ estimate, loading, error, isFirstOrder
           )}
         </>
       ) : null}
+
+      <AppModal
+        visible={tooltip.visible}
+        setModalVisible={(v) => setTooltip((t) => ({ ...t, visible: v }))}
+        title="About this charge"
+        description={tooltip.text}
+        confirmText="Got it"
+        hideCancel
+      />
     </View>
   );
 }

@@ -1,6 +1,9 @@
-import { StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../../Context/ThemeContext';
 import AppText from '../AppText';
+import AppModal from '../AppModal';
 import { radius, spacing } from '../../Themes/Themes';
 
 const money = (n) => `₹${(Number(n) || 0).toFixed(2)}`;
@@ -12,7 +15,8 @@ const money = (n) => `₹${(Number(n) || 0).toFixed(2)}`;
  */
 export default function OrderSummary({ isOrderDetails = false, order }) {
 
-    const { theme } = useTheme()
+    const { theme } = useTheme();
+    const [tooltip, setTooltip] = useState({ visible: false, text: '' });
 
     const num = (v) => Number(v) || 0;
 
@@ -30,10 +34,21 @@ export default function OrderSummary({ isOrderDetails = false, order }) {
     const hasLift = order?.hasLift ?? order?.lift;
     const floorHint = floorNo != null ? `Floor ${floorNo} · ${hasLift ? 'lift' : 'no lift'}` : undefined;
 
-    const Row = ({ label, hint, value, valueColor }) => (
+    const Row = ({ label, hint, value, valueColor, info }) => (
         <View style={styles.row}>
             <View style={{ flex: 1, marginRight: spacing.sm }}>
-                <AppText variant="label" color={theme.inkMuted}>{label}</AppText>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <AppText variant="label" color={theme.inkMuted}>{label}</AppText>
+                    {!!info && (
+                        <TouchableOpacity
+                            onPress={() => setTooltip({ visible: true, text: info })}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            style={{ marginLeft: 4 }}
+                        >
+                            <Ionicons name="information-circle-outline" size={13} color={theme.inkMuted} />
+                        </TouchableOpacity>
+                    )}
+                </View>
                 {hint ? <AppText variant="caption" color={theme.inkMuted} style={{ marginTop: 2 }}>{hint}</AppText> : null}
             </View>
             <AppText variant="label" color={valueColor || theme.ink}>{value}</AppText>
@@ -46,14 +61,32 @@ export default function OrderSummary({ isOrderDetails = false, order }) {
 
             <Row label="Item Total" value={money(subTotal)} />
             <Row label="GST" value={money(taxAmount)} />
-            {floorCharge > 0 && <Row label="Floor charge" hint={floorHint} value={money(floorCharge)} />}
+            {floorCharge > 0 && (
+                <Row
+                    label="Floor charge"
+                    hint={floorHint}
+                    value={money(floorCharge)}
+                    info="A small charge for delivering to upper floors without a lift."
+                />
+            )}
             <Row
                 label="Delivery charges"
                 value={deliveryCharge > 0 ? money(deliveryCharge) : 'FREE'}
                 valueColor={deliveryCharge > 0 ? undefined : theme.success}
+                info="Based on distance from our store to your address."
             />
-            <Row label="Handling charges" value={money(convenienceFee)} />
-            {deliverySurcharge > 0 && <Row label="Delivery surcharge" value={money(deliverySurcharge)} />}
+            <Row
+                label="Handling charges"
+                value={money(convenienceFee)}
+                info="A convenience fee covering order coordination."
+            />
+            {deliverySurcharge > 0 && (
+                <Row
+                    label="Delivery surcharge"
+                    value={money(deliverySurcharge)}
+                    info="An express fee for instant/ASAP delivery. No surcharge for scheduled delivery."
+                />
+            )}
             {depositAmount > 0 && (
                 <Row label="Refundable can deposit" hint="Refunded when cans are returned" value={money(depositAmount)} />
             )}
@@ -73,6 +106,15 @@ export default function OrderSummary({ isOrderDetails = false, order }) {
                 </View>
                 <AppText variant="price" color={theme.ink}>{money(collectAtDoor)}</AppText>
             </View>
+
+            <AppModal
+                visible={tooltip.visible}
+                setModalVisible={(v) => setTooltip((t) => ({ ...t, visible: v }))}
+                title="About this charge"
+                description={tooltip.text}
+                confirmText="Got it"
+                hideCancel
+            />
         </View>
     );
 }
